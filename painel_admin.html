@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Administrativo - Mundoria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    
+    <style>
+        :root { --laranja-mundoria: #f67123; --azul-abas: #00008b; }
+        body { background-color: #f8f9fa; font-family: sans-serif; }
+        .navbar { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 0; }
+        .painel-header-bg { background-color: var(--laranja-mundoria); padding: 40px 20px 0 20px; color: white; border-radius: 0 0 15px 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .card-admin { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; border: none; }
+        .card-header-admin { background-color: #343a40; color: white; padding: 15px 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .table th { font-size: 0.9em; text-transform: uppercase; color: #666; }
+        #mapa-ponto { height: 300px; width: 100%; border-radius: 10px; border: 2px solid #ccc; margin-top: 10px; cursor: crosshair; }
+        .img-container-corte { max-height: 500px; display: block; } .img-container-corte img { max-width: 100%; }
+        .lista-sugestoes { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 0 0 10px 10px; z-index: 1000; max-height: 200px; overflow-y: auto; display: none; }
+        .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; } .item-sugestao:hover { background-color: #f0f8ff; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <div class="d-flex align-items-center gap-3">
+                <a class="navbar-brand fw-bold fs-3" href="/" style="color: #f67123;">🌍 Mundoria</a>
+                <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Voltar ao Home</a>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="fw-bold text-dark" id="nome-admin">Admin</span>
+                <a href="/logout" class="btn btn-danger btn-sm rounded-pill">Sair</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="painel-header-bg">
+            <div class="d-flex justify-content-between align-items-end">
+                <div><h1 class="fw-bold">Painel Administrativo</h1><p class="opacity-75">Gerenciamento total do sistema</p></div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-light text-primary fw-bold" onclick="abrirModalPonto()">+ Adicionar Local</button>
+                    <button class="btn btn-light text-dark fw-bold" onclick="abrirModalNovoGestor()">+ Novo Gestor</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card-admin">
+                    <div class="card-header-admin">
+                        <span>📍 Pontos Turísticos</span>
+                        <span class="badge bg-primary" id="contador-pontos">0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead><tr><th>Foto</th><th>Nome</th><th>Categoria</th><th>Endereço</th><th class="text-end">Ação</th></tr></thead>
+                            <tbody id="tabela-pontos"><tr><td colspan="5" class="text-center py-4">Carregando...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card-admin">
+                    <div class="card-header-admin" style="background-color: #00008b;"><span>👔 Equipe de Gestão</span></div>
+                    <div class="p-3"><ul class="list-group list-group-flush" id="lista-gestores"><li class="list-group-item text-center">Carregando...</li></ul></div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card-admin">
+                    <div class="card-header-admin" style="background-color: #dc3545;"><span>👥 Gerenciar Usuários</span></div>
+                    <div class="p-3">
+                        <div class="input-group mb-3">
+                            <input type="text" id="busca-usuario" class="form-control" placeholder="Buscar nome ou e-mail...">
+                            <button class="btn btn-outline-danger" onclick="buscarUsuarios()">Buscar</button>
+                        </div>
+                        <ul class="list-group" id="lista-usuarios-busca"><li class="list-group-item text-center text-muted small">Busque para excluir.</li></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPonto" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title" id="titulo-modal">Cadastrar Ponto Turístico</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="form-ponto"><div class="row mb-2"><div class="col-8"><label class="fw-bold">Nome</label><input type="text" name="nome" class="form-control" required></div><div class="col-4"><label class="fw-bold">Categoria</label><select name="categoria" class="form-select"><option>Parque</option><option>Museu</option><option>Monumento</option><option>Praça</option></select></div></div><div class="mb-2"><label class="fw-bold">Endereço</label><div class="position-relative"><input type="text" name="endereco_texto" id="inp-rua" class="form-control" oninput="buscarEndereco(this.value)"><div id="lista-sugestoes" class="lista-sugestoes"></div></div></div><div id="mapa-ponto"></div><input type="hidden" name="lat" id="inp-lat"><input type="hidden" name="lon" id="inp-lon"><div class="mb-2 mt-3"><label class="fw-bold">Foto</label><input type="file" id="input-foto" class="form-control" accept="image/*" onchange="abrirCortador(event)"><img id="preview-foto" class="mt-2" style="width:100%;height:150px;object-fit:cover;display:none;"></div><div class="mb-2"><label class="fw-bold">Descrição</label><textarea name="descricao" class="form-control" rows="3"></textarea></div></form></div><div class="modal-footer"><button class="btn btn-success w-100" onclick="salvarPonto()">Salvar</button></div></div></div></div>
+    <div class="modal fade" id="modalNovoGestor" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">Novo Gestor</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="novo-gestor-nome" class="form-control mb-2" placeholder="Nome"><input type="email" id="novo-gestor-email" class="form-control mb-2" placeholder="E-mail"><input type="password" id="novo-gestor-senha" class="form-control" placeholder="Senha"></div><div class="modal-footer"><button class="btn btn-dark w-100" onclick="salvarNovoGestor()">Cadastrar</button></div></div></div></div>
+    <div class="modal fade" id="modalCortar" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-body p-0"><div class="img-container-corte"><img id="img-crop" src="" style="max-width: 100%;"></div></div><div class="modal-footer"><button class="btn btn-success" onclick="confirmarCorte()">Confirmar</button></div></div></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        let mapa=null, marcador=null, cropper=null, blobFoto=null, timeoutBusca=null;
+
+        fetch('/api/usuario-atual').then(r=>r.json()).then(u => {
+            document.getElementById('nome-admin').innerText = u.nome;
+            carregarPontos();
+            
+            // Se for o ADMIN MESTRE, carrega a equipe
+            if (u.email === 'admin@mundoria.com') {
+                carregarGestores();
+            } else {
+                // Se não for mestre, esconde a gestão de equipe
+                document.getElementById('lista-gestores').innerHTML = '<li class="list-group-item text-muted text-center">Acesso restrito ao Admin Principal.</li>';
+            }
+        });
+
+        // 1. PONTOS
+        function carregarPontos() {
+            fetch('/api/admin/pontos').then(r=>r.json()).then(pontos => {
+                document.getElementById('contador-pontos').innerText = pontos.length;
+                const tbody = document.getElementById('tabela-pontos');
+                tbody.innerHTML = pontos.length ? '' : '<tr><td colspan="5" class="text-center">Nenhum ponto.</td></tr>';
+                pontos.forEach(p => {
+                    tbody.innerHTML += `<tr><td><img src="${p.imagem}" width="50" height="50" style="border-radius:5px;object-fit:cover;"></td><td class="fw-bold">${p.nome}</td><td>${p.categoria}</td><td class="small text-muted">${p.endereco}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="excluirPonto(${p.id})">Excluir</button></td></tr>`;
+                });
+            });
+        }
+        function salvarPonto() { const f=document.getElementById('form-ponto'); const fd=new FormData(f); if(blobFoto)fd.set('foto_ponto',blobFoto,'p.jpg'); fetch('/api/admin/salvar-ponto',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{ if(d.sucesso){alert("Salvo!");location.reload();}else alert("Erro"); }); }
+        function excluirPonto(id) { if(confirm("Excluir este local?")) { fetch('/api/admin/excluir', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) }).then(()=>carregarPontos()); } }
+
+        // 2. GESTORES
+        function carregarGestores() {
+            fetch('/api/admin/gestores').then(r=>r.json()).then(lista => {
+                const ul = document.getElementById('lista-gestores');
+                ul.innerHTML = lista.map(g => `<li class="list-group-item d-flex justify-content-between"><div><strong>${g.nome}</strong><br><small>${g.email}</small></div>${g.email!=='admin@mundoria.com'?`<button class="btn btn-sm btn-danger" onclick="excluirGestor(${g.id})">X</button>`:''}</li>`).join('');
+            });
+        }
+        function salvarNovoGestor() { const n=document.getElementById('novo-gestor-nome').value; const e=document.getElementById('novo-gestor-email').value; const s=document.getElementById('novo-gestor-senha').value; fetch('/api/admin/criar-gestor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,email:e,senha:s})}).then(r=>r.json()).then(d=>{ if(d.sucesso){alert("Criado!");location.reload();}else alert("Erro"); }); }
+        function excluirGestor(id) { if(confirm("Remover gestor?")) fetch('/api/admin/excluir-gestor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(()=>carregarGestores()); }
+
+        // 3. USUÁRIOS (BUSCA)
+        function buscarUsuarios() {
+            const termo = document.getElementById('busca-usuario').value;
+            if(!termo) return alert("Digite algo.");
+            fetch('/api/admin/usuarios/buscar', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({termo})}).then(r=>r.json()).then(lista => {
+                const ul = document.getElementById('lista-usuarios-busca');
+                if(lista.length===0){ ul.innerHTML='<li class="list-group-item text-center">Nada encontrado.</li>'; return; }
+                ul.innerHTML = lista.map(u => `<li class="list-group-item d-flex justify-content-between"><div><strong>${u.nome}</strong> (${u.tipo})<br><small>${u.email}</small></div><button class="btn btn-sm btn-danger" onclick="excluirUsuario(${u.id})">Excluir</button></li>`).join('');
+            });
+        }
+        function excluirUsuario(id) { if(confirm("Excluir TUDO deste usuário?")) fetch('/api/admin/usuarios/excluir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(()=>buscarUsuarios()); }
+
+        // UTILITÁRIOS
+        function abrirModalPonto() { new bootstrap.Modal(document.getElementById('modalPonto')).show(); setTimeout(iniciarMapa,500); }
+        function abrirModalNovoGestor() { new bootstrap.Modal(document.getElementById('modalNovoGestor')).show(); }
+        function iniciarMapa() { if(!mapa){ mapa=L.map('mapa-ponto').setView([-23.5505,-46.6333],13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa); mapa.on('click',e=>{ if(marcador)mapa.removeLayer(marcador); marcador=L.marker(e.latlng).addTo(mapa); document.getElementById('inp-lat').value=e.latlng.lat; document.getElementById('inp-lon').value=e.latlng.lng; fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`).then(r=>r.json()).then(d=>{ document.getElementById('inp-rua').value=d.display_name.split(',')[0]; }); }); }else{ mapa.invalidateSize(); } }
+        function buscarEndereco(q){ const l=document.getElementById('lista-sugestoes'); if(q.length<3){l.style.display='none';return;} clearTimeout(timeoutBusca); timeoutBusca=setTimeout(()=>{ fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&addressdetails=1&limit=5`).then(r=>r.json()).then(d=>{ l.innerHTML=''; if(d.length>0){l.style.display='block';d.forEach(i=>{ const x=document.createElement('div'); x.className='item-sugestao'; x.innerText=i.display_name; x.onclick=()=>{ selecionar(i); }; l.appendChild(x); });}else{l.style.display='none';} }); },300); }
+        function selecionar(i){ document.getElementById('inp-rua').value=i.display_name.split(',')[0]; document.getElementById('lista-sugestoes').style.display='none'; document.getElementById('inp-lat').value=i.lat; document.getElementById('inp-lon').value=i.lon; if(mapa){ mapa.setView([i.lat, i.lon], 16); if(marcador)mapa.removeLayer(marcador); marcador=L.marker([i.lat, i.lon]).addTo(mapa); } }
+        function abrirCortador(e){ const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ document.getElementById('img-crop').src=ev.target.result; new bootstrap.Modal(document.getElementById('modalCortar')).show(); setTimeout(()=>{ if(cropper)cropper.destroy(); cropper=new Cropper(document.getElementById('img-crop'),{aspectRatio:16/9,viewMode:2}); },200); }; r.readAsDataURL(f); } }
+        function confirmarCorte(){ cropper.getCroppedCanvas().toBlob(b=>{ blobFoto=b; bootstrap.Modal.getInstance(document.getElementById('modalCortar')).hide(); document.getElementById('preview-foto').src=URL.createObjectURL(b); document.getElementById('preview-foto').style.display='block'; }); }
+    </script>
+</body>
+</html>

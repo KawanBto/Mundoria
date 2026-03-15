@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Seja um Parceiro - Mundoria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f2f5; }
+        .card-plano { border: none; border-radius: 15px; transition: transform 0.3s; cursor: pointer; }
+        .card-plano:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .destaque { border: 3px solid #f67123; position: relative; }
+        .badge-destaque { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: #f67123; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
+        .btn-assinar { background-color: #00008b; color: white; width: 100%; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container py-5 text-center">
+        <h1 class="fw-bold mb-3">Torne-se um Parceiro do Mundoria</h1>
+        <p class="lead text-muted mb-5">Divulgue seu estabelecimento para milhares de turistas.</p>
+
+        <div class="row justify-content-center">
+            
+            <div class="col-md-4 mb-4">
+                <div class="card card-plano h-100 p-4">
+                    <h3>Básico</h3>
+                    <h1 class="display-4 fw-bold">R$ 29<small class="fs-6 text-muted">/mês</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4 text-start">
+                        <li>✅ Divulgar seu local</li>
+                        <li>✅ Aparecer nas buscas</li>
+                        <li>❌ Destaque na Home</li>
+                    </ul>
+                    <button class="btn btn-outline-dark w-100 mt-auto" onclick="assinar('basico')">Escolher Básico</button>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card card-plano destaque h-100 p-4">
+                    <span class="badge-destaque">RECOMENDADO</span>
+                    <h3>Profissional</h3>
+                    <h1 class="display-4 fw-bold">R$ 59<small class="fs-6 text-muted">/mês</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4 text-start">
+                        <li>✅ Divulgação ilimitada</li>
+                        <li>✅ Painel de Relatórios</li>
+                        <li>✅ Destaque na Home</li>
+                    </ul>
+                    <button class="btn btn-assinar w-100 mt-auto" onclick="assinar('profissional')">Escolher Profissional</button>
+                </div>
+            </div>
+
+        </div>
+        
+        <a href="/" class="text-muted text-decoration-none mt-4 d-inline-block">Voltar para Home</a>
+    </div>
+
+    <script>
+        function assinar(plano) {
+            if(confirm("Deseja confirmar a assinatura e se tornar um Parceiro do Mundoria?")) {
+                // AGORA CHAMA A ROTA CORRETA!
+                fetch('/api/virar-parceiro', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ plano: plano })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.erro) {
+                        alert("Erro: " + data.erro);
+                        window.location.href = '/login';
+                    } else {
+                        alert("Parabéns! Agora você é um Parceiro do Mundoria.");
+                        window.location.href = '/painel';
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

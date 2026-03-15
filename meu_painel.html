@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu Painel - Mundoria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* DESIGN ORIGINAL MANTIDO */
+        :root { --laranja-mundoria: #f67123; --azul-abas: #00008b; }
+        body { background-color: #f8f9fa; font-family: sans-serif; }
+        .navbar { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 0; }
+        .painel-header-bg { background-color: var(--laranja-mundoria); padding: 40px 20px 0 20px; color: white; border-radius: 0 0 15px 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .nav-tabs { border-bottom: none; gap: 5px; }
+        .nav-link { background-color: rgba(255,255,255,0.8); color: var(--azul-abas); font-weight: bold; border: none; border-radius: 15px 15px 0 0 !important; padding: 12px 30px; }
+        .nav-link.active { background-color: var(--azul-abas) !important; color: white !important; }
+        .card-wrapper { background: white; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); padding: 20px; border-left: 5px solid var(--laranja-mundoria); cursor: pointer; transition: 0.2s; }
+        .card-wrapper:hover { transform: translateX(5px); }
+        .d-none { display: none !important; }
+        .user-avatar-mini { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--laranja-mundoria); }
+        .btn-menu-azul { width: 45px; height: 45px; background-color: #00008b; color: white; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+        
+        /* ESTILOS ESPECÍFICOS */
+        #mapa-evento { height: 250px; width: 100%; border-radius: 10px; border: 2px solid #ccc; margin-top: 10px; }
+        .img-preview-form { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; display: none; margin-top: 10px; border: 1px solid #ddd; }
+        .lista-sugestoes { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ccc; z-index: 1000; max-height: 200px; overflow-y: auto; display: none; }
+        .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; } .item-sugestao:hover { background-color: #f0f8ff; }
+        .img-container-corte { max-height: 500px; display: block; } .img-container-corte img { max-width: 100%; }
+        .stats-card { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-top: 4px solid var(--azul-abas); height: 100%; transition: transform 0.2s; }
+        .stats-card:hover { transform: translateY(-5px); }
+        .stats-num { font-size: 2.5rem; font-weight: bold; color: var(--laranja-mundoria); }
+        .box-review-parceiro { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #00008b; }
+        .box-resposta { background: #e9f7ef; padding: 10px; margin-top: 10px; border-radius: 8px; font-size: 0.9em; border-left: 3px solid #28a745; color: #155724; }
+        
+        /* ROTEIRO */
+        .item-roteiro-card { background: #f9f9f9; border-radius: 8px; padding: 10px; margin-bottom: 10px; border: 1px solid #eee; }
+        .conflito-horario { border: 2px solid #ffc107 !important; background: #fffbe6 !important; }
+        .msg-conflito { color: #856404; font-weight: bold; font-size: 0.8em; margin-top: 5px; display: none; }
+        .capa-roteiro-container { position: relative; height: 150px; background: #eee; border-radius: 10px; overflow: hidden; margin-bottom: 20px; cursor: pointer; border: 2px dashed #ccc; }
+        .capa-roteiro-img { width: 100%; height: 100%; object-fit: cover; }
+        .capa-roteiro-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; opacity: 0; transition: 0.3s; }
+        .capa-roteiro-container:hover .capa-roteiro-overlay { opacity: 1; }
+        .btn-expandir { border: none; background: none; transition: transform 0.3s; font-size: 1.2rem; color: #aaa; }
+        .btn-expandir.aberto { transform: rotate(180deg); color: var(--azul-abas); }
+        .timeline-item { padding: 12px 0; border-bottom: 1px dashed #eee; display: flex; gap: 15px; align-items: center; font-size: 0.95em; }
+        .timeline-date { font-weight: bold; color: var(--laranja-mundoria); min-width: 120px; font-size: 0.9em; }
+        .link-local { text-decoration: none; color: #333; font-weight: 600; }
+        .link-local:hover { color: var(--azul-abas); text-decoration: underline; }
+        .dropdown-toggle::after { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top"><div class="container"><div class="d-flex align-items-center gap-3"><a class="navbar-brand fw-bold fs-3" href="/" style="color: #f67123;">🌍 Mundoria</a><a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="bi bi-arrow-left"></i> Voltar ao Home</a></div><div class="d-flex align-items-center gap-3" id="header-user-area"></div></div></nav>
+
+    <div class="container mt-4">
+        <div class="painel-header-bg">
+            <div class="d-flex justify-content-between align-items-end">
+                <div><h1 class="fw-bold">Meu Painel</h1><p class="opacity-75" id="texto-saudacao">Carregando...</p></div>
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <div id="nav-turista" class="d-flex gap-2">
+                        <li class="nav-item"><button class="nav-link active" data-bs-target="#favoritos" data-bs-toggle="tab">Favoritos</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-target="#roteiros" data-bs-toggle="tab">Roteiros</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-target="#avaliacoes" data-bs-toggle="tab">Minhas Avaliações</button></li>
+                    </div>
+                    <li class="nav-item d-none" id="nav-parceiro"><button class="nav-link active bg-warning text-dark" data-bs-target="#meu-negocio" data-bs-toggle="tab">Meu Negócio</button></li>
+                    <li class="nav-item d-none" id="nav-produtor"><button class="nav-link active bg-success text-white" data-bs-target="#meus-eventos" data-bs-toggle="tab">Curadoria</button></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="favoritos">
+                <div class="d-flex gap-2 mb-4 align-items-center bg-white p-3 rounded shadow-sm">
+                    <input type="text" id="busca-fav" class="form-control w-50" placeholder="Buscar..." onkeyup="filtrarFavoritos()">
+                    <select id="filtro-cat-fav" class="form-select w-auto" onchange="filtrarFavoritos()"><option value="todos">Todas Categorias</option><option>Restaurante</option><option>Parque</option><option>Museu</option><option>Balada</option><option>Evento</option></select>
+                </div>
+                <div id="lista-favoritos">Carregando...</div>
+            </div>
+
+            <div class="tab-pane fade" id="roteiros">
+                <div class="d-flex justify-content-between mb-3 align-items-center bg-white p-3 rounded shadow-sm">
+                    <h4 class="m-0 text-primary">Meus Roteiros</h4>
+                    <button class="btn btn-primary rounded-pill fw-bold" onclick="abrirModalCriarRoteiro()">+ Novo Roteiro</button>
+                </div>
+                <div id="lista-roteiros">Carregando...</div>
+            </div>
+            
+            <div class="tab-pane fade" id="avaliacoes"><div id="lista-minhas-avaliacoes" class="p-3">Carregando...</div></div>
+
+            <div class="tab-pane fade" id="meus-eventos">
+                <div class="d-flex justify-content-between mb-3"><h4 class="text-success">Solicitações</h4><button class="btn btn-success rounded-pill fw-bold" onclick="abrirModalNovoEvento(null, 'produtor')">+ Criar Evento Público</button></div>
+                <div class="card border-warning mb-4 shadow-sm"><div class="card-header bg-warning text-dark fw-bold">Pendentes</div><div class="card-body p-0"><table class="table table-hover mb-0"><tbody id="tabela-aprovacao"><tr><td class="text-center py-3">Nada pendente.</td></tr></tbody></table></div></div>
+                <h5 class="text-muted mt-4">Locais Publicados</h5><div id="lista-meus-eventos"></div>
+            </div>
+
+            <div class="tab-pane fade" id="meu-negocio"><div id="conteudo-parceiro" class="p-3"><p class="text-center">Carregando dados...</p></div></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEvento" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title" id="titulo-modal">Dados do Local</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="form-evento">
+        <input type="hidden" name="id" id="inp-id">
+        <div class="row mb-2"><div class="col-6"><label class="fw-bold">Nome</label><input type="text" name="nome" id="inp-nome" class="form-control" required></div><div class="col-6"><label class="fw-bold">Categoria</label><select name="categoria" id="inp-cat" class="form-select"></select></div></div>
+        <div class="mb-2"><label class="fw-bold">Endereço</label><div class="input-group-endereco"><input type="text" name="endereco_texto" id="inp-rua" class="form-control" oninput="buscarEndereco(this.value)" placeholder="Busque..."><div id="lista-sugestoes" class="lista-sugestoes"></div></div></div>
+        <div class="row mb-2"><div class="col-4"><input type="text" name="numero" id="inp-num" class="form-control" placeholder="Nº"></div><div class="col-8 pt-2"><div class="form-check"><input type="checkbox" id="check-sn" onchange="toggleNumero(this)"><label class="form-check-label">Sem Número</label></div></div></div>
+        <div id="mapa-evento"></div><input type="hidden" name="lat" id="inp-lat"><input type="hidden" name="lon" id="inp-lon">
+        <div class="row mb-2 mt-3"><div class="col-6"><label class="fw-bold">Data</label><div class="input-group"><input type="date" name="data_formatada" id="inp-data" class="form-control"><div class="input-group-text"><input type="checkbox" id="check-sem-data" onchange="toggleData(this)"> S/ Data</div></div></div><div class="col-6"><label class="fw-bold">Horário</label><div class="input-group"><input type="time" name="horario" id="inp-hora" class="form-control"><div class="input-group-text"><input type="checkbox" id="check-sem-hora" onchange="toggleHorario(this)"> Livre</div></div></div></div>
+        <div class="mb-2"><label class="fw-bold">Foto</label><input type="file" name="foto_local" class="form-control" accept="image/*" onchange="abrirCortador(event)"><img id="preview-foto-modal" class="img-preview-form"></div>
+        <div class="mb-2"><label class="fw-bold">Descrição</label><textarea name="descricao" id="inp-desc" class="form-control" rows="3"></textarea></div>
+    </form></div><div class="modal-footer"><button class="btn btn-success w-100 fw-bold" onclick="enviarFormulario()">Salvar</button></div></div></div></div>
+    
+    <div class="modal fade" id="modalCortar" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">Recortar</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><div class="img-container-corte"><img id="img-crop" src=""></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-success" onclick="confirmarCorte()">Confirmar</button></div></div></div></div>
+    <div class="modal fade" id="modalCortarParceiro" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">Ajustar Foto</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><div class="img-container-corte"><img id="img-crop-parceiro" src="" style="max-width: 100%;"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-primary" onclick="confirmarCorteParceiro()">Confirmar</button></div></div></div></div>
+
+    <div class="modal fade" id="modalCriarRoteiro" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title">Criar Roteiro</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><label>Nome</label><input type="text" id="input-nome-roteiro" class="form-control"></div><div class="modal-footer"><button class="btn btn-primary" onclick="criarRoteiro()">Salvar</button></div></div></div></div>
+    <div class="modal fade" id="modalGerenciarRoteiro" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title" id="titulo-gerenciar">Editar Roteiro</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
+        <form id="form-capa" action="/api/roteiros/capa" method="POST" enctype="multipart/form-data"><input type="hidden" name="id_roteiro" id="id-roteiro-atual"><label class="capa-roteiro-container" title="Alterar capa"><img src="" id="img-capa-roteiro" class="capa-roteiro-img"><div class="capa-roteiro-overlay"><i class="bi bi-camera fs-1"></i> Alterar Capa</div><input type="file" name="foto_capa" accept="image/*" hidden onchange="this.form.submit()"></label></form>
+        <div class="input-group mb-3"><select id="select-pontos-disp" class="form-select"><option selected disabled>Carregando locais...</option></select><button class="btn btn-success" onclick="adicionarAoRoteiro()">+ Adicionar</button></div>
+        <div id="alerta-conflito-geral" class="alert alert-warning d-none"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Atenção:</strong> Eventos com menos de 30 min de diferença!</div>
+        <h6 class="text-muted mb-3">Itens do Roteiro:</h6>
+        <div id="lista-itens-roteiro-modal"><p class="text-center">Carregando...</p></div>
+        <hr><button class="btn btn-outline-danger btn-sm w-100" onclick="excluirRoteiroAtual()">Excluir Roteiro</button>
+    </div></div></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let meusFavoritosGlobais=[], idRoteiroAberto=null, cropper=null, cropperParceiro=null, blobFoto=null, blobFotoParceiro=null, mapa=null, marcador=null, timeoutBusca=null, modoAcao='';
+        const catsPublicas = `<option>Parque</option><option>Museu</option><option>Praça</option><option>Teatro</option>`;
+        const catsPrivadas = `<option>Restaurante</option><option>Bar</option><option>Balada</option><option>Show</option>`;
+
+        fetch('/api/meu-painel-dados').then(r=>r.json()).then(data => {
+            if(data.erro) { window.location.href = '/login'; return; }
+            const u = data.usuario;
+            montarHeader(u);
+            if(u.tipo === 'produtor') { 
+                document.getElementById('nav-turista').classList.add('d-none');
+                document.getElementById('favoritos').classList.remove('show', 'active');
+                document.getElementById('nav-produtor').classList.remove('d-none'); 
+                document.getElementById('meus-eventos').classList.add('show', 'active');
+                carregarPendentesProdutor(); 
+                carregarMeusEventos();
+            } else if(u.tipo === 'parceiro') {
+                document.getElementById('nav-turista').classList.add('d-none');
+                document.getElementById('favoritos').classList.remove('show', 'active');
+                document.getElementById('nav-parceiro').classList.remove('d-none'); 
+                document.getElementById('meu-negocio').classList.add('show', 'active');
+                carregarDadosParceiro(u);
+            } else {
+                meusFavoritosGlobais = data.favoritos || [];
+                filtrarFavoritos();
+                renderizarRoteiros(data.roteiros || []);
+                document.getElementById('lista-minhas-avaliacoes').innerHTML = data.meus_comentarios.length ? data.meus_comentarios.map(c=>`<div class="card-wrapper d-block"><strong>${c.nome_local}</strong> (${c.nota}★)<br>"${c.comentario}"</div>`).join('') : '<p>Nenhuma avaliação.</p>';
+            }
+        });
+
+        function filtrarFavoritos() {
+            const termo = document.getElementById('busca-fav').value.toLowerCase();
+            const cat = document.getElementById('filtro-cat-fav').value;
+            const div = document.getElementById('lista-favoritos');
+            let lista = meusFavoritosGlobais.filter(f => {
+                const matchNome = f.nome_local.toLowerCase().includes(termo);
+                const matchCat = cat === 'todos' || f.categoria === cat;
+                return matchNome && matchCat;
+            });
+            if(lista.length === 0) { div.innerHTML = '<p class="text-center py-5 text-muted">Nenhum favorito encontrado.</p>'; return; }
+            div.innerHTML = lista.map(f => `<a href="/detalhes?id=${f.id_local}" class="text-decoration-none text-dark"><div class="card-wrapper d-flex align-items-center gap-3 mb-3"><img src="${f.imagem}" style="width:80px; height:80px; border-radius:10px; object-fit:cover;" class="me-3"><div><h5 class="m-0 fw-bold">${f.nome_local}</h5><span class="badge bg-info text-dark mt-1">${f.categoria}</span></div><i class="bi bi-chevron-right ms-auto text-muted fs-4"></i></div></a>`).join('');
+        }
+
+        // 🔥 ABRIR MODAL E CORREÇÃO DO NÚMERO 🔥
+        function abrirModalNovoEvento(id, modo) {
+            modoAcao = modo;
+            document.getElementById('form-evento').reset();
+            document.getElementById('inp-id').value = id || '';
+            document.getElementById('preview-foto-modal').style.display = 'none';
+            const sel = document.getElementById('inp-cat');
+            
+            // RESETAR ESTADOS PARA NÃO VIR "SUJO"
+            document.getElementById('inp-num').disabled = false;
+            document.getElementById('check-sn').checked = false;
+            
+            if(modo === 'produtor') { document.getElementById('titulo-modal').innerText="Criar Evento Público"; sel.innerHTML = catsPublicas; }
+            if(modo === 'parceiro') { document.getElementById('titulo-modal').innerText="Solicitar Cadastro"; sel.innerHTML = catsPrivadas; }
+            if(modo === 'aprovar') { document.getElementById('titulo-modal').innerText="Aprovar/Editar"; sel.innerHTML = catsPrivadas; }
+            
+            new bootstrap.Modal(document.getElementById('modalEvento')).show();
+            iniciarMapa();
+
+            if(id) { 
+                fetch(`/api/eventos/${id}`).then(r=>r.json()).then(d=>{
+                    document.getElementById('inp-nome').value = d.nome;
+                    if (!sel.innerHTML.includes(d.categoria)) sel.innerHTML += `<option value="${d.categoria}">${d.categoria}</option>`;
+                    sel.value = d.categoria;
+                    document.getElementById('inp-rua').value = d.endereco;
+                    
+                    // LÓGICA BLINDADA PARA O NÚMERO
+                    if(d.numero && d.numero !== 'S/N' && d.numero !== '[object Object]') {
+                        document.getElementById('inp-num').value = d.numero; 
+                        document.getElementById('check-sn').checked = false; 
+                        toggleNumero({checked: false});
+                    } else {
+                        document.getElementById('check-sn').checked = true; 
+                        toggleNumero({checked: true}); 
+                    }
+
+                    if(d.data_evento && d.data_evento !== 'A definir') { document.getElementById('inp-data').value = d.data_evento.split(' ')[0]; document.getElementById('check-sem-data').checked=false; toggleData({checked:false}); } else { document.getElementById('check-sem-data').checked=true; toggleData({checked:true}); }
+                    if(d.horario && d.horario !== 'Livre') { document.getElementById('inp-hora').value = d.horario; document.getElementById('check-sem-hora').checked=false; toggleHorario({checked:false}); } else { document.getElementById('check-sem-hora').checked=true; toggleHorario({checked:true}); }
+                    document.getElementById('inp-desc').value = d.descricao;
+                    if(d.imagem) { document.getElementById('preview-foto-modal').src = d.imagem; document.getElementById('preview-foto-modal').style.display = 'block'; }
+                    if(d.lat && d.lon) { document.getElementById('inp-lat').value = d.lat; document.getElementById('inp-lon').value = d.lon; setTimeout(()=> { if(mapa) { mapa.setView([d.lat, d.lon], 16); L.marker([d.lat, d.lon]).addTo(mapa); } }, 1000); }
+                });
+            }
+        }
+
+        function enviarFormulario() {
+            const fd = new FormData(document.getElementById('form-evento'));
+            const sn = document.getElementById('check-sn').checked;
+            
+            // GARANTE O NÚMERO CORRETO
+            fd.set('numero', sn ? 'S/N' : document.getElementById('inp-num').value);
+            
+            if(document.getElementById('check-sem-hora').checked) fd.set('horario', 'Livre');
+            if(document.getElementById('check-sem-data').checked) fd.set('data_formatada', 'A definir');
+            if(blobFoto) fd.set('foto_local', blobFoto, 'p.jpg');
+            
+            let url = '/api/locais/salvar';
+            fetch(url, { method: 'POST', body: fd }).then(r=>r.json()).then(d => { if(d.sucesso) { alert("Salvo!"); location.reload(); } else alert("Erro: "+d.erro); });
+        }
+
+        // --- DASHBOARD PARCEIRO ---
+        function carregarDadosParceiro(user) {
+            fetch('/api/parceiro/dados').then(res => res.json()).then(data => {
+                const div = document.getElementById('conteudo-parceiro');
+                if(!data.local) {
+                    div.innerHTML = `<div class="text-center py-5"><h3>Bem-vindo Parceiro!</h3><p>Cadastre seu estabelecimento.</p><button class="btn btn-primary btn-lg mt-3" onclick="abrirModalNovoEvento(null, 'parceiro')">Solicitar Cadastro</button></div>`;
+                } else if (data.status === 'pendente') {
+                    div.innerHTML = `<div class="alert alert-warning text-center shadow-sm"><h3>⏳ Em Análise</h3><p>Aguardando aprovação.</p></div>`;
+                } else {
+                    // EVITA ERRO UNDEFINED
+                    const stats = data.stats || {total_favoritos:0, total_roteiros:0, total_reviews:0, nota_media:0};
+                    const media = stats.nota_media ? stats.nota_media.toFixed(1) : '-';
+                    
+                    div.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center mb-4"><h2 class="fw-bold text-primary">${data.local.nome} <span class="badge bg-success fs-6 align-middle">Ativo</span></h2></div>
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-2"><div class="stats-card"><h2 class="stats-num">${stats.total_favoritos || 0}</h2><small>Favoritos</small></div></div>
+                            <div class="col-md-3 mb-2"><div class="stats-card"><h2 class="stats-num">${stats.total_roteiros || 0}</h2><small>Em Roteiros</small></div></div>
+                            <div class="col-md-3 mb-2"><div class="stats-card"><h2 class="stats-num">${stats.total_reviews || 0}</h2><small>Avaliações</small></div></div>
+                            <div class="col-md-3 mb-2"><div class="stats-card"><h2 class="stats-num">${media}</h2><small>Nota Média</small></div></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-4"><div class="card border-0 shadow-sm p-3 h-100"><h5 class="fw-bold mb-3">Engajamento</h5><canvas id="grafico-stats"></canvas></div></div>
+                            <div class="col-md-6 mb-4"><div class="card border-0 shadow-sm p-3 h-100"><h5 class="fw-bold mb-3">Editar Informações</h5><form id="form-negocio"><input type="hidden" name="id" value="${data.local.id}"><div class="mb-2"><label class="fw-bold small">Descrição</label><textarea name="descricao" class="form-control" rows="3">${data.local.descricao}</textarea></div><div class="mb-2"><label class="fw-bold small">Endereço</label><input type="text" name="endereco" class="form-control" value="${data.local.endereco}"></div><div class="mb-2"><label class="fw-bold small">Número</label><input type="text" name="numero" class="form-control" value="${data.local.numero || 'S/N'}"></div><div class="mb-3"><label class="fw-bold small">Alterar Foto</label><input type="file" class="form-control" accept="image/*" onchange="abrirCortadorParceiro(event)"></div><button type="button" class="btn btn-primary w-100" onclick="salvarEdicaoLocal()">Salvar Alterações</button></form></div></div>
+                        </div>
+                        <h4 class="mb-3">Comentários</h4>
+                        <div id="lista-reviews">${data.reviews && data.reviews.length ? data.reviews.map(r => `<div class="box-review-parceiro"><div class="d-flex justify-content-between"><strong>${r.nome_user}</strong><span class="text-warning">${'★'.repeat(r.nota)}</span></div><p class="mb-2">"${r.comentario}"</p><small class="text-muted">${new Date(r.data_avaliacao).toLocaleDateString()}</small>${r.resposta ? `<div class="box-resposta"><strong>Você:</strong> ${r.resposta}</div>` : `<div class="mt-2 input-group"><input type="text" id="resp-${r.id}" class="form-control form-control-sm" placeholder="Responder..."><button class="btn btn-sm btn-outline-primary" onclick="responder(${r.id})">Enviar</button></div>`}</div>`).join('') : '<p class="text-muted">Sem avaliações.</p>'}</div>
+                        <div class="text-center mt-5"><button class="btn btn-outline-danger btn-sm" onclick="cancelarParceria()">Encerrar Parceria</button></div>
+                    `;
+                    setTimeout(() => { new Chart(document.getElementById('grafico-stats'), { type: 'bar', data: { labels: ['Favoritos', 'Roteiros', 'Avaliações'], datasets: [{ label: 'Total', data: [stats.total_favoritos||0, stats.total_roteiros||0, stats.total_reviews||0], backgroundColor: ['#f67123', '#00008b', '#28a745'] }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } }); }, 500);
+                }
+            });
+        }
+
+        function responder(id) { const txt = document.getElementById(`resp-${id}`).value; if(!txt) return alert("Escreva algo!"); fetch('/api/parceiro/responder', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_avaliacao: id, resposta: txt }) }).then(() => carregarDadosParceiro()); }
+        
+        // SALVAR EDIÇÃO PARCEIRO
+        function salvarEdicaoLocal() {
+            const form = document.getElementById('form-negocio');
+            const fd = new FormData(form);
+            if(blobFotoParceiro) fd.set('foto_local', blobFotoParceiro, 'local.jpg');
+            fetch('/api/parceiro/editar-local', { method: 'POST', body: fd }).then(r => r.json()).then(d => {
+                if(d.sucesso) { alert("Atualizado com sucesso!"); location.reload(); } else alert("Erro: " + d.erro);
+            });
+        }
+
+        function abrirCortadorParceiro(e) { const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ document.getElementById('img-crop-parceiro').src=ev.target.result; new bootstrap.Modal(document.getElementById('modalCortarParceiro')).show(); setTimeout(()=>{ if(cropperParceiro)cropperParceiro.destroy(); cropperParceiro=new Cropper(document.getElementById('img-crop-parceiro'),{aspectRatio:16/9}); },200); }; r.readAsDataURL(f); } }
+        function confirmarCorteParceiro() { cropperParceiro.getCroppedCanvas().toBlob(b=>{ blobFotoParceiro=b; bootstrap.Modal.getInstance(document.getElementById('modalCortarParceiro')).hide(); alert("Foto pronta para salvar!"); }); }
+        function cancelarParceria() { if(confirm("Tem certeza?")) fetch('/api/cancelar-parceiro', {method:'POST'}).then(()=>location.reload()); }
+
+        // OUTRAS FUNÇÕES (IGUAIS)
+        function carregarPendentesProdutor() { fetch('/api/produtor/pendentes').then(r=>r.json()).then(lista => { const tbody = document.getElementById('tabela-aprovacao'); if(lista.length === 0) { tbody.innerHTML = '<tr><td class="text-center py-3 text-muted">Nenhuma solicitação pendente.</td></tr>'; return; } tbody.innerHTML = ''; lista.forEach(ev => { tbody.innerHTML += `<tr><td><img src="${ev.imagem}" width="50"></td><td class="fw-bold">${ev.nome}</td><td class="text-end"><button class="btn btn-sm btn-success me-1" onclick="abrirModalNovoEvento(${ev.id}, 'aprovar')">Analisar</button></td></tr>`; }); }); }
+        function carregarMeusEventos() { fetch('/api/meus-eventos').then(r=>r.json()).then(l => { document.getElementById('lista-meus-eventos').innerHTML = l.length ? l.map(e=>`<div class="card-wrapper"><h5>${e.nome}</h5></div>`).join('') : '<p class="text-center">Nenhum.</p>'; }); }
+        function toggleNumero(c){ document.getElementById('inp-num').disabled=c.checked; if(c.checked)document.getElementById('inp-num').value=''; }
+        function toggleData(c){ document.getElementById('inp-data').disabled=c.checked; if(c.checked)document.getElementById('inp-data').value=''; }
+        function toggleHorario(c){ document.getElementById('inp-hora').disabled=c.checked; if(c.checked)document.getElementById('inp-hora').value=''; }
+        function iniciarMapa(lat=-23.55, lon=-46.63) { setTimeout(()=>{ if(!mapa) { mapa = L.map('mapa-evento').setView([lat, lon], 13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa); mapa.on('click', e=>{ if(marcador)mapa.removeLayer(marcador); marcador=L.marker(e.latlng).addTo(mapa); document.getElementById('inp-lat').value=e.latlng.lat; document.getElementById('inp-lon').value=e.latlng.lng; fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`).then(r=>r.json()).then(d=>{ if(d.address) document.getElementById('inp-rua').value = d.address.road || d.address.pedestrian || d.display_name.split(',')[0]; }); }); } else { mapa.invalidateSize(); } }, 500); }
+        function buscarEndereco(q){ if(q.length<3)return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&addressdetails=1`).then(r=>r.json()).then(d=>{ document.getElementById('lista-sugestoes').innerHTML=d.map(i=>`<div class="item-sugestao p-2 border-bottom" onclick="selecionarEnd('${i.display_name}',${i.lat},${i.lon})">${i.display_name}</div>`).join(''); document.getElementById('lista-sugestoes').style.display='block'; }); }
+        function selecionarEnd(n,lat,lon){ document.getElementById('inp-rua').value=n.split(',')[0]; document.getElementById('lista-sugestoes').style.display='none'; mapa.setView([lat,lon],16); if(marcador)mapa.removeLayer(marcador); marcador=L.marker([lat,lon]).addTo(mapa); document.getElementById('inp-lat').value=lat; document.getElementById('inp-lon').value=lon; }
+        function abrirCortador(e){ const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ document.getElementById('img-crop').src=ev.target.result; new bootstrap.Modal(document.getElementById('modalCortar')).show(); setTimeout(()=>{ if(cropper)cropper.destroy(); cropper=new Cropper(document.getElementById('img-crop'),{aspectRatio:16/9}); },200); }; r.readAsDataURL(f); } }
+        function confirmarCorte(){ cropper.getCroppedCanvas().toBlob(b=>{ blobFoto=b; bootstrap.Modal.getInstance(document.getElementById('modalCortar')).hide(); document.getElementById('preview-foto-modal').src=URL.createObjectURL(b); document.getElementById('preview-foto-modal').style.display='block'; }); }
+        function montarHeader(u){ document.getElementById('header-user-area').innerHTML=`<a href="/perfil" class="text-dark fw-bold me-3">${u.nome}</a><a href="/logout" class="btn btn-sm btn-danger">Sair</a>`; document.getElementById('texto-saudacao').innerText=`Olá, ${u.nome}!`; }
+        function renderizarRoteiros(lista) { const div=document.getElementById('lista-roteiros'); if(lista.length===0){div.innerHTML='<p class="text-center py-5 text-muted">Nenhum roteiro criado.</p>';return;} div.innerHTML=lista.map(r=>`<div class="card-wrapper"><div class="card-main" onclick="toggleDetalhes(${r.id})"><div class="d-flex align-items-center gap-3"><img src="${r.foto_capa||'https://via.placeholder.com/80'}" style="width:60px;height:60px;border-radius:5px;object-fit:cover;"><div><h5 class="m-0 fw-bold">${r.nome_roteiro}</h5></div></div><div><button class="btn btn-outline-primary btn-sm me-2" onclick="event.stopPropagation(); abrirGerenciador(${r.id}, '${r.nome_roteiro}')">Gerenciar</button><button class="btn-expandir" id="icon-expand-${r.id}"><i class="bi bi-chevron-down"></i></button></div></div><div class="collapse card-detalhes" id="collapse-${r.id}"><div id="conteudo-detalhe-${r.id}" class="py-3 text-center small text-muted">Carregando...</div></div></div>`).join(''); }
+        function toggleDetalhes(id){ const c=document.getElementById(`collapse-${id}`),i=document.getElementById(`icon-expand-${id}`); new bootstrap.Collapse(c,{toggle:true}); if(c.classList.contains('show')) i.classList.remove('aberto'); else { i.classList.add('aberto'); carregarResumoRoteiro(id); } }
+        function carregarResumoRoteiro(id){ fetch(`/api/roteiros/${id}`).then(r=>r.json()).then(d=>{ const div=document.getElementById(`conteudo-detalhe-${id}`); if(d.itens.length===0){div.innerHTML="Vazio.";return;} div.innerHTML=d.itens.map(i=>`<div class="timeline-item"><span class="timeline-date">${i.data_visita?new Date(i.data_visita).toLocaleString('pt-BR'):'S/ Data'}</span><a href="/detalhes?id=${i.id_local_real}" target="_blank" class="link-local">${i.nome}</a></div>`).join(''); }); }
+        function abrirModalCriarRoteiro() { new bootstrap.Modal(document.getElementById('modalCriarRoteiro')).show(); }
+        function criarRoteiro() { const n=document.getElementById('input-nome-roteiro').value; fetch('/api/roteiros/criar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n})}).then(()=>location.reload()); }
+        function abrirGerenciador(id, nome) { idRoteiroAberto=id; document.getElementById('titulo-gerenciar').innerText="Editando: "+nome; document.getElementById('id-roteiro-atual').value=id; new bootstrap.Modal(document.getElementById('modalGerenciarRoteiro')).show(); carregarPontosDisponiveis(); carregarItensRoteiro(); }
+        function carregarPontosDisponiveis() { fetch('/api/pontos-disponiveis').then(r=>r.json()).then(pts => { document.getElementById('select-pontos-disp').innerHTML=pts.map(p=>`<option value="${p.id}">${p.nome}</option>`).join(''); }); }
+        function carregarItensRoteiro() { fetch(`/api/roteiros/${idRoteiroAberto}`).then(r=>r.json()).then(d => { document.getElementById('img-capa-roteiro').src=d.roteiro.foto_capa||''; const div=document.getElementById('lista-itens-roteiro-modal'); if(d.itens.length===0){div.innerHTML='<p class="text-center small text-muted">Adicione locais.</p>';return;} div.innerHTML=d.itens.map(i=>`<div class="item-roteiro-card"><div class="d-flex justify-content-between mb-2"><strong>${i.nome}</strong><button class="btn btn-sm btn-outline-danger" onclick="removerItem(${i.id_item})"><i class="bi bi-trash"></i></button></div><div class="d-flex gap-2"><input type="datetime-local" class="form-control form-control-sm input-data-roteiro" id="data-roteiro-${i.id_item}" value="${i.data_visita||''}" oninput="verificarConflitos()"><button class="btn btn-success btn-sm" onclick="salvarData(${i.id_item})" title="Confirmar"><i class="bi bi-check-lg"></i></button></div><div class="msg-conflito">⚠️ Intervalo curto!</div></div>`).join(''); verificarConflitos(); }); }
+        function adicionarAoRoteiro() { const idLocal=document.getElementById('select-pontos-disp').value; fetch('/api/roteiros/adicionar-item',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_roteiro:idRoteiroAberto,id_local:idLocal})}).then(()=>carregarItensRoteiro()); }
+        function removerItem(id) { fetch('/api/roteiros/item/remover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_item:id})}).then(()=>carregarItensRoteiro()); }
+        function salvarData(idItem) { const val=document.getElementById(`data-roteiro-${idItem}`).value; fetch('/api/roteiros/item/data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_item: idItem, data: val }) }).then(() => { alert("Data salva!"); verificarConflitos(); }); }
+        function excluirRoteiroAtual() { if(confirm("Excluir?")) fetch('/api/roteiros/excluir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_roteiro:idRoteiroAberto})}).then(()=>location.reload()); }
+        function verificarConflitos() { const inp=document.querySelectorAll('.input-data-roteiro'); inp.forEach(i=>{ i.parentElement.parentElement.classList.remove('conflito-horario'); i.parentElement.nextElementSibling.style.display='none'; }); for(let i=0;i<inp.length;i++){ if(!inp[i].value)continue; const dA=new Date(inp[i].value); for(let j=i+1;j<inp.length;j++){ if(!inp[j].value)continue; const dB=new Date(inp[j].value); if(Math.abs(dA-dB)/60000<30){ inp[i].parentElement.parentElement.classList.add('conflito-horario'); inp[j].parentElement.parentElement.classList.add('conflito-horario'); inp[i].parentElement.nextElementSibling.style.display='block'; inp[j].parentElement.nextElementSibling.style.display='block'; } } } }
+        function abrirCortadorCapa(e){ const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ document.getElementById('img-capa-roteiro').src=ev.target.result; const fd=new FormData(); fd.append('foto_capa',f); fd.append('id_roteiro',idRoteiroAberto); fetch('/api/roteiros/capa',{method:'POST',body:fd}); }; r.readAsDataURL(f); } }
+    </script>
+</body>
+</html>

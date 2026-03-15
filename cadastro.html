@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro - Mundoria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f67123; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card-cadastro { background: white; padding: 40px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .btn-azul { background: #00008b; color: white; width: 100%; font-weight: bold; padding: 10px; border: none; border-radius: 5px; }
+        .btn-azul:hover { background: #00005c; }
+        .form-check-input:checked { background-color: #f67123; border-color: #f67123; }
+    </style>
+</head>
+<body>
+    <div class="card-cadastro">
+        <h2 class="mb-4 text-center fw-bold" style="color: #f67123;">CADASTRO</h2>
+        
+        <form id="form-cadastro" action="/api/cadastro" method="POST">
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Usuário (Nome)</label>
+                <input type="text" name="nome" class="form-control" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">E-mail</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Senha</label>
+                <input type="password" name="senha" id="senha" class="form-control" placeholder="Crie uma senha" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Confirmar Senha</label>
+                <input type="password" id="confirma_senha" class="form-control" placeholder="Repita a senha" required>
+                <div id="erro-senha" class="form-text text-danger d-none">As senhas não conferem!</div>
+            </div>
+
+            <div class="mb-4 form-check">
+                <input type="checkbox" class="form-check-input" id="check-mostrar" onclick="toggleSenhas()">
+                <label class="form-check-label small" for="check-mostrar">Exibir senhas</label>
+            </div>
+            
+            <button type="submit" class="btn btn-azul mb-3">CADASTRAR-SE</button>
+        </form>
+        
+        <div class="text-center">
+            <a href="/login" class="small text-muted text-decoration-none">Já tenho conta? <b>Faça Login</b></a>
+        </div>
+    </div>
+
+    <script>
+        // 1. Função para mostrar/esconder senha
+        function toggleSenhas() {
+            const senha = document.getElementById('senha');
+            const confirma = document.getElementById('confirma_senha');
+            const check = document.getElementById('check-mostrar');
+
+            if (check.checked) {
+                senha.type = "text";
+                confirma.type = "text";
+            } else {
+                senha.type = "password";
+                confirma.type = "password";
+            }
+        }
+
+        // 2. Validação antes de enviar
+        document.getElementById('form-cadastro').addEventListener('submit', function(event) {
+            const senha = document.getElementById('senha').value;
+            const confirma = document.getElementById('confirma_senha').value;
+            const msgErro = document.getElementById('erro-senha');
+
+            if (senha !== confirma) {
+                // Se forem diferentes, CANCELA o envio
+                event.preventDefault();
+                
+                // Mostra a mensagem de erro vermelha
+                msgErro.classList.remove('d-none');
+                
+                // Treme a caixa (opcional, só pra dar um feedback visual)
+                document.getElementById('confirma_senha').style.borderColor = "red";
+            } else {
+                // Se tiver tudo certo, esconde o erro e deixa enviar
+                msgErro.classList.add('d-none');
+                document.getElementById('confirma_senha').style.borderColor = "#ced4da";
+            }
+        });
+    </script>
+</body>
+</html>

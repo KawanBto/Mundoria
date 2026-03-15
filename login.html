@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Mundoria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f67123; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card-login { background: white; padding: 40px; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .btn-azul { background: #00008b; color: white; width: 100%; font-weight: bold; padding: 10px; border: none; border-radius: 5px; }
+        .btn-azul:hover { background: #00005c; }
+        .form-check-input:checked { background-color: #f67123; border-color: #f67123; }
+    </style>
+</head>
+<body>
+    <div class="card-login text-center">
+        <h2 class="mb-4 fw-bold text-dark">Login</h2>
+        
+        <form action="/api/login" method="POST">
+            <div class="mb-3 text-start">
+                <label class="form-label fw-bold">E-mail</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            
+            <div class="mb-2 text-start">
+                <label class="form-label fw-bold">Senha</label>
+                <input type="password" name="senha" id="senha" class="form-control" required>
+            </div>
+
+            <div class="mb-4 text-start form-check">
+                <input type="checkbox" class="form-check-input" id="check-mostrar" onclick="toggleSenha()">
+                <label class="form-check-label small" for="check-mostrar">Exibir senha</label>
+            </div>
+            
+            <button type="submit" class="btn btn-azul mb-3">ACESSAR</button>
+        </form>
+
+        <p class="small">Não tem uma conta? <a href="/cadastro" class="fw-bold text-decoration-none" style="color: #f67123;">CADASTRE-SE</a></p>
+        <a href="/" class="small text-muted text-decoration-none">Voltar para Home</a>
+    </div>
+
+    <script>
+        // Função simples para alternar entre texto e bolinhas
+        function toggleSenha() {
+            const inputSenha = document.getElementById('senha');
+            const check = document.getElementById('check-mostrar');
+            
+            if (check.checked) {
+                inputSenha.type = "text";
+            } else {
+                inputSenha.type = "password";
+            }
+        }
+    </script>
+</body>
+</html>

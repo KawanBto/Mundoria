@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalhes - Mundoria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { background: #f8f9fa; font-family: sans-serif; }
+        .navbar { background: #fff; border-bottom: 1px solid #eee; padding: 15px 0; }
+        .btn-laranja { background: #f67123; color: white; border: none; }
+        .detalhe-header { background: #f67123; padding: 30px; border-radius: 0 0 20px 20px; color: white; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .box-info { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); height: fit-content; border-left: 5px solid #00008b; }
+        .box-avaliacao { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); height: fit-content; }
+        .img-local { width: 100%; height: 350px; object-fit: cover; border-radius: 15px; border: 1px solid #eee; }
+        .btn-favoritar { background: none; border: none; color: white; font-size: 2rem; transition: 0.2s; }
+        .btn-favoritar:hover { transform: scale(1.1); }
+        .coracao-ativo { color: #ff4040 !important; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        .comentario-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .comentario-texto { word-wrap: break-word; white-space: pre-wrap; color: #555; margin-bottom: 0; }
+        .estrela { color: #ccc; cursor: pointer; font-size: 1.5rem; transition: 0.2s; }
+        .estrela.ativa { color: #f67123; }
+        #mapa-detalhe { height: 250px; width: 100%; border-radius: 10px; margin-top: 15px; border: 1px solid #ccc; z-index: 1; }
+        .badge-cat { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 15px; border-radius: 20px; }
+        .d-none { display: none !important; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3" href="/" style="color: #f67123;">🌍 Mundoria</a>
+            <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Voltar</a>
+        </div>
+    </nav>
+
+    <div class="detalhe-header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <h1 id="nome-local" class="fw-bold m-0 display-5">Carregando...</h1>
+                <button class="btn-favoritar" id="btn-coracao" onclick="toggleFavorito()" title="Favoritar"><i class="bi bi-heart" id="icone-coracao"></i></button>
+            </div>
+            <span class="badge-cat fs-6" id="categoria-local">-</span>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row">
+            <div class="col-lg-7 mb-4">
+                <img id="img-local" src="" class="img-local mb-4 shadow-sm">
+                <div class="box-info">
+                    <h4 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle"></i> Sobre o Local</h4>
+                    <p class="mb-2"><strong>📍 Endereço:</strong> <span id="end-local">...</span></p>
+                    <p id="linha-data" class="mb-2 d-none"><strong>📅 Data:</strong> <span id="data-local"></span></p>
+                    <p id="linha-hora" class="mb-2 d-none"><strong>⏰ Horário:</strong> <span id="hora-local"></span></p>
+                    <hr>
+                    <p id="desc-local" style="white-space: pre-wrap; line-height: 1.6;">...</p>
+                    <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-map"></i> Localização</h5>
+                    <div id="mapa-detalhe"></div>
+                    <a id="btn-rota" href="#" target="_blank" class="btn btn-success w-100 mt-3 fw-bold p-2 shadow-sm"><i class="bi bi-cursor-fill"></i> Abrir no GPS</a>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="box-avaliacao">
+                    <h4 class="fw-bold text-primary mb-3"><i class="bi bi-star"></i> Avaliações</h4>
+                    
+                    <div id="area-avaliacao">
+                        <div class="card bg-light border-0 p-4 mb-4 shadow-sm" id="form-avaliacao-card">
+                            <label class="fw-bold mb-2 text-dark">Sua experiência:</label>
+                            <div class="mb-3 text-center" id="estrelas-container">
+                                <i class="bi bi-star-fill estrela" data-nota="1" onclick="setNota(1)"></i>
+                                <i class="bi bi-star-fill estrela" data-nota="2" onclick="setNota(2)"></i>
+                                <i class="bi bi-star-fill estrela" data-nota="3" onclick="setNota(3)"></i>
+                                <i class="bi bi-star-fill estrela" data-nota="4" onclick="setNota(4)"></i>
+                                <i class="bi bi-star-fill estrela" data-nota="5" onclick="setNota(5)"></i>
+                            </div>
+                            <textarea id="texto-comentario" class="form-control mb-2" rows="3" maxlength="250" oninput="contarCaracteres(this)" placeholder="Conte o que achou..."></textarea>
+                            <div class="text-end mb-3"><small id="contador-chars" class="text-muted" style="font-size: 0.8em;">0 / 250</small></div>
+                            <button class="btn btn-laranja w-100 fw-bold" onclick="enviarAvaliacao()">ENVIAR AVALIAÇÃO</button>
+                        </div>
+                    </div>
+
+                    <div id="aviso-login" class="alert alert-info d-none text-center p-3 shadow-sm">
+                        <i class="bi bi-lock-fill fs-4"></i><br><strong>Faça login</strong> para avaliar este local.<br>
+                        <a href="/login" class="btn btn-primary btn-sm mt-2">Entrar agora</a>
+                    </div>
+                    
+                    <div id="aviso-parceiro" class="alert alert-warning d-none text-center p-3 shadow-sm">
+                        <i class="bi bi-info-circle-fill fs-5"></i><br>Parceiros Comerciais não podem avaliar estabelecimentos.
+                    </div>
+
+                    <h5 class="text-muted border-bottom pb-2 mb-3">Comentários Recentes</h5>
+                    <div id="lista-comentarios" style="max-height: 500px; overflow-y: auto; padding-right: 5px;">
+                        <p class="text-center text-muted py-3">Carregando comentários...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const idLocal = params.get('id');
+        let notaSelecionada = 0;
+        let mapaDetalhe = null;
+
+        fetch('/api/usuario-atual').then(res => res.json()).then(user => {
+            if(!user.logado) {
+                document.getElementById('form-avaliacao-card').style.display = 'none';
+                document.getElementById('aviso-login').classList.remove('d-none');
+            } else if(user.tipo === 'parceiro') {
+                document.getElementById('form-avaliacao-card').style.display = 'none';
+                document.getElementById('aviso-parceiro').classList.remove('d-none');
+            }
+        });
+
+        fetch(`/api/locais/${idLocal}`).then(res => res.json()).then(data => {
+            const local = data.local;
+            document.getElementById('nome-local').innerText = local.nome;
+            document.getElementById('categoria-local').innerText = local.categoria;
+            document.getElementById('img-local').src = local.imagem;
+            document.getElementById('end-local').innerText = `${local.endereco}, ${local.numero || 'S/N'}`;
+            document.getElementById('desc-local').innerText = local.descricao;
+            
+            if (local.data_evento && local.data_evento !== 'A definir') {
+                const p = local.data_evento.split('-');
+                const dataBr = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : local.data_evento;
+                document.getElementById('data-local').innerText = dataBr;
+                document.getElementById('linha-data').classList.remove('d-none');
+            }
+            if (local.horario && local.horario !== 'Livre') {
+                document.getElementById('hora-local').innerText = local.horario;
+                document.getElementById('linha-hora').classList.remove('d-none');
+            } else if (local.horario === 'Livre') {
+                 document.getElementById('hora-local').innerText = "Horário Livre / 24h";
+                 document.getElementById('linha-hora').classList.remove('d-none');
+            }
+
+            atualizarIconeCoracao(data.isFavorito);
+            renderizarComentarios(data.avaliacoes);
+            
+            if(local.lat && local.lon) {
+                mapaDetalhe = L.map('mapa-detalhe').setView([local.lat, local.lon], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapaDetalhe);
+                L.marker([local.lat, local.lon]).addTo(mapaDetalhe).bindPopup(local.nome).openPopup();
+                document.getElementById('btn-rota').href = `https://www.google.com/maps/dir/?api=1&destination=${local.lat},${local.lon}`;
+            } else {
+                document.getElementById('mapa-detalhe').innerHTML = '<p class="text-muted text-center pt-5">Localização não disponível.</p>';
+                document.getElementById('btn-rota').classList.add('disabled');
+            }
+        });
+
+        function contarCaracteres(campo) { document.getElementById('contador-chars').innerText = campo.value.length + " / 250"; }
+        function atualizarIconeCoracao(ativo) { const icone=document.getElementById('icone-coracao'); if(ativo){icone.classList.remove('bi-heart');icone.classList.add('bi-heart-fill','coracao-ativo');}else{icone.classList.remove('bi-heart-fill','coracao-ativo');icone.classList.add('bi-heart');} }
+        
+        function toggleFavorito() { 
+            fetch('/api/favoritar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_local:idLocal})})
+            .then(res=>res.json())
+            .then(data=>{ 
+                if(data.erro) { 
+                    alert("Você precisa estar logado para salvar favoritos!"); 
+                    window.location.href='/login'; 
+                } else {
+                    atualizarIconeCoracao(data.estado==='adicionado');
+                } 
+            }); 
+        }
+        
+        function renderizarComentarios(lista) { const div=document.getElementById('lista-comentarios'); div.innerHTML=''; if(lista.length===0)div.innerHTML='<p class="text-center small mt-3 text-muted">Seja o primeiro a avaliar!</p>'; lista.forEach(av=>{ let resp = av.resposta ? `<div class="mt-2 p-2 bg-white border-start border-success border-3 rounded shadow-sm" style="font-size:0.9em;"><strong class="text-success">Resposta do Local:</strong><br>${av.resposta}</div>` : ''; div.innerHTML+=`<div class="comentario-item"><div class="d-flex align-items-center gap-2 mb-2"><img src="${av.foto_usuario}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;"><strong class="small text-dark">@${av.nome_usuario}</strong><span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span></div><p class="comentario-texto">"${av.comentario}"</p>${resp}</div>`; }); }
+        function setNota(n) { notaSelecionada=n; document.querySelectorAll('.estrela').forEach(s=>{ if(s.getAttribute('data-nota')<=n)s.classList.add('ativa');else s.classList.remove('ativa'); }); }
+        
+        function enviarAvaliacao() { 
+            const c=document.getElementById('texto-comentario').value; 
+            if(!notaSelecionada)return alert("Selecione uma nota!"); 
+            fetch('/api/avaliar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_local:idLocal,nota:notaSelecionada,comentario:c})})
+            .then(res=>res.json())
+            .then(d=>{ 
+                if(d.erro) {
+                    alert(d.erro); 
+                    if(d.erro.includes("login")) window.location.href='/login';
+                } else {
+                    alert("Obrigado pela avaliação!");
+                    window.location.reload();
+                } 
+            }); 
+        }
+    </script>
+</body>
+</html>

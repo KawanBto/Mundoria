@@ -39,7 +39,9 @@
         <div class="container d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
                 <h1 id="nome-local" class="fw-bold m-0 display-5">Carregando...</h1>
-                <button class="btn-favoritar" id="btn-coracao" onclick="toggleFavorito()" title="Favoritar"><i class="bi bi-heart" id="icone-coracao"></i></button>
+                <button class="btn-favoritar" id="btn-coracao" onclick="toggleFavorito()" title="Favoritar">
+                    <i class="bi bi-heart" id="icone-coracao"></i>
+                </button>
             </div>
             <span class="badge-cat fs-6" id="categoria-local">-</span>
         </div>
@@ -58,7 +60,9 @@
                     <p id="desc-local" style="white-space: pre-wrap; line-height: 1.6;">...</p>
                     <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-map"></i> Localização</h5>
                     <div id="mapa-detalhe"></div>
-                    <a id="btn-rota" href="#" target="_blank" class="btn btn-success w-100 mt-3 fw-bold p-2 shadow-sm"><i class="bi bi-cursor-fill"></i> Abrir no GPS</a>
+                    <a id="btn-rota" href="#" target="_blank" class="btn btn-success w-100 mt-3 fw-bold p-2 shadow-sm">
+                        <i class="bi bi-cursor-fill"></i> Abrir no GPS
+                    </a>
                 </div>
             </div>
 
@@ -77,7 +81,9 @@
                                 <i class="bi bi-star-fill estrela" data-nota="5" onclick="setNota(5)"></i>
                             </div>
                             <textarea id="texto-comentario" class="form-control mb-2" rows="3" maxlength="250" oninput="contarCaracteres(this)" placeholder="Conte o que achou..."></textarea>
-                            <div class="text-end mb-3"><small id="contador-chars" class="text-muted" style="font-size: 0.8em;">0 / 250</small></div>
+                            <div class="text-end mb-3">
+                                <small id="contador-chars" class="text-muted" style="font-size: 0.8em;">0 / 250</small>
+                            </div>
                             <button class="btn btn-laranja w-100 fw-bold" onclick="enviarAvaliacao()">ENVIAR AVALIAÇÃO</button>
                         </div>
                     </div>
@@ -104,7 +110,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
@@ -121,6 +127,10 @@
         window.dbFirebase = dbFirebase;
         window.docFirebase = doc;
         window.getDocFirebase = getDoc;
+        window.collectionFirebase = collection;
+        window.queryFirebase = query;
+        window.whereFirebase = where;
+        window.getDocsFirebase = getDocs;
     </script>
 
     <script>
@@ -129,17 +139,46 @@
         let notaSelecionada = 0;
         let mapaDetalhe = null;
 
-        fetch('/api/usuario-atual').then(res => res.json()).then(user => {
-            if(!user.logado) {
-                document.getElementById('form-avaliacao-card').style.display = 'none';
-                document.getElementById('aviso-login').classList.remove('d-none');
-            } else if(user.tipo === 'parceiro') {
-                document.getElementById('form-avaliacao-card').style.display = 'none';
-                document.getElementById('aviso-parceiro').classList.remove('d-none');
-            }
-        });
+        fetch('/api/usuario-atual')
+            .then(res => res.json())
+            .then(user => {
+                if (!user.logado) {
+                    document.getElementById('form-avaliacao-card').style.display = 'none';
+                    document.getElementById('aviso-login').classList.remove('d-none');
+                } else if (user.tipo === 'parceiro') {
+                    document.getElementById('form-avaliacao-card').style.display = 'none';
+                    document.getElementById('aviso-parceiro').classList.remove('d-none');
+                }
+            });
 
-                setTimeout(async () => {
+        async function carregarComentariosFirebase() {
+            try {
+                const avaliacoesRef = window.collectionFirebase(window.dbFirebase, "avaliacoes");
+                const q = window.queryFirebase(
+                    avaliacoesRef,
+                    window.whereFirebase("id_local", "==", idLocal)
+                );
+
+                const snap = await window.getDocsFirebase(q);
+
+                const comentarios = [];
+                snap.forEach((docItem) => {
+                    comentarios.push({
+                        id: docItem.id,
+                        ...docItem.data()
+                    });
+                });
+
+                renderizarComentarios(comentarios);
+            } catch (erro) {
+                console.error("Erro ao carregar comentários do Firebase:", erro);
+                alert("Erro ao carregar comentários: " + erro.message);
+                document.getElementById('lista-comentarios').innerHTML =
+                    '<p class="text-center small mt-3 text-danger">Erro ao carregar comentários.</p>';
+            }
+        }
+
+        async function carregarDetalhesFirebase() {
             try {
                 const ref = window.docFirebase(window.dbFirebase, "locais", idLocal);
                 const snap = await window.getDocFirebase(ref);
@@ -174,11 +213,13 @@
                 }
 
                 atualizarIconeCoracao(false);
-                renderizarComentarios([]);
+                await carregarComentariosFirebase();
 
                 if (local.lat && local.lon) {
                     mapaDetalhe = L.map('mapa-detalhe').setView([local.lat, local.lon], 15);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapaDetalhe);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(mapaDetalhe);
                     L.marker([local.lat, local.lon]).addTo(mapaDetalhe).bindPopup(local.nome).openPopup();
                     document.getElementById('btn-rota').href = `https://www.google.com/maps/dir/?api=1&destination=${local.lat},${local.lon}`;
                 } else {
@@ -186,43 +227,102 @@
                     document.getElementById('btn-rota').classList.add('disabled');
                 }
             } catch (erro) {
+                console.error("Erro ao carregar detalhes do Firebase:", erro);
                 alert("Erro ao carregar detalhes do Firebase: " + erro.message);
             }
+        }
+
+        setTimeout(() => {
+            carregarDetalhesFirebase();
         }, 500);
 
-        function contarCaracteres(campo) { document.getElementById('contador-chars').innerText = campo.value.length + " / 250"; }
-        function atualizarIconeCoracao(ativo) { const icone=document.getElementById('icone-coracao'); if(ativo){icone.classList.remove('bi-heart');icone.classList.add('bi-heart-fill','coracao-ativo');}else{icone.classList.remove('bi-heart-fill','coracao-ativo');icone.classList.add('bi-heart');} }
-        
-        function toggleFavorito() { 
-            fetch('/api/favoritar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_local:idLocal})})
-            .then(res=>res.json())
-            .then(data=>{ 
-                if(data.erro) { 
-                    alert("Você precisa estar logado para salvar favoritos!"); 
-                    window.location.href='/login'; 
-                } else {
-                    atualizarIconeCoracao(data.estado==='adicionado');
-                } 
-            }); 
+        function contarCaracteres(campo) {
+            document.getElementById('contador-chars').innerText = campo.value.length + " / 250";
         }
-        
-        function renderizarComentarios(lista) { const div=document.getElementById('lista-comentarios'); div.innerHTML=''; if(lista.length===0)div.innerHTML='<p class="text-center small mt-3 text-muted">Seja o primeiro a avaliar!</p>'; lista.forEach(av=>{ let resp = av.resposta ? `<div class="mt-2 p-2 bg-white border-start border-success border-3 rounded shadow-sm" style="font-size:0.9em;"><strong class="text-success">Resposta do Local:</strong><br>${av.resposta}</div>` : ''; div.innerHTML+=`<div class="comentario-item"><div class="d-flex align-items-center gap-2 mb-2"><img src="${av.foto_usuario}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;"><strong class="small text-dark">@${av.nome_usuario}</strong><span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span></div><p class="comentario-texto">"${av.comentario}"</p>${resp}</div>`; }); }
-        function setNota(n) { notaSelecionada=n; document.querySelectorAll('.estrela').forEach(s=>{ if(s.getAttribute('data-nota')<=n)s.classList.add('ativa');else s.classList.remove('ativa'); }); }
-        
-        function enviarAvaliacao() { 
-            const c=document.getElementById('texto-comentario').value; 
-            if(!notaSelecionada)return alert("Selecione uma nota!"); 
-            fetch('/api/avaliar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id_local:idLocal,nota:notaSelecionada,comentario:c})})
-            .then(res=>res.json())
-            .then(d=>{ 
-                if(d.erro) {
-                    alert(d.erro); 
-                    if(d.erro.includes("login")) window.location.href='/login';
+
+        function atualizarIconeCoracao(ativo) {
+            const icone = document.getElementById('icone-coracao');
+            if (ativo) {
+                icone.classList.remove('bi-heart');
+                icone.classList.add('bi-heart-fill', 'coracao-ativo');
+            } else {
+                icone.classList.remove('bi-heart-fill', 'coracao-ativo');
+                icone.classList.add('bi-heart');
+            }
+        }
+
+        function toggleFavorito() {
+            fetch('/api/favoritar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_local: idLocal })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.erro) {
+                    alert("Você precisa estar logado para salvar favoritos!");
+                    window.location.href = '/login';
+                } else {
+                    atualizarIconeCoracao(data.estado === 'adicionado');
+                }
+            });
+        }
+
+        function renderizarComentarios(lista) {
+            const div = document.getElementById('lista-comentarios');
+            div.innerHTML = '';
+
+            if (lista.length === 0) {
+                div.innerHTML = '<p class="text-center small mt-3 text-muted">Seja o primeiro a avaliar!</p>';
+                return;
+            }
+
+            lista.forEach(av => {
+                let resp = av.resposta
+                    ? `<div class="mt-2 p-2 bg-white border-start border-success border-3 rounded shadow-sm" style="font-size:0.9em;"><strong class="text-success">Resposta do Local:</strong><br>${av.resposta}</div>`
+                    : '';
+
+                div.innerHTML += `
+                    <div class="comentario-item">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <img src="${av.foto_usuario}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
+                            <strong class="small text-dark">@${av.nome_usuario}</strong>
+                            <span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span>
+                        </div>
+                        <p class="comentario-texto">"${av.comentario}"</p>
+                        ${resp}
+                    </div>
+                `;
+            });
+        }
+
+        function setNota(n) {
+            notaSelecionada = n;
+            document.querySelectorAll('.estrela').forEach(s => {
+                if (Number(s.getAttribute('data-nota')) <= n) s.classList.add('ativa');
+                else s.classList.remove('ativa');
+            });
+        }
+
+        function enviarAvaliacao() {
+            const c = document.getElementById('texto-comentario').value;
+            if (!notaSelecionada) return alert("Selecione uma nota!");
+
+            fetch('/api/avaliar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_local: idLocal, nota: notaSelecionada, comentario: c })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.erro) {
+                    alert(d.erro);
+                    if (d.erro.includes("login")) window.location.href = '/login';
                 } else {
                     alert("Obrigado pela avaliação!");
                     window.location.reload();
-                } 
-            }); 
+                }
+            });
         }
     </script>
 </body>

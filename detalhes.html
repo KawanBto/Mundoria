@@ -101,6 +101,28 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
+            authDomain: "mundoria-53de5.firebaseapp.com",
+            projectId: "mundoria-53de5",
+            storageBucket: "mundoria-53de5.firebasestorage.app",
+            messagingSenderId: "86901345396",
+            appId: "1:86901345396:web:969fa3637292d0333e1521"
+        };
+
+        const appFirebase = initializeApp(firebaseConfig);
+        const dbFirebase = getFirestore(appFirebase);
+
+        window.dbFirebase = dbFirebase;
+        window.docFirebase = doc;
+        window.getDocFirebase = getDoc;
+    </script>
+
     <script>
         const params = new URLSearchParams(window.location.search);
         const idLocal = params.get('id');
@@ -117,41 +139,56 @@
             }
         });
 
-        fetch(`/api/locais/${idLocal}`).then(res => res.json()).then(data => {
-            const local = data.local;
-            document.getElementById('nome-local').innerText = local.nome;
-            document.getElementById('categoria-local').innerText = local.categoria;
-            document.getElementById('img-local').src = local.imagem;
-            document.getElementById('end-local').innerText = `${local.endereco}, ${local.numero || 'S/N'}`;
-            document.getElementById('desc-local').innerText = local.descricao;
-            
-            if (local.data_evento && local.data_evento !== 'A definir') {
-                const p = local.data_evento.split('-');
-                const dataBr = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : local.data_evento;
-                document.getElementById('data-local').innerText = dataBr;
-                document.getElementById('linha-data').classList.remove('d-none');
-            }
-            if (local.horario && local.horario !== 'Livre') {
-                document.getElementById('hora-local').innerText = local.horario;
-                document.getElementById('linha-hora').classList.remove('d-none');
-            } else if (local.horario === 'Livre') {
-                 document.getElementById('hora-local').innerText = "Horário Livre / 24h";
-                 document.getElementById('linha-hora').classList.remove('d-none');
-            }
+                setTimeout(async () => {
+            try {
+                const ref = window.docFirebase(window.dbFirebase, "locais", idLocal);
+                const snap = await window.getDocFirebase(ref);
 
-            atualizarIconeCoracao(data.isFavorito);
-            renderizarComentarios(data.avaliacoes);
-            
-            if(local.lat && local.lon) {
-                mapaDetalhe = L.map('mapa-detalhe').setView([local.lat, local.lon], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapaDetalhe);
-                L.marker([local.lat, local.lon]).addTo(mapaDetalhe).bindPopup(local.nome).openPopup();
-                document.getElementById('btn-rota').href = `https://www.google.com/maps/dir/?api=1&destination=${local.lat},${local.lon}`;
-            } else {
-                document.getElementById('mapa-detalhe').innerHTML = '<p class="text-muted text-center pt-5">Localização não disponível.</p>';
-                document.getElementById('btn-rota').classList.add('disabled');
+                if (!snap.exists()) {
+                    alert("Local não encontrado no Firebase.");
+                    window.location.href = "/";
+                    return;
+                }
+
+                const local = snap.data();
+
+                document.getElementById('nome-local').innerText = local.nome || 'Sem nome';
+                document.getElementById('categoria-local').innerText = local.categoria || '-';
+                document.getElementById('img-local').src = local.imagem || 'https://via.placeholder.com/800x400';
+                document.getElementById('end-local').innerText = `${local.endereco || 'Endereço não informado'}, ${local.numero || 'S/N'}`;
+                document.getElementById('desc-local').innerText = local.descricao || 'Sem descrição.';
+
+                if (local.data_evento && local.data_evento !== 'A definir') {
+                    const p = local.data_evento.split('-');
+                    const dataBr = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : local.data_evento;
+                    document.getElementById('data-local').innerText = dataBr;
+                    document.getElementById('linha-data').classList.remove('d-none');
+                }
+
+                if (local.horario && local.horario !== 'Livre') {
+                    document.getElementById('hora-local').innerText = local.horario;
+                    document.getElementById('linha-hora').classList.remove('d-none');
+                } else if (local.horario === 'Livre') {
+                    document.getElementById('hora-local').innerText = "Horário Livre / 24h";
+                    document.getElementById('linha-hora').classList.remove('d-none');
+                }
+
+                atualizarIconeCoracao(false);
+                renderizarComentarios([]);
+
+                if (local.lat && local.lon) {
+                    mapaDetalhe = L.map('mapa-detalhe').setView([local.lat, local.lon], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapaDetalhe);
+                    L.marker([local.lat, local.lon]).addTo(mapaDetalhe).bindPopup(local.nome).openPopup();
+                    document.getElementById('btn-rota').href = `https://www.google.com/maps/dir/?api=1&destination=${local.lat},${local.lon}`;
+                } else {
+                    document.getElementById('mapa-detalhe').innerHTML = '<p class="text-muted text-center pt-5">Localização não disponível.</p>';
+                    document.getElementById('btn-rota').classList.add('disabled');
+                }
+            } catch (erro) {
+                alert("Erro ao carregar detalhes do Firebase: " + erro.message);
             }
-        });
+        }, 500);
 
         function contarCaracteres(campo) { document.getElementById('contador-chars').innerText = campo.value.length + " / 250"; }
         function atualizarIconeCoracao(ativo) { const icone=document.getElementById('icone-coracao'); if(ativo){icone.classList.remove('bi-heart');icone.classList.add('bi-heart-fill','coracao-ativo');}else{icone.classList.remove('bi-heart-fill','coracao-ativo');icone.classList.add('bi-heart');} }

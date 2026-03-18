@@ -16,7 +16,7 @@
     <div class="card-cadastro">
         <h2 class="mb-4 text-center fw-bold" style="color: #f67123;">CADASTRO</h2>
         
-        <form id="form-cadastro" action="/api/cadastro" method="POST">
+        <form id="form-cadastro">
             
             <div class="mb-3">
                 <label class="form-label fw-bold">Usuário (Nome)</label>
@@ -40,7 +40,7 @@
             </div>
 
             <div class="mb-4 form-check">
-                <input type="checkbox" class="form-check-input" id="check-mostrar" onclick="toggleSenhas()">
+                <input type="checkbox" class="form-check-input" id="check-mostrar">
                 <label class="form-check-label small" for="check-mostrar">Exibir senhas</label>
             </div>
             
@@ -52,41 +52,63 @@
         </div>
     </div>
 
-    <script>
-        // 1. Função para mostrar/esconder senha
-        function toggleSenhas() {
-            const senha = document.getElementById('senha');
-            const confirma = document.getElementById('confirma_senha');
-            const check = document.getElementById('check-mostrar');
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-            if (check.checked) {
-                senha.type = "text";
-                confirma.type = "text";
-            } else {
-                senha.type = "password";
-                confirma.type = "password";
-            }
-        }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
+            authDomain: "mundoria-53de5.firebaseapp.com",
+            projectId: "mundoria-53de5",
+            storageBucket: "mundoria-53de5.firebasestorage.app",
+            messagingSenderId: "86901345396",
+            appId: "1:86901345396:web:969fa3637292d0333e1521"
+        };
 
-        // 2. Validação antes de enviar
-        document.getElementById('form-cadastro').addEventListener('submit', function(event) {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Função de mostrar/esconder senha (ajustada para funcionar em módulos)
+        document.getElementById('check-mostrar').addEventListener('change', function() {
+            const type = this.checked ? "text" : "password";
+            document.getElementById('senha').type = type;
+            document.getElementById('confirma_senha').type = type;
+        });
+
+        const form = document.getElementById('form-cadastro');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nome = form.nome.value;
+            const email = form.email.value;
             const senha = document.getElementById('senha').value;
             const confirma = document.getElementById('confirma_senha').value;
-            const msgErro = document.getElementById('erro-senha');
 
             if (senha !== confirma) {
-                // Se forem diferentes, CANCELA o envio
-                event.preventDefault();
-                
-                // Mostra a mensagem de erro vermelha
-                msgErro.classList.remove('d-none');
-                
-                // Treme a caixa (opcional, só pra dar um feedback visual)
-                document.getElementById('confirma_senha').style.borderColor = "red";
-            } else {
-                // Se tiver tudo certo, esconde o erro e deixa enviar
-                msgErro.classList.add('d-none');
-                document.getElementById('confirma_senha').style.borderColor = "#ced4da";
+                document.getElementById('erro-senha').classList.remove('d-none');
+                return;
+            }
+
+            try {
+                // 1. Cria o usuário no Firebase Authentication
+                const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+                const user = userCredential.user;
+
+                // 2. Salva as informações no Cloud Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    nome: nome,
+                    email: email,
+                    tipo: "turista",
+                    foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                });
+
+                alert("Conta criada com sucesso no Firebase!");
+                window.location.href = "/login";
+            } catch (error) {
+                console.error("Erro detalhado:", error);
+                alert("Erro ao cadastrar: " + error.message);
             }
         });
     </script>

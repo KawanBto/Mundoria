@@ -38,8 +38,9 @@
 
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-3" href="/" style="color: #f67123;">🌍 Mundoria</a>
-            <div class="d-flex align-items-center gap-3" id="menu-usuario"></div>
+            <a class="navbar-brand fw-bold fs-3" href="index.html" style="color: #f67123;">🌍 Mundoria</a>
+            <div class="d-flex align-items-center gap-3" id="menu-usuario">
+                </div>
         </div>
     </nav>
 
@@ -47,7 +48,7 @@
         <h1 class="fw-bold display-5 mb-3">Explore o Autêntico</h1>
         <p class="lead mb-4">Descubra experiências únicas longe do turismo de massa.</p>
         <div class="search-box">
-            <input type="text" id="input-busca" class="search-input" placeholder="Busque por locais, sushi, parques..." onkeyup="aplicarFiltros()">
+            <input type="text" id="input-busca" class="search-input" placeholder="Busque por locais..." onkeyup="aplicarFiltros()">
             <button class="search-btn"><i class="bi bi-search"></i></button>
         </div>
     </div>
@@ -92,7 +93,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
@@ -105,147 +107,123 @@
 
     const appFirebase = initializeApp(firebaseConfig);
     const dbFirebase = getFirestore(appFirebase);
+    const authFirebase = getAuth(appFirebase);
 
+    // Exporta para o escopo global para que as funções do segundo <script> as encontrem
     window.dbFirebase = dbFirebase;
     window.collectionFirebase = collection;
     window.getDocsFirebase = getDocs;
 
+    const menu = document.getElementById('menu-usuario');
+
+    // Substitui o fetch('/api/usuario-atual')
+    onAuthStateChanged(authFirebase, async (user) => {
+        if (user) {
+            window.isLogado = true;
+            const userSnap = await getDoc(doc(dbFirebase, "users", user.uid));
+            const data = userSnap.exists() ? userSnap.data() : { nome: "Usuário", foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png", tipo: "turista" };
+            window.usuarioGlobal = { id: user.uid, ...data };
+
+            if (data.tipo === 'admin') {
+                menu.innerHTML = `
+                    <a href="painel_admin.html" class="btn-admin-link"><i class="bi bi-gear-fill"></i> Painel Administrativo</a>
+                    <a href="perfil.html" class="text-decoration-none d-flex align-items-center gap-2 text-dark">
+                        <img src="${data.foto}" class="user-avatar-mini">
+                        <span class="fw-bold d-none d-md-block">${data.nome}</span>
+                    </a>
+                    <button class="btn btn-outline-danger btn-sm ms-2" id="btn-sair">Sair</button>
+                `;
+            } else {
+                let badgeTipo = '';
+                if (data.tipo === 'produtor') {
+                    badgeTipo = `<li><hr class="dropdown-divider"></li><li><span class="dropdown-item-text text-success fw-bold"><i class="bi bi-star-fill"></i> Você é Produtor</span></li>`;
+                } else if (data.tipo === 'parceiro') {
+                    badgeTipo = `<li><hr class="dropdown-divider"></li><li><span class="dropdown-item-text text-primary fw-bold"><i class="bi bi-shop"></i> Você é Parceiro</span></li>`;
+                } else {
+                    badgeTipo = `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item fw-bold text-warning" href="planos.html">⭐ Seja Parceiro</a></li>`;
+                }
+
+                menu.innerHTML = `
+                    <a href="perfil.html" class="text-decoration-none d-flex align-items-center gap-2 text-dark">
+                        <img src="${data.foto}" class="user-avatar-mini">
+                        <span class="fw-bold d-none d-md-block">${data.nome}</span>
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn-menu-azul dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-list"></i></button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-3">
+                            <li><h6 class="dropdown-header">Menu</h6></li>
+                            <li><a class="dropdown-item" href="meu_painel.html"><i class="bi bi-grid-fill me-2"></i> Meu Painel</a></li>
+                            ${badgeTipo}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item text-danger" id="btn-sair">Sair</button></li>
+                        </ul>
+                    </div>`;
+            }
+            
+            // Configura o logout
+            document.getElementById('btn-sair').addEventListener('click', () => {
+                if(confirm('Deseja realmente sair?')) {
+                    signOut(authFirebase).then(() => location.reload());
+                }
+            });
+
+        } else {
+            window.isLogado = false;
+            window.usuarioGlobal = null;
+            menu.innerHTML = `
+                <a href="login.html" class="btn btn-outline-secondary btn-sm me-2">Login</a>
+                <a href="cadastro.html" class="btn btn-primary btn-sm" style="background:#f67123; border:none;">Cadastre-se</a>
+            `;
+        }
+        carregarLocais();
+    });
 </script>
 
 <script>
-    
-    let isLogado = false;
-    let usuarioGlobal = null;
     let locaisGlobais = [];
     let filtroAtual = 'todos';
 
-    fetch('/api/usuario-atual')
-        .then(res => res.json())
-        .then(data => {
-            isLogado = data.logado;
-            usuarioGlobal = data.logado ? data : null;
-            
-            const menu = document.getElementById('menu-usuario');
-            
-            if (data.logado) {
-                if (data.tipo === 'admin') {
-                    menu.innerHTML = `
-                        <a href="/admin" class="btn-admin-link"><i class="bi bi-gear-fill"></i> Painel Administrativo</a>
-                        <a href="/perfil" class="text-decoration-none d-flex align-items-center gap-2 text-dark">
-                            <img src="${data.foto}" class="user-avatar-mini">
-                            <span class="fw-bold d-none d-md-block">${data.nome}</span>
-                        </a>
-                        <a href="/logout" class="btn btn-outline-danger btn-sm ms-2" onclick="return confirm('Sair?')">Sair</a>
-                    `;
-                } else {
-                    let badgeTipo = '';
-                    if (data.tipo === 'produtor') {
-                        badgeTipo = `<li><hr class="dropdown-divider"></li><li><span class="dropdown-item-text text-success fw-bold"><i class="bi bi-star-fill"></i> Você é Produtor</span></li>`;
-                    } else if (data.tipo === 'parceiro') {
-                        badgeTipo = `<li><hr class="dropdown-divider"></li><li><span class="dropdown-item-text text-primary fw-bold"><i class="bi bi-shop"></i> Você é Parceiro</span></li>`;
-                    } else {
-                        badgeTipo = `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item fw-bold text-warning" href="/planos">⭐ Seja Parceiro</a></li>`;
-                    }
-
-                    menu.innerHTML = `
-                        <a href="/perfil" class="text-decoration-none d-flex align-items-center gap-2 text-dark">
-                            <img src="${data.foto}" class="user-avatar-mini">
-                            <span class="fw-bold d-none d-md-block">${data.nome}</span>
-                        </a>
-                        <div class="dropdown">
-                            <button class="btn-menu-azul dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-list"></i></button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-3">
-                                <li><h6 class="dropdown-header">Menu</h6></li>
-                                <li><a class="dropdown-item" href="/painel"><i class="bi bi-grid-fill me-2"></i> Meu Painel</a></li>
-                                ${badgeTipo}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="/logout" onclick="return confirm('Sair?')">Sair</a></li>
-                            </ul>
-                        </div>`;
-                }
-            } else { 
-                menu.innerHTML = `<a href="/login" class="btn btn-outline-secondary btn-sm me-2">Login</a><a href="/cadastro" class="btn btn-primary btn-sm" style="background:#f67123; border:none;">Cadastre-se</a>`; 
-            }
-
-            carregarLocais();
-        });
-
     async function carregarLocais() {
         try {
+            // Usa as referências globais que o módulo salvou no 'window'
             const snap = await window.getDocsFirebase(
                 window.collectionFirebase(window.dbFirebase, "locais")
             );
-
             locaisGlobais = [];
-
             snap.forEach((doc) => {
-                locaisGlobais.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
+                locaisGlobais.push({ id: doc.id, ...doc.data() });
             });
-
             renderizarLocais(locaisGlobais);
         } catch (erro) {
-            console.error("Erro ao carregar locais do Firebase:", erro);
-            document.getElementById('grade-conteudo').innerHTML =
-                '<div class="col-12 text-center text-danger py-5"><h4>Erro ao carregar locais do Firebase.</h4></div>';
+            console.error("Erro ao carregar locais:", erro);
         }
     }
 
     function renderizarLocais(lista) {
         const div = document.getElementById('grade-conteudo');
-        div.innerHTML = '';
+        div.innerHTML = lista.length === 0 ? '<div class="col-12 text-center text-muted py-5"><h4>Nenhum local encontrado.</h4></div>' : '';
         
-        if(lista.length === 0) { 
-            div.innerHTML = '<div class="col-12 text-center text-muted py-5"><h4>Nenhum local encontrado. 😢</h4></div>'; 
-            return; 
-        }
-
         lista.forEach(item => {
-            let etiqueta = '';
-            if (item.tipo_local === 'evento') {
-                let dataFinal = item.data_evento;
-                if(dataFinal && dataFinal !== "A definir") {
-                    const partes = dataFinal.split(' ');
-                    const dataParte = partes[0].split('-');
-                    if(dataParte.length === 3) { 
-                        dataFinal = `${dataParte[2]}/${dataParte[1]}/${dataParte[0]}`; 
-                        if(partes[1]) dataFinal += ` às ${partes[1]}`; 
-                    }
-                }
-                etiqueta = `<span class="badge-data mb-2 d-inline-block">📅 ${dataFinal}</span>`;
-            } else { 
-                etiqueta = `<span class="badge-categoria mb-2 d-inline-block">📍 ${item.categoria}</span>`; 
-            }
-
-            let botoesAcao = '';
-            if (usuarioGlobal && usuarioGlobal.tipo === 'admin') {
-                botoesAcao = `<a href="/detalhes?id=${item.id}" class="btn btn-primary w-100 btn-sm fw-bold">Ver Detalhes (Admin)</a>`;
-            } else {
-                botoesAcao = `
-                    <button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="abrirModalRoteiro(${item.id})">+ Roteiro</button>
-                    <a href="/detalhes?id=${item.id}" class="btn btn-primary w-50 btn-sm fw-bold">Detalhes</a>
-                `;
-            }
+            let etiqueta = item.tipo_local === 'evento' ? `📅 ${item.data_evento}` : `📍 ${item.categoria}`;
+            let botoesAcao = (window.usuarioGlobal && window.usuarioGlobal.tipo === 'admin') 
+                ? `<a href="detalhes.html?id=${item.id}" class="btn btn-primary w-100 btn-sm fw-bold">Ver Detalhes (Admin)</a>`
+                : `<button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="abrirModalRoteiro('${item.id}')">+ Roteiro</button>
+                   <a href="detalhes.html?id=${item.id}" class="btn btn-primary w-50 btn-sm fw-bold">Detalhes</a>`;
 
             div.innerHTML += `
                 <div class="col-md-4 mb-4">
                     <div class="card card-evento h-100 shadow-sm">
-                        <img src="${item.imagem}" class="card-img-top" alt="${item.nome}">
+                        <img src="${item.imagem}" class="card-img-top">
                         <div class="card-body d-flex flex-column">
                             <div>
-                                ${etiqueta}
+                                <span class="badge-categoria mb-2 d-inline-block">${etiqueta}</span>
                                 <h5 class="card-title fw-bold mt-2">${item.nome}</h5>
                                 <p class="card-text text-secondary small">${item.descricao.substring(0, 80)}...</p>
                             </div>
-                            <div class="mt-auto pt-3 d-flex gap-2">
-                                ${botoesAcao}
-                            </div>
+                            <div class="mt-auto pt-3 d-flex gap-2">${botoesAcao}</div>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
     }
 
@@ -253,35 +231,31 @@
         const termo = document.getElementById('input-busca').value.toLowerCase();
         const filtrados = locaisGlobais.filter(item => {
             const bateNicho = (filtroAtual === 'todos') || (item.categoria === filtroAtual);
-            const bateTexto = item.nome.toLowerCase().includes(termo) || item.descricao.toLowerCase().includes(termo) || item.categoria.toLowerCase().includes(termo);
+            const bateTexto = item.nome.toLowerCase().includes(termo) || item.descricao.toLowerCase().includes(termo);
             return bateNicho && bateTexto;
         });
         renderizarLocais(filtrados);
     }
 
-    function filtrarNicho(c,b){ filtroAtual=c; document.querySelectorAll('.btn-nicho').forEach(btn=>btn.classList.remove('ativo')); b.classList.add('ativo'); aplicarFiltros(); }
+    function filtrarNicho(c, b) {
+        filtroAtual = c;
+        document.querySelectorAll('.btn-nicho').forEach(btn => btn.classList.remove('ativo'));
+        b.classList.add('ativo');
+        aplicarFiltros();
+    }
     
     function abrirModalRoteiro(idLocal) {
-        if(!isLogado) { alert("Faça login para adicionar ao roteiro!"); window.location.href = '/login'; return; }
+        if(!window.isLogado) {
+            alert("Faça login para adicionar ao roteiro!");
+            window.location.href = 'login.html';
+            return;
+        }
         document.getElementById('id-local-temp').value = idLocal;
-        fetch('/api/meus-roteiros-simples').then(res => res.json()).then(roteiros => {
-            const select = document.getElementById('select-roteiros');
-            select.innerHTML = '';
-            if(roteiros.length === 0) select.innerHTML = '<option disabled selected>Crie um roteiro no Painel primeiro!</option>';
-            else roteiros.forEach(r => { select.innerHTML += `<option value="${r.id}">${r.nome_roteiro}</option>`; });
-            new bootstrap.Modal(document.getElementById('modalAddRoteiro')).show();
-        });
+        new bootstrap.Modal(document.getElementById('modalAddRoteiro')).show();
     }
 
     function confirmarAdicaoRoteiro() {
-        const idRoteiro = document.getElementById('select-roteiros').value;
-        const idLocal = document.getElementById('id-local-temp').value;
-        if(!idRoteiro || isNaN(idRoteiro)) return alert("Escolha um roteiro válido.");
-        fetch('/api/roteiros/adicionar-item', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_roteiro: idRoteiro, id_local: idLocal }) })
-        .then(res => res.json()).then(data => { 
-            if(data.sucesso) { alert("✅ Local adicionado ao roteiro!"); bootstrap.Modal.getInstance(document.getElementById('modalAddRoteiro')).hide(); } 
-            else alert("Erro ao adicionar."); 
-        });
+        alert("Função de salvar roteiro sendo migrada!");
     }
 </script>
 </body>

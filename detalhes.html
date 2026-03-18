@@ -30,8 +30,8 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-3" href="/" style="color: #f67123;">🌍 Mundoria</a>
-            <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Voltar</a>
+            <a class="navbar-brand fw-bold fs-3" href="index.html" style="color: #f67123;">🌍 Mundoria</a>
+            <a href="index.html" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Voltar</a>
         </div>
     </nav>
 
@@ -71,7 +71,7 @@
                     <h4 class="fw-bold text-primary mb-3"><i class="bi bi-star"></i> Avaliações</h4>
                     
                     <div id="area-avaliacao">
-                        <div class="card bg-light border-0 p-4 mb-4 shadow-sm" id="form-avaliacao-card">
+                        <div class="card bg-light border-0 p-4 mb-4 shadow-sm" id="form-avaliacao-card" style="display: none;">
                             <label class="fw-bold mb-2 text-dark">Sua experiência:</label>
                             <div class="mb-3 text-center" id="estrelas-container">
                                 <i class="bi bi-star-fill estrela" data-nota="1" onclick="setNota(1)"></i>
@@ -90,7 +90,7 @@
 
                     <div id="aviso-login" class="alert alert-info d-none text-center p-3 shadow-sm">
                         <i class="bi bi-lock-fill fs-4"></i><br><strong>Faça login</strong> para avaliar este local.<br>
-                        <a href="/login" class="btn btn-primary btn-sm mt-2">Entrar agora</a>
+                        <a href="login.html" class="btn btn-primary btn-sm mt-2">Entrar agora</a>
                     </div>
                     
                     <div id="aviso-parceiro" class="alert alert-warning d-none text-center p-3 shadow-sm">
@@ -110,7 +110,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
@@ -123,6 +124,7 @@
 
         const appFirebase = initializeApp(firebaseConfig);
         const dbFirebase = getFirestore(appFirebase);
+        const authFirebase = getAuth(appFirebase);
 
         window.dbFirebase = dbFirebase;
         window.docFirebase = doc;
@@ -131,6 +133,32 @@
         window.queryFirebase = query;
         window.whereFirebase = where;
         window.getDocsFirebase = getDocs;
+        window.addDocFirebase = addDoc;
+
+        // VIGIA DE LOGIN PARA DETALHES
+        onAuthStateChanged(authFirebase, async (user) => {
+            if (user) {
+                // Busca dados do usuário no Firestore para saber o tipo e nome
+                const userSnap = await getDoc(doc(dbFirebase, "users", user.uid));
+                const userData = userSnap.exists() ? userSnap.data() : null;
+
+                if (userData) {
+                    window.usuarioAtual = { id: user.uid, ...userData, logado: true };
+                    
+                    if (userData.tipo === 'parceiro') {
+                        document.getElementById('form-avaliacao-card').style.display = 'none';
+                        document.getElementById('aviso-parceiro').classList.remove('d-none');
+                    } else {
+                        document.getElementById('form-avaliacao-card').style.display = 'block';
+                        document.getElementById('aviso-login').classList.add('d-none');
+                    }
+                }
+            } else {
+                window.usuarioAtual = { logado: false };
+                document.getElementById('form-avaliacao-card').style.display = 'none';
+                document.getElementById('aviso-login').classList.remove('d-none');
+            }
+        });
     </script>
 
     <script>
@@ -138,18 +166,6 @@
         const idLocal = params.get('id');
         let notaSelecionada = 0;
         let mapaDetalhe = null;
-
-        fetch('/api/usuario-atual')
-            .then(res => res.json())
-            .then(user => {
-                if (!user.logado) {
-                    document.getElementById('form-avaliacao-card').style.display = 'none';
-                    document.getElementById('aviso-login').classList.remove('d-none');
-                } else if (user.tipo === 'parceiro') {
-                    document.getElementById('form-avaliacao-card').style.display = 'none';
-                    document.getElementById('aviso-parceiro').classList.remove('d-none');
-                }
-            });
 
         async function carregarComentariosFirebase() {
             try {
@@ -160,21 +176,15 @@
                 );
 
                 const snap = await window.getDocsFirebase(q);
-
                 const comentarios = [];
                 snap.forEach((docItem) => {
-                    comentarios.push({
-                        id: docItem.id,
-                        ...docItem.data()
-                    });
+                    comentarios.push({ id: docItem.id, ...docItem.data() });
                 });
 
                 renderizarComentarios(comentarios);
             } catch (erro) {
-                console.error("Erro ao carregar comentários do Firebase:", erro);
-                alert("Erro ao carregar comentários: " + erro.message);
-                document.getElementById('lista-comentarios').innerHTML =
-                    '<p class="text-center small mt-3 text-danger">Erro ao carregar comentários.</p>';
+                console.error("Erro ao carregar comentários:", erro);
+                document.getElementById('lista-comentarios').innerHTML = '<p class="text-center small mt-3 text-danger">Erro ao carregar comentários.</p>';
             }
         }
 
@@ -184,13 +194,12 @@
                 const snap = await window.getDocFirebase(ref);
 
                 if (!snap.exists()) {
-                    alert("Local não encontrado no Firebase.");
-                    window.location.href = "/";
+                    alert("Local não encontrado.");
+                    window.location.href = "index.html";
                     return;
                 }
 
                 const local = snap.data();
-
                 document.getElementById('nome-local').innerText = local.nome || 'Sem nome';
                 document.getElementById('categoria-local').innerText = local.categoria || '-';
                 document.getElementById('img-local').src = local.imagem || 'https://via.placeholder.com/800x400';
@@ -198,102 +207,73 @@
                 document.getElementById('desc-local').innerText = local.descricao || 'Sem descrição.';
 
                 if (local.data_evento && local.data_evento !== 'A definir') {
-                    const p = local.data_evento.split('-');
-                    const dataBr = p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : local.data_evento;
-                    document.getElementById('data-local').innerText = dataBr;
+                    document.getElementById('data-local').innerText = local.data_evento;
                     document.getElementById('linha-data').classList.remove('d-none');
                 }
 
-                if (local.horario && local.horario !== 'Livre') {
+                if (local.horario) {
                     document.getElementById('hora-local').innerText = local.horario;
                     document.getElementById('linha-hora').classList.remove('d-none');
-                } else if (local.horario === 'Livre') {
-                    document.getElementById('hora-local').innerText = "Horário Livre / 24h";
-                    document.getElementById('linha-hora').classList.remove('d-none');
                 }
-
-                atualizarIconeCoracao(false);
-                await carregarComentariosFirebase();
 
                 if (local.lat && local.lon) {
-                    mapaDetalhe = L.map('mapa-detalhe').setView([local.lat, local.lon], 15);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap'
-                    }).addTo(mapaDetalhe);
-                    L.marker([local.lat, local.lon]).addTo(mapaDetalhe).bindPopup(local.nome).openPopup();
-                    document.getElementById('btn-rota').href = `https://www.google.com/maps/dir/?api=1&destination=${local.lat},${local.lon}`;
-                } else {
-                    document.getElementById('mapa-detalhe').innerHTML = '<p class="text-muted text-center pt-5">Localização não disponível.</p>';
-                    document.getElementById('btn-rota').classList.add('disabled');
+                    if(!mapaDetalhe) {
+                        mapaDetalhe = L.map('mapa-detalhe').setView([local.lat, local.lon], 15);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaDetalhe);
+                        L.marker([local.lat, local.lon]).addTo(mapaDetalhe).bindPopup(local.nome).openPopup();
+                    }
+                    document.getElementById('btn-rota').href = `https://www.google.com/maps?q=${local.lat},${local.lon}`;
                 }
+
+                await carregarComentariosFirebase();
             } catch (erro) {
-                console.error("Erro ao carregar detalhes do Firebase:", erro);
-                alert("Erro ao carregar detalhes do Firebase: " + erro.message);
+                console.error(erro);
             }
         }
 
-        setTimeout(() => {
-            carregarDetalhesFirebase();
-        }, 500);
+        setTimeout(carregarDetalhesFirebase, 500);
 
         function contarCaracteres(campo) {
             document.getElementById('contador-chars').innerText = campo.value.length + " / 250";
         }
 
-        function atualizarIconeCoracao(ativo) {
-            const icone = document.getElementById('icone-coracao');
-            if (ativo) {
-                icone.classList.remove('bi-heart');
-                icone.classList.add('bi-heart-fill', 'coracao-ativo');
-            } else {
-                icone.classList.remove('bi-heart-fill', 'coracao-ativo');
-                icone.classList.add('bi-heart');
-            }
-        }
+        async function enviarAvaliacao() {
+            const comentario = document.getElementById('texto-comentario').value;
+            if (!notaSelecionada) return alert("Selecione uma nota!");
 
-        function toggleFavorito() {
-            fetch('/api/favoritar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_local: idLocal })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.erro) {
-                    alert("Você precisa estar logado para salvar favoritos!");
-                    window.location.href = '/login';
-                } else {
-                    atualizarIconeCoracao(data.estado === 'adicionado');
-                }
-            });
-        }
+            const user = window.usuarioAtual;
 
-        function renderizarComentarios(lista) {
-            const div = document.getElementById('lista-comentarios');
-            div.innerHTML = '';
-
-            if (lista.length === 0) {
-                div.innerHTML = '<p class="text-center small mt-3 text-muted">Seja o primeiro a avaliar!</p>';
+            if (!user || !user.logado) {
+                alert("Você precisa estar logado!");
+                window.location.href = 'login.html';
                 return;
             }
 
-            lista.forEach(av => {
-                let resp = av.resposta
-                    ? `<div class="mt-2 p-2 bg-white border-start border-success border-3 rounded shadow-sm" style="font-size:0.9em;"><strong class="text-success">Resposta do Local:</strong><br>${av.resposta}</div>`
-                    : '';
+            const dataFormatada = new Date().toLocaleDateString('pt-BR');
 
-                div.innerHTML += `
-                    <div class="comentario-item">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <img src="${av.foto_usuario}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
-                            <strong class="small text-dark">@${av.nome_usuario}</strong>
-                            <span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span>
-                        </div>
-                        <p class="comentario-texto">"${av.comentario}"</p>
-                        ${resp}
-                    </div>
-                `;
-            });
+            const avaliacao = {
+                comentario,
+                data_avaliacao: dataFormatada,
+                foto_usuario: user.foto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                id_local: idLocal,
+                id_usuario: user.id,
+                nome_usuario: user.nome,
+                nota: notaSelecionada,
+                resposta: "",
+            };
+
+            try {
+                const avaliacoesRef = window.collectionFirebase(window.dbFirebase, "avaliacoes");
+                await window.addDocFirebase(avaliacoesRef, avaliacao);
+
+                alert("Obrigado pela avaliação!");
+                document.getElementById('texto-comentario').value = "";
+                setNota(0);
+                carregarComentariosFirebase();
+            } catch (erro) {
+                console.error("Erro ao enviar:", erro);
+                alert("Erro ao enviar a avaliação.");
+            }
         }
 
         function setNota(n) {
@@ -304,24 +284,20 @@
             });
         }
 
-        function enviarAvaliacao() {
-            const c = document.getElementById('texto-comentario').value;
-            if (!notaSelecionada) return alert("Selecione uma nota!");
+        function renderizarComentarios(lista) {
+            const div = document.getElementById('lista-comentarios');
+            div.innerHTML = lista.length === 0 ? '<p class="text-center small mt-3 text-muted">Seja o primeiro a avaliar!</p>' : '';
 
-            fetch('/api/avaliar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_local: idLocal, nota: notaSelecionada, comentario: c })
-            })
-            .then(res => res.json())
-            .then(d => {
-                if (d.erro) {
-                    alert(d.erro);
-                    if (d.erro.includes("login")) window.location.href = '/login';
-                } else {
-                    alert("Obrigado pela avaliação!");
-                    window.location.reload();
-                }
+            lista.forEach(av => {
+                div.innerHTML += `
+                    <div class="comentario-item">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <img src="${av.foto_usuario}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
+                            <strong class="small">@${av.nome_usuario}</strong>
+                            <span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span>
+                        </div>
+                        <p class="comentario-texto">"${av.comentario}"</p>
+                    </div>`;
             });
         }
     </script>

@@ -16,7 +16,7 @@
     <div class="card-login text-center">
         <h2 class="mb-4 fw-bold text-dark">Login</h2>
         
-        <form action="/api/login" method="POST">
+        <form id="form-login">
             <div class="mb-3 text-start">
                 <label class="form-label fw-bold">E-mail</label>
                 <input type="email" name="email" class="form-control" required>
@@ -28,7 +28,7 @@
             </div>
 
             <div class="mb-4 text-start form-check">
-                <input type="checkbox" class="form-check-input" id="check-mostrar" onclick="toggleSenha()">
+                <input type="checkbox" class="form-check-input" id="check-mostrar">
                 <label class="form-check-label small" for="check-mostrar">Exibir senha</label>
             </div>
             
@@ -39,18 +39,68 @@
         <a href="/" class="small text-muted text-decoration-none">Voltar para Home</a>
     </div>
 
-    <script>
-        // Função simples para alternar entre texto e bolinhas
-        function toggleSenha() {
-            const inputSenha = document.getElementById('senha');
-            const check = document.getElementById('check-mostrar');
-            
-            if (check.checked) {
-                inputSenha.type = "text";
-            } else {
-                inputSenha.type = "password";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        // Importamos o Firestore para saber o TIPO do usuário e redirecionar corretamente
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
+            authDomain: "mundoria-53de5.firebaseapp.com",
+            projectId: "mundoria-53de5",
+            storageBucket: "mundoria-53de5.firebasestorage.app",
+            messagingSenderId: "86901345396",
+            appId: "1:86901345396:web:969fa3637292d0333e1521"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Lógica de mostrar senha
+        document.getElementById('check-mostrar').addEventListener('change', function() {
+            document.getElementById('senha').type = this.checked ? "text" : "password";
+        });
+
+        const formLogin = document.getElementById('form-login');
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = formLogin.email.value;
+            const senha = formLogin.senha.value;
+
+            try {
+                // 1. Faz o login no Firebase Auth
+                const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+                const user = userCredential.user;
+
+                // 2. Busca o 'tipo' do usuário no Firestore para saber qual painel abrir
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+                
+                if (userSnap.exists()) {
+                    const dados = userSnap.data();
+                    alert("Bem-vindo de volta, " + dados.nome + "!");
+
+                    // 3. Redirecionamento Inteligente (conforme seu sistema original)
+                    // 3. Redirecionamento Inteligente (conforme seu sistema original)
+                    if (dados.tipo === 'admin') {
+                        window.location.href = "/painel_admin.html";
+                    } else if (dados.tipo === 'analista') {
+                        window.location.href = "/painel_analista.html";
+                    } else {
+                        // Turistas, Produtores e Parceiros vão para o painel comum
+                        window.location.href = "/meu_painel.html";
+                    }
+                } else {
+                    window.location.href = "/meu_painel.html";
+                }
+
+            } catch (error) {
+                console.error("Erro no login:", error.code);
+                alert("E-mail ou senha incorretos.");
             }
-        }
+        });
     </script>
 </body>
 </html>

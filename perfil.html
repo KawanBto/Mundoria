@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Perfil - Mundoria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    
+    <style>
+        body { background: #f8f9fa; font-family: sans-serif; }
+        .navbar { background: #fff; border-bottom: 1px solid #eee; padding: 15px 0; }
+        .perfil-container { max-width: 700px; margin: 50px auto; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .perfil-header { background: #2c3e50; color: white; padding: 40px; text-align: center; }
+        .perfil-foto-area { position: relative; width: 120px; height: 120px; margin: 0 auto 15px; }
+        .foto-perfil { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid white; background: #eee; }
+        .perfil-corpo { padding: 30px; }
+        .btn-salvar { background: #f67123; color: white; border: none; padding: 12px; font-weight: bold; width: 100%; border-radius: 8px; }
+        /* Modal de Corte */
+        .preview-crop { max-height: 400px; max-width: 100%; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3" href="index.html" style="color: #f67123;">🌍 Mundoria</a>
+            <a href="index.html" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Voltar</a>
+        </div>
+    </nav>
+
+    <div class="perfil-container">
+        <div class="perfil-header">
+            <div class="perfil-foto-area">
+                <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" id="img-perfil" class="foto-perfil">
+            </div>
+            <h3 id="nome-exibicao" class="fw-bold m-0">Carregando...</h3>
+            <input type="file" id="input-foto" class="d-none" accept="image/*">
+            <button class="btn btn-sm btn-outline-light mt-3" onclick="document.getElementById('input-foto').click()">
+                <i class="bi bi-camera"></i> Alterar Foto
+            </button>
+        </div>
+
+        <div class="perfil-corpo">
+            <form id="form-perfil">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Nome</label>
+                        <input type="text" id="perfil-nome" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">E-mail</label>
+                        <input type="email" id="perfil-email" class="form-control" readonly style="background: #e9ecef;">
+                    </div>
+                </div>
+
+                <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> Endereço</h5>
+                <div class="mb-3">
+                    <label class="form-label">Endereço (Rua, Número)</label>
+                    <input type="text" id="perfil-endereco" class="form-control">
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" id="perfil-cidade" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Estado</label>
+                        <input type="text" id="perfil-estado" class="form-control">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-salvar mt-3" id="btn-submit-perfil">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCrop" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajustar Foto de Perfil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div>
+                        <img id="image-to-crop" class="preview-crop">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirmar-corte">Cortar e Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        // ADICIONADO: Firebase Storage
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
+            authDomain: "mundoria-53de5.firebaseapp.com",
+            projectId: "mundoria-53de5",
+            storageBucket: "mundoria-53de5.firebasestorage.app",
+            messagingSenderId: "86901345396",
+            appId: "1:86901345396:web:969fa3637292d0333e1521"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let cropper = null;
+        const modalCrop = new bootstrap.Modal(document.getElementById('modalCrop'));
+        const imageToCrop = document.getElementById('image-to-crop');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'login.html'; return; }
+            const emailId = user.email.toLowerCase();
+            const userSnap = await getDoc(doc(db, "users", emailId));
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                document.getElementById('img-perfil').src = data.foto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+                document.getElementById('nome-exibicao').innerText = data.nome;
+                document.getElementById('perfil-nome').value = data.nome;
+                document.getElementById('perfil-email').value = data.email;
+                document.getElementById('perfil-endereco').value = data.endereco || '';
+                document.getElementById('perfil-cidade').value = data.cidade || '';
+                document.getElementById('perfil-estado').value = data.estado || '';
+            }
+        });
+
+        // 1. Quando seleciona a imagem, abre o cortador
+        document.getElementById('input-foto').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imageToCrop.src = event.target.result;
+                    modalCrop.show();
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(imageToCrop, {
+                        aspectRatio: 1, // Foto quadrada
+                        viewMode: 1
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 2. Quando confirma o corte, faz o upload para o Storage
+        document.getElementById('btn-confirmar-corte').addEventListener('click', async () => {
+            if (!cropper) return;
+            
+            const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+            const btnConfirmar = document.getElementById('btn-confirmar-corte');
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerText = "Enviando...";
+
+            canvas.toBlob(async (blob) => {
+                const user = auth.currentUser;
+                const emailId = user.email.toLowerCase();
+                const storageRef = ref(storage, `perfis/${emailId}.png`);
+
+                try {
+                    // Upload para o Storage
+                    await uploadBytes(storageRef, blob);
+                    const photoURL = await getDownloadURL(storageRef);
+
+                    // Atualiza no Firestore
+                    await updateDoc(doc(db, "users", emailId), { foto: photoURL });
+                    
+                    document.getElementById('img-perfil').src = photoURL;
+                    modalCrop.hide();
+                    alert("Foto atualizada com sucesso!");
+                } catch (error) {
+                    console.error(error);
+                    alert("Erro ao enviar a imagem. Verifique as regras do Storage.");
+                } finally {
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.innerText = "Cortar e Salvar";
+                }
+            });
+        });
+
+        // Salvar dados de texto
+        document.getElementById('form-perfil').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emailId = auth.currentUser.email.toLowerCase();
+            const novosDados = {
+                nome: document.getElementById('perfil-nome').value,
+                endereco: document.getElementById('perfil-endereco').value,
+                cidade: document.getElementById('perfil-cidade').value,
+                estado: document.getElementById('perfil-estado').value
+            };
+            try {
+                await updateDoc(doc(db, "users", emailId), novosDados);
+                alert("Dados atualizados!");
+            } catch (e) { alert("Erro ao salvar."); }
+        });
+    </script>
+</body>
+</html>

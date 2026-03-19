@@ -35,13 +35,22 @@
             <button type="submit" class="btn btn-azul mb-3">ACESSAR</button>
         </form>
 
+<<<<<<< HEAD
         <p class="small">Não tem uma conta? <a href="cadastro.html" class="fw-bold text-decoration-none" style="color: #f67123;">CADASTRE-SE</a></p>
         <a href="index.html" class="small text-muted text-decoration-none">Voltar para Home</a>
+=======
+        <p class="small">Não tem uma conta? <a href="/cadastro" class="fw-bold text-decoration-none" style="color: #f67123;">CADASTRE-SE</a></p>
+        <a href="/" class="small text-muted text-decoration-none">Voltar para Home</a>
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+<<<<<<< HEAD
+=======
+        // Importamos o Firestore para saber o TIPO do usuário e redirecionar corretamente
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -74,14 +83,20 @@
                 const userCredential = await signInWithEmailAndPassword(auth, email, senha);
                 const user = userCredential.user;
 
+<<<<<<< HEAD
                 // 2. Busca o 'tipo' no Firestore usando o EMAIL como ID do documento
                 // MUDANÇA AQUI: doc(db, "users", user.email) em vez de user.uid
                 const userSnap = await getDoc(doc(db, "users", user.email));
+=======
+                // 2. Busca o 'tipo' do usuário no Firestore para saber qual painel abrir
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
                 
                 if (userSnap.exists()) {
                     const dados = userSnap.data();
                     alert("Bem-vindo de volta, " + dados.nome + "!");
 
+<<<<<<< HEAD
                     // 3. Redirecionamento baseado no tipo de usuário
                     if (dados.tipo === 'admin') {
                         window.location.href = "painel_admin.html";
@@ -93,6 +108,20 @@
                 } else {
                     // Caso o documento não exista (usuário antigo ou erro de cadastro)
                     window.location.href = "meu_painel.html";
+=======
+                    // 3. Redirecionamento Inteligente (conforme seu sistema original)
+                    // 3. Redirecionamento Inteligente (conforme seu sistema original)
+                    if (dados.tipo === 'admin') {
+                        window.location.href = "/painel_admin.html";
+                    } else if (dados.tipo === 'analista') {
+                        window.location.href = "/painel_analista.html";
+                    } else {
+                        // Turistas, Produtores e Parceiros vão para o painel comum
+                        window.location.href = "/meu_painel.html";
+                    }
+                } else {
+                    window.location.href = "/meu_painel.html";
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
                 }
 
             } catch (error) {

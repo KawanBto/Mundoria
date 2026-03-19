@@ -48,7 +48,11 @@
         </form>
         
         <div class="text-center">
+<<<<<<< HEAD
             <a href="login.html" class="small text-muted text-decoration-none">Já tenho conta? <b>Faça Login</b></a>
+=======
+            <a href="/login" class="small text-muted text-decoration-none">Já tenho conta? <b>Faça Login</b></a>
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
         </div>
     </div>
 
@@ -70,6 +74,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+<<<<<<< HEAD
+=======
+        // Função de mostrar/esconder senha (ajustada para funcionar em módulos)
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
         document.getElementById('check-mostrar').addEventListener('change', function() {
             const type = this.checked ? "text" : "password";
             document.getElementById('senha').type = type;
@@ -91,20 +99,34 @@
             }
 
             try {
+<<<<<<< HEAD
                 // 1. Cria o usuário no Firebase Auth
                 const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
                 
                 // 2. Salva no Firestore usando o EMAIL como ID do documento
                 // MUDANÇA AQUI: doc(db, "users", email) em vez de user.uid
                 await setDoc(doc(db, "users", email), {
+=======
+                // 1. Cria o usuário no Firebase Authentication
+                const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+                const user = userCredential.user;
+
+                // 2. Salva as informações no Cloud Firestore
+                await setDoc(doc(db, "users", user.uid), {
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
                     nome: nome,
                     email: email,
                     tipo: "turista",
                     foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png"
                 });
 
+<<<<<<< HEAD
                 alert("Conta criada com sucesso!");
                 window.location.href = "login.html";
+=======
+                alert("Conta criada com sucesso no Firebase!");
+                window.location.href = "/login";
+>>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
             } catch (error) {
                 console.error("Erro detalhado:", error);
                 alert("Erro ao cadastrar: " + error.message);

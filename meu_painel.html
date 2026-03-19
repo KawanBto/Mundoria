@@ -6,16 +6,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
-<<<<<<< HEAD
     
     <style>
-=======
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <style>
-        /* DESIGN ORIGINAL PRESERVADO */
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
         :root { --laranja-mundoria: #f67123; --azul-abas: #00008b; }
         body { background-color: #f8f9fa; font-family: sans-serif; }
         .navbar { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 0; }
@@ -23,7 +15,6 @@
         .nav-tabs { border-bottom: none; gap: 5px; }
         .nav-link { background-color: rgba(255,255,255,0.8); color: var(--azul-abas); font-weight: bold; border: none; border-radius: 15px 15px 0 0 !important; padding: 12px 30px; }
         .nav-link.active { background-color: var(--azul-abas) !important; color: white !important; }
-<<<<<<< HEAD
         
         .card-wrapper { background: white; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); padding: 20px; border-left: 5px solid var(--laranja-mundoria); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 15px; text-decoration: none; color: inherit; position: relative; }
         .card-wrapper:hover { transform: translateX(5px); }
@@ -39,32 +30,16 @@
         
         .d-none { display: none !important; }
         #preview-crop { max-width: 100%; display: block; }
-=======
-        .card-wrapper { background: white; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); padding: 20px; border-left: 5px solid var(--laranja-mundoria); cursor: pointer; transition: 0.2s; }
-        .card-wrapper:hover { transform: translateX(5px); }
-        .d-none { display: none !important; }
-        .user-avatar-mini { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
-        #mapa-evento { height: 250px; width: 100%; border-radius: 10px; border: 2px solid #ccc; margin-top: 10px; }
-        .img-preview-form { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; display: none; margin-top: 10px; border: 1px solid #ddd; }
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container">
             <div class="d-flex align-items-center gap-3">
-<<<<<<< HEAD
                 <a class="navbar-brand fw-bold fs-3" href="index.html" style="color: #f67123;">🌍 Mundoria</a>
                 <a href="index.html" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="bi bi-arrow-left"></i> Voltar</a>
             </div>
             <div class="d-flex align-items-center gap-3" id="header-user-area"></div>
-=======
-                <a class="navbar-brand fw-bold fs-3" href="/" style="color: #f67123;">🌍 Mundoria</a>
-                <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="bi bi-arrow-left"></i> Voltar ao Home</a>
-            </div>
-            <div class="d-flex align-items-center gap-3" id="header-user-area">
-                </div>
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
         </div>
     </nav>
 
@@ -76,46 +51,21 @@
                     <p class="opacity-75" id="texto-saudacao">Carregando...</p>
                 </div>
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
-<<<<<<< HEAD
                     <li class="nav-item"><button class="nav-link active" data-bs-target="#favoritos" data-bs-toggle="tab">Favoritos</button></li>
                     <li class="nav-item"><button class="nav-link" data-bs-target="#roteiros" data-bs-toggle="tab">Roteiros</button></li>
                     <li class="nav-item"><button class="nav-link" data-bs-target="#avaliacoes" data-bs-toggle="tab">Minhas Avaliações</button></li>
-=======
-                    <div id="nav-turista" class="d-flex gap-2">
-                        <li class="nav-item"><button class="nav-link active" data-bs-target="#favoritos" data-bs-toggle="tab">Favoritos</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-target="#roteiros" data-bs-toggle="tab">Roteiros</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-target="#avaliacoes" data-bs-toggle="tab">Minhas Avaliações</button></li>
-                    </div>
-                    <li class="nav-item d-none" id="nav-parceiro"><button class="nav-link active bg-warning text-dark" data-bs-target="#meu-negocio" data-bs-toggle="tab">Meu Negócio</button></li>
-                    <li class="nav-item d-none" id="nav-produtor"><button class="nav-link active bg-success text-white" data-bs-target="#meus-eventos" data-bs-toggle="tab">Curadoria</button></li>
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
                 </ul>
             </div>
         </div>
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="favoritos">
-<<<<<<< HEAD
                 <div id="lista-favoritos"><p class="text-center py-5">Carregando favoritos...</p></div>
-=======
-                <div class="d-flex gap-2 mb-4 align-items-center bg-white p-3 rounded shadow-sm">
-                    <input type="text" id="busca-fav" class="form-control w-50" placeholder="Buscar favorito..." onkeyup="filtrarFavoritos()">
-                    <select id="filtro-cat-fav" class="form-select w-auto" onchange="filtrarFavoritos()">
-                        <option value="todos">Todas Categorias</option>
-                        <option>Restaurante</option>
-                        <option>Parque</option>
-                        <option>Museu</option>
-                        <option>Evento</option>
-                    </select>
-                </div>
-                <div id="lista-favoritos"><p class="text-center py-5">Carregando seus favoritos...</p></div>
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
             </div>
 
             <div class="tab-pane fade" id="roteiros">
                 <div class="d-flex justify-content-between mb-3 align-items-center bg-white p-3 rounded shadow-sm">
                     <h4 class="m-0 text-primary">Meus Roteiros</h4>
-<<<<<<< HEAD
                     <button class="btn btn-primary rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#modalNovoRoteiro">+ Novo Roteiro</button>
                 </div>
                 <div id="lista-roteiros"></div>
@@ -145,34 +95,11 @@
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button class="btn btn-primary" id="btn-salvar-crop">Salvar Foto</button>
-=======
-                    <button class="btn btn-primary rounded-pill fw-bold" onclick="abrirModalCriarRoteiro()">+ Novo Roteiro</button>
-                </div>
-                <div id="lista-roteiros"><p class="text-center py-5 text-muted">Ainda em desenvolvimento no Firebase.</p></div>
-            </div>
-            
-            <div class="tab-pane fade" id="avaliacoes">
-                <div id="lista-minhas-avaliacoes" class="p-3">Carregando suas avaliações...</div>
-            </div>
-
-            <div class="tab-pane fade" id="meus-eventos">
-                <div class="d-flex justify-content-between mb-3">
-                    <h4 class="text-success">Solicitações</h4>
-                    <button class="btn btn-success rounded-pill fw-bold" onclick="abrirModalNovoEvento(null, 'produtor')">+ Criar Evento Público</button>
-                </div>
-                <div id="lista-meus-eventos"></div>
-            </div>
-
-            <div class="tab-pane fade" id="meu-negocio">
-                <div id="conteudo-parceiro" class="p-3">
-                    <p class="text-center">Painel do parceiro em transição para o Firebase.</p>
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
                 </div>
             </div>
         </div>
     </div>
 
-<<<<<<< HEAD
     <input type="file" id="input-file-roteiro" accept="image/*" class="d-none">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -183,16 +110,6 @@
         import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
-=======
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
 
         const firebaseConfig = {
             apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
@@ -204,7 +121,6 @@
         };
 
         const app = initializeApp(firebaseConfig);
-<<<<<<< HEAD
         const db = getFirestore(app);
         const auth = getAuth(app);
         const storage = getStorage(app);
@@ -439,132 +355,6 @@
             document.getElementById('texto-saudacao').innerText = `Olá, ${u.nome}!`;
             document.getElementById('header-user-area').innerHTML = `<a href="perfil.html" class="text-dark fw-bold me-3 text-decoration-none d-flex align-items-center"><img src="${u.foto}" class="user-avatar-mini me-2">${u.nome}</a><button class="btn btn-sm btn-danger rounded-pill px-3" id="btn-sair">Sair</button>`;
             document.getElementById('btn-sair').onclick = () => signOut(auth).then(() => window.location.href = "index.html");
-=======
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Torna o db acessível globalmente se precisar
-        window.dbFirebase = db;
-
-        // OBSERVADOR DE LOGIN
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = '/login.html';
-                return;
-            }
-
-            // 1. Busca dados do Perfil no Firestore
-            const userSnap = await getDoc(doc(db, "users", user.uid));
-            if (userSnap.exists()) {
-                const u = userSnap.data();
-                u.id = user.uid;
-                
-                atualizarInterface(u);
-
-                // 2. Carrega Conteúdo Específico
-                if (u.tipo === 'produtor') {
-                    configurarAbas('produtor');
-                } else if (u.tipo === 'parceiro') {
-                    configurarAbas('parceiro');
-                } else {
-                    configurarAbas('turista');
-                    carregarFavoritosFirebase(user.uid);
-                    carregarMinhasAvaliacoesFirebase(user.uid);
-                }
-            }
-        });
-
-        function atualizarInterface(u) {
-            document.getElementById('texto-saudacao').innerText = `Olá, ${u.nome}!`;
-            document.getElementById('header-user-area').innerHTML = `
-                <a href="/perfil.html" class="text-dark fw-bold me-3 text-decoration-none d-flex align-items-center">
-                    <img src="${u.foto}" class="user-avatar-mini me-2"> ${u.nome}
-                </a>
-                <button class="btn btn-sm btn-danger rounded-pill px-3" id="btn-sair">Sair</button>
-            `;
-
-            document.getElementById('btn-sair').onclick = () => {
-                if(confirm("Deseja sair do Mundoria?")) {
-                    signOut(auth).then(() => window.location.href = "/");
-                }
-            };
-        }
-
-        function configurarAbas(tipo) {
-            const navTurista = document.getElementById('nav-turista');
-            const navParceiro = document.getElementById('nav-parceiro');
-            const navProdutor = document.getElementById('nav-produtor');
-
-            if (tipo === 'produtor') {
-                navTurista.classList.add('d-none');
-                navProdutor.classList.remove('d-none');
-            } else if (tipo === 'parceiro') {
-                navTurista.classList.add('d-none');
-                navParceiro.classList.remove('d-none');
-            }
-        }
-
-        // BUSCA FAVORITOS NO FIREBASE
-        async function carregarFavoritosFirebase(uid) {
-            const favRef = collection(db, "favoritos");
-            const q = query(favRef, where("id_usuario", "==", uid));
-            const snap = await getDocs(q);
-            
-            const div = document.getElementById('lista-favoritos');
-            if (snap.empty) {
-                div.innerHTML = '<p class="text-center py-5 text-muted">Você ainda não favoritou nenhum local.</p>';
-                return;
-            }
-
-            let html = "";
-            snap.forEach(doc => {
-                const f = doc.data();
-                html += `
-                    <a href="/detalhes.html?id=${f.id_local}" class="text-decoration-none text-dark">
-                        <div class="card-wrapper d-flex align-items-center gap-3 mb-3">
-                            <img src="${f.imagem}" style="width:80px; height:80px; border-radius:10px; object-fit:cover;">
-                            <div>
-                                <h5 class="m-0 fw-bold">${f.nome_local}</h5>
-                                <span class="badge bg-info text-dark mt-1">${f.categoria}</span>
-                            </div>
-                            <i class="bi bi-chevron-right ms-auto text-muted fs-4"></i>
-                        </div>
-                    </a>`;
-            });
-            div.innerHTML = html;
-        }
-
-        // BUSCA MINHAS AVALIAÇÕES NO FIREBASE
-        async function carregarMinhasAvaliacoesFirebase(uid) {
-            const reviewRef = collection(db, "avaliacoes");
-            const q = query(reviewRef, where("id_usuario", "==", uid));
-            const snap = await getDocs(q);
-            
-            const div = document.getElementById('lista-minhas-avaliacoes');
-            if (snap.empty) {
-                div.innerHTML = '<p class="text-center py-4 text-muted">Nenhuma avaliação enviada.</p>';
-                return;
-            }
-
-            div.innerHTML = "";
-            snap.forEach(doc => {
-                const c = doc.data();
-                div.innerHTML += `
-                    <div class="card-wrapper d-block">
-                        <strong>${c.nome_usuario || 'Você'}</strong> em um local do Mundoria
-                        <span class="text-warning ms-2">${'★'.repeat(c.nota)}</span>
-                        <p class="mb-0 mt-2 commentary-texto">"${c.comentario}"</p>
-                        <small class="text-muted d-block mt-2">${c.data_avaliacao}</small>
-                    </div>`;
-            });
-        }
-    </script>
-
-    <script>
-        // Funções de UI que não dependem do Firebase diretamente podem continuar aqui
-        function abrirModalCriarRoteiro() {
-            alert("A funcionalidade de Roteiros está sendo migrada para o Firebase. Em breve disponível!");
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
         }
     </script>
 </body>

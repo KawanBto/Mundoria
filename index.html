@@ -83,11 +83,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-<<<<<<< HEAD
                     <button type="button" class="btn btn-success" onclick="window.confirmarAdicaoRoteiro()">Salvar no Roteiro</button>
-=======
-                    <button type="button" class="btn btn-success" onclick="confirmarAdicaoRoteiro()">Salvar no Roteiro</button>
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
                 </div>
             </div>
         </div>
@@ -97,11 +93,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-<<<<<<< HEAD
     import { getFirestore, collection, getDocs, doc, getDoc, query, where, addDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-=======
-    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -117,17 +109,12 @@
     const dbFirebase = getFirestore(appFirebase);
     const authFirebase = getAuth(appFirebase);
 
-<<<<<<< HEAD
-=======
-    // Exporta para o escopo global para que as funções do segundo <script> as encontrem
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
     window.dbFirebase = dbFirebase;
     window.collectionFirebase = collection;
     window.getDocsFirebase = getDocs;
 
     const menu = document.getElementById('menu-usuario');
 
-<<<<<<< HEAD
     onAuthStateChanged(authFirebase, async (user) => {
         if (user) {
             window.isLogado = true;
@@ -141,15 +128,6 @@
             };
             
             window.usuarioGlobal = { id: emailId, ...data };
-=======
-    // Substitui o fetch('/api/usuario-atual')
-    onAuthStateChanged(authFirebase, async (user) => {
-        if (user) {
-            window.isLogado = true;
-            const userSnap = await getDoc(doc(dbFirebase, "users", user.uid));
-            const data = userSnap.exists() ? userSnap.data() : { nome: "Usuário", foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png", tipo: "turista" };
-            window.usuarioGlobal = { id: user.uid, ...data };
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
 
             if (data.tipo === 'admin') {
                 menu.innerHTML = `
@@ -187,10 +165,6 @@
                     </div>`;
             }
             
-<<<<<<< HEAD
-=======
-            // Configura o logout
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
             document.getElementById('btn-sair').addEventListener('click', () => {
                 if(confirm('Deseja realmente sair?')) {
                     signOut(authFirebase).then(() => location.reload());
@@ -207,7 +181,6 @@
         }
         carregarLocais();
     });
-<<<<<<< HEAD
 
     // --- FUNÇÕES DE ROTEIRO (MUDANÇA AQUI) ---
 
@@ -264,8 +237,6 @@
             alert("Erro ao salvar local no roteiro.");
         }
     };
-=======
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
 </script>
 
 <script>
@@ -274,10 +245,6 @@
 
     async function carregarLocais() {
         try {
-<<<<<<< HEAD
-=======
-            // Usa as referências globais que o módulo salvou no 'window'
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
             const snap = await window.getDocsFirebase(
                 window.collectionFirebase(window.dbFirebase, "locais")
             );
@@ -299,11 +266,7 @@
             let etiqueta = item.tipo_local === 'evento' ? `📅 ${item.data_evento}` : `📍 ${item.categoria}`;
             let botoesAcao = (window.usuarioGlobal && window.usuarioGlobal.tipo === 'admin') 
                 ? `<a href="detalhes.html?id=${item.id}" class="btn btn-primary w-100 btn-sm fw-bold">Ver Detalhes (Admin)</a>`
-<<<<<<< HEAD
                 : `<button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="window.abrirModalRoteiro('${item.id}')">+ Roteiro</button>
-=======
-                : `<button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="abrirModalRoteiro('${item.id}')">+ Roteiro</button>
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
                    <a href="detalhes.html?id=${item.id}" class="btn btn-primary w-50 btn-sm fw-bold">Detalhes</a>`;
 
             div.innerHTML += `
@@ -339,23 +302,6 @@
         b.classList.add('ativo');
         aplicarFiltros();
     }
-<<<<<<< HEAD
-=======
-    
-    function abrirModalRoteiro(idLocal) {
-        if(!window.isLogado) {
-            alert("Faça login para adicionar ao roteiro!");
-            window.location.href = 'login.html';
-            return;
-        }
-        document.getElementById('id-local-temp').value = idLocal;
-        new bootstrap.Modal(document.getElementById('modalAddRoteiro')).show();
-    }
-
-    function confirmarAdicaoRoteiro() {
-        alert("Função de salvar roteiro sendo migrada!");
-    }
->>>>>>> 00a9129d3f6c5555a5e046796263a174c1b0f362
 </script>
 </body>
 </html>

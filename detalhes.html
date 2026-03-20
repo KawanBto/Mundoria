@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
+        :root { --laranja-mundoria: #f67123; --azul-abas: #00008b; }
         body { background: #f8f9fa; font-family: sans-serif; }
         .navbar { background: #fff; border-bottom: 1px solid #eee; padding: 15px 0; }
         .btn-laranja { background: #f67123; color: white; border: none; }
@@ -20,6 +21,10 @@
         .coracao-ativo { color: #ff4040 !important; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
         .comentario-item { border-bottom: 1px solid #eee; padding: 15px 0; }
         .comentario-texto { word-wrap: break-word; white-space: pre-wrap; color: #555; margin-bottom: 0; }
+        
+        /* ESTILO PARA A RESPOSTA DO DONO */
+        .resposta-dono { background: #f8f9fa; padding: 12px; border-radius: 10px; margin-top: 10px; border-left: 3px solid #f67123; font-size: 0.9em; margin-left: 20px; }
+        
         .estrela { color: #ccc; cursor: pointer; font-size: 1.5rem; transition: 0.2s; }
         .estrela.ativa { color: #f67123; }
         #mapa-detalhe { height: 250px; width: 100%; border-radius: 10px; margin-top: 15px; border: 1px solid #ccc; z-index: 1; }
@@ -110,7 +115,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        // Importamos setDoc e deleteDoc para gerenciar os favoritos com IDs manuais
         import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
@@ -135,8 +139,8 @@
         window.whereFirebase = where;
         window.getDocsFirebase = getDocs;
         window.addDocFirebase = addDoc;
-        window.setDocFirebase = setDoc;      // Adicionado para ID manual
-        window.deleteDocFirebase = deleteDoc; // Adicionado para desfavoritar
+        window.setDocFirebase = setDoc;
+        window.deleteDocFirebase = deleteDoc;
 
         onAuthStateChanged(authFirebase, async (user) => {
             if (user) {
@@ -145,7 +149,7 @@
 
                 if (userData) {
                     window.usuarioAtual = { id: user.email.toLowerCase(), ...userData, logado: true };
-                    verificarStatusFavorito(user.email.toLowerCase()); // Verifica se o coração deve estar cheio
+                    verificarStatusFavorito(user.email.toLowerCase());
                     
                     if (userData.tipo === 'parceiro') {
                         document.getElementById('form-avaliacao-card').style.display = 'none';
@@ -170,7 +174,6 @@
         let mapaDetalhe = null;
         let isFavoritoAtivo = false;
 
-        // FUNÇÃO: Verifica se o local já é favorito ao abrir a página
         async function verificarStatusFavorito(email) {
             const idFavorito = `${email}_${idLocal}`;
             const docRef = window.docFirebase(window.dbFirebase, "favoritos", idFavorito);
@@ -182,7 +185,6 @@
             }
         }
 
-        // FUNÇÃO: Liga/Desliga o Favorito (Toggle) usando ID email_idLocal
         async function toggleFavorito() {
             const user = window.usuarioAtual;
             if (!user || !user.logado) {
@@ -191,16 +193,14 @@
                 return;
             }
 
-            const idFavorito = `${user.id}_${idLocal}`; // Padrão solicitado
+            const idFavorito = `${user.id}_${idLocal}`;
             const docRef = window.docFirebase(window.dbFirebase, "favoritos", idFavorito);
 
             if (isFavoritoAtivo) {
-                // Remove do Firebase
                 await window.deleteDocFirebase(docRef);
                 isFavoritoAtivo = false;
                 atualizarIconeCoracao(false);
             } else {
-                // Adiciona ao Firebase com ID manual e dados para o Painel
                 const dados = {
                     id_usuario: user.id,
                     id_local: idLocal,
@@ -225,8 +225,6 @@
                 icone.classList.add('bi-heart');
             }
         }
-
-        // --- SISTEMA DE AVALIAÇÃO E CARREGAMENTO (PRESERVADO) ---
 
         async function carregarComentariosFirebase() {
             try {
@@ -315,6 +313,10 @@
             const div = document.getElementById('lista-comentarios');
             div.innerHTML = lista.length === 0 ? '<p class="text-center small mt-3 text-muted">Sem comentários ainda.</p>' : '';
             lista.forEach(av => {
+                // VERIFICA SE EXISTE RESPOSTA DO PARCEIRO COMERCIAL
+                const htmlResposta = av.resposta_parceiro ? 
+                    `<div class="resposta-dono"><strong>Resposta do proprietário:</strong><br>${av.resposta_parceiro}</div>` : '';
+
                 div.innerHTML += `
                     <div class="comentario-item">
                         <div class="d-flex align-items-center gap-2 mb-2">
@@ -322,7 +324,8 @@
                             <strong class="small">@${av.nome_usuario}</strong>
                             <span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span>
                         </div>
-                        <p class="comentario-texto">"${av.comentario}"</p>
+                        <p class="comentario-texto mb-0">"${av.comentario}"</p>
+                        ${htmlResposta}
                     </div>`;
             });
         }

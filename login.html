@@ -57,7 +57,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Lógica de mostrar senha
         document.getElementById('check-mostrar').addEventListener('change', function() {
             document.getElementById('senha').type = this.checked ? "text" : "password";
         });
@@ -65,36 +64,40 @@
         const formLogin = document.getElementById('form-login');
         formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const email = formLogin.email.value;
             const senha = formLogin.senha.value;
 
             try {
-                // 1. Faz o login no Firebase Auth
                 const userCredential = await signInWithEmailAndPassword(auth, email, senha);
                 const user = userCredential.user;
 
-                // 2. Busca o 'tipo' no Firestore usando o EMAIL como ID do documento
-                // MUDANÇA AQUI: doc(db, "users", user.email) em vez de user.uid
-                const userSnap = await getDoc(doc(db, "users", user.email));
+                // Busca o documento pelo email em minúsculo [cite: 20, 208]
+                const userSnap = await getDoc(doc(db, "users", user.email.toLowerCase()));
                 
                 if (userSnap.exists()) {
                     const dados = userSnap.data();
-                    alert("Bem-vindo de volta, " + dados.nome + "!");
+                    
+                    // DEBUG: Veja no console o que está vindo do banco!
+                    console.log("Usuário logado:", dados.nome);
+                    console.log("Tipo detectado:", dados.tipo);
 
-                    // 3. Redirecionamento baseado no tipo de usuário
+                    alert("Bem-vindo, " + dados.nome + "!");
+
+                    // REDIRECIONAMENTO RÍGIDO [cite: 209, 210, 211]
                     if (dados.tipo === 'admin') {
                         window.location.href = "painel_admin.html";
+                    } else if (dados.tipo === 'produtor') {
+                        // Força o redirecionamento para o painel escuro de gestão
+                        window.location.href = "painel.html";
                     } else if (dados.tipo === 'analista') {
                         window.location.href = "painel_analista.html";
                     } else {
+                        // Turistas e Parceiros caem aqui
                         window.location.href = "meu_painel.html";
                     }
                 } else {
-                    // Caso o documento não exista (usuário antigo ou erro de cadastro)
                     window.location.href = "meu_painel.html";
                 }
-
             } catch (error) {
                 console.error("Erro no login:", error.code);
                 alert("E-mail ou senha incorretos.");

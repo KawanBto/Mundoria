@@ -14,23 +14,21 @@
     </style>
 </head>
 <body>
-
     <div class="container py-5 text-center">
         <h1 class="fw-bold mb-3">Torne-se um Parceiro do Mundoria</h1>
         <p class="lead text-muted mb-5">Divulgue seu estabelecimento para milhares de turistas.</p>
 
         <div class="row justify-content-center">
-            
             <div class="col-md-4 mb-4">
                 <div class="card card-plano h-100 p-4">
                     <h3>Básico</h3>
-                    <h1 class="display-4 fw-bold">R$ 29<small class="fs-6 text-muted">/mês</small></h1>
+                    <h1 class="display-4 fw-bold">Grátis<small class="fs-6 text-muted"> (TCC)</small></h1>
                     <ul class="list-unstyled mt-3 mb-4 text-start">
                         <li>✅ Divulgar seu local</li>
                         <li>✅ Aparecer nas buscas</li>
                         <li>❌ Destaque na Home</li>
                     </ul>
-                    <button class="btn btn-outline-dark w-100 mt-auto" onclick="assinar('basico')">Escolher Básico</button>
+                    <button class="btn btn-outline-dark w-100 mt-auto" onclick="window.assinarPlano('basico')">Escolher Básico</button>
                 </div>
             </div>
 
@@ -38,42 +36,64 @@
                 <div class="card card-plano destaque h-100 p-4">
                     <span class="badge-destaque">RECOMENDADO</span>
                     <h3>Profissional</h3>
-                    <h1 class="display-4 fw-bold">R$ 59<small class="fs-6 text-muted">/mês</small></h1>
+                    <h1 class="display-4 fw-bold">Grátis<small class="fs-6 text-muted"> (TCC)</small></h1>
                     <ul class="list-unstyled mt-3 mb-4 text-start">
                         <li>✅ Divulgação ilimitada</li>
                         <li>✅ Painel de Relatórios</li>
                         <li>✅ Destaque na Home</li>
                     </ul>
-                    <button class="btn btn-assinar w-100 mt-auto" onclick="assinar('profissional')">Escolher Profissional</button>
+                    <button class="btn btn-assinar w-100 mt-auto" onclick="window.assinarPlano('profissional')">Escolher Profissional</button>
                 </div>
             </div>
-
         </div>
-        
-        <a href="/" class="text-muted text-decoration-none mt-4 d-inline-block">Voltar para Home</a>
+        <a href="index.html" class="text-muted text-decoration-none mt-4 d-inline-block">Voltar para Home</a>
     </div>
 
-    <script>
-        function assinar(plano) {
-            if(confirm("Deseja confirmar a assinatura e se tornar um Parceiro do Mundoria?")) {
-                // AGORA CHAMA A ROTA CORRETA!
-                fetch('/api/virar-parceiro', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ plano: plano })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.erro) {
-                        alert("Erro: " + data.erro);
-                        window.location.href = '/login';
-                    } else {
-                        alert("Parabéns! Agora você é um Parceiro do Mundoria.");
-                        window.location.href = '/painel';
-                    }
-                });
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
+            authDomain: "mundoria-53de5.firebaseapp.com",
+            projectId: "mundoria-53de5",
+            storageBucket: "mundoria-53de5.firebasestorage.app",
+            messagingSenderId: "86901345396",
+            appId: "1:86901345396:web:969fa3637292d0333e1521"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let emailUsuario = "";
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                alert("Faça login para assinar um plano!");
+                window.location.href = "login.html";
+            } else {
+                emailUsuario = user.email.toLowerCase();
             }
-        }
+        });
+
+        window.assinarPlano = async (plano) => {
+            if(confirm(`Deseja confirmar a adesão ao plano ${plano} e se tornar um Parceiro?`)) {
+                try {
+                    // Atualiza o tipo do usuário para parceiro no Firestore
+                    await updateDoc(doc(db, "users", emailUsuario), {
+                        tipo: "parceiro",
+                        plano_assinado: plano
+                    });
+                    alert("Parabéns! Agora você é um Parceiro do Mundoria.");
+                    window.location.href = "meu_painel.html";
+                } catch (e) {
+                    console.error(e);
+                    alert("Erro ao processar assinatura.");
+                }
+            }
+        };
     </script>
 </body>
 </html>

@@ -2,157 +2,272 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel Administrativo - Mundoria</title>
+    <title>Administração - Mundoria</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     
     <style>
-        :root { --laranja-mundoria: #f67123; --azul-abas: #00008b; }
+        :root { --laranja-mundoria: #f67123; --azul-admin: #00008b; }
         body { background-color: #f8f9fa; font-family: sans-serif; }
-        .navbar { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 0; }
-        .painel-header-bg { background-color: var(--laranja-mundoria); padding: 40px 20px 0 20px; color: white; border-radius: 0 0 15px 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .card-admin { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; border: none; }
-        .card-header-admin { background-color: #343a40; color: white; padding: 15px 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        .table th { font-size: 0.9em; text-transform: uppercase; color: #666; }
-        #mapa-ponto { height: 300px; width: 100%; border-radius: 10px; border: 2px solid #ccc; margin-top: 10px; cursor: crosshair; }
-        .img-container-corte { max-height: 500px; display: block; } .img-container-corte img { max-width: 100%; }
-        .lista-sugestoes { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ccc; border-radius: 0 0 10px 10px; z-index: 1000; max-height: 200px; overflow-y: auto; display: none; }
-        .item-sugestao { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; } .item-sugestao:hover { background-color: #f0f8ff; }
+        .sidebar { background: #212529; min-height: 100vh; color: white; padding: 20px; position: sticky; top: 0; }
+        .nav-link { color: rgba(255,255,255,0.7); transition: 0.2s; }
+        .nav-link:hover { color: var(--laranja-mundoria); }
+        .nav-link.active { color: var(--laranja-mundoria) !important; font-weight: bold; }
+        .card-admin { background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; border: none; }
+        .card-header-custom { padding: 15px 20px; border-radius: 12px 12px 0 0; font-weight: bold; color: white; display: flex; justify-content: space-between; align-items: center; }
+        #mapa-ponto { height: 300px; width: 100%; border-radius: 10px; border: 2px solid #ccc; margin-top: 10px; }
+        .img-tabela { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+        .lista-sugestoes { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ccc; z-index: 1000; border-radius: 0 0 10px 10px; max-height: 150px; overflow-y: auto; display: none; }
+        .item-sugestao { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.9em; }
+        .item-sugestao:hover { background: #f8f9fa; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
-        <div class="container">
-            <div class="d-flex align-items-center gap-3">
-                <a class="navbar-brand fw-bold fs-3" href="/" style="color: #f67123;">🌍 Mundoria</a>
-                <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Voltar ao Home</a>
-            </div>
-            <div class="d-flex align-items-center gap-3">
-                <span class="fw-bold text-dark" id="nome-admin">Admin</span>
-                <a href="/logout" class="btn btn-danger btn-sm rounded-pill">Sair</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        <div class="painel-header-bg">
-            <div class="d-flex justify-content-between align-items-end">
-                <div><h1 class="fw-bold">Painel Administrativo</h1><p class="opacity-75">Gerenciamento total do sistema</p></div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-light text-primary fw-bold" onclick="abrirModalPonto()">+ Adicionar Local</button>
-                    <button class="btn btn-light text-dark fw-bold" onclick="abrirModalNovoGestor()">+ Novo Gestor</button>
-                </div>
-            </div>
-        </div>
-
+    <div class="container-fluid">
         <div class="row">
-            <div class="col-12">
-                <div class="card-admin">
-                    <div class="card-header-admin">
-                        <span>📍 Pontos Turísticos</span>
-                        <span class="badge bg-primary" id="contador-pontos">0</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead><tr><th>Foto</th><th>Nome</th><th>Categoria</th><th>Endereço</th><th class="text-end">Ação</th></tr></thead>
-                            <tbody id="tabela-pontos"><tr><td colspan="5" class="text-center py-4">Carregando...</td></tr></tbody>
-                        </table>
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="pt-3">
+                    <h4 class="fw-bold mb-4 text-center">🌍 Mundoria</h4>
+                    <hr>
+                    <ul class="nav flex-column gap-2">
+                        <li class="nav-item"><a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Site Público</a></li>
+                        <li class="nav-item"><a href="#" class="nav-link active"><i class="bi bi-gear-fill me-2"></i> Administração</a></li>
+                        <li class="nav-item"><a href="meu_painel.html" class="nav-link"><i class="bi bi-person me-2"></i> Meu Painel</a></li>
+                    </ul>
+                    <hr>
+                    <button class="btn btn-sm btn-outline-danger w-100 mt-4" id="btn-sair-admin">Sair do Sistema</button>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <h1 class="h2 fw-bold">Painel Administrativo Mestre</h1>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary fw-bold" onclick="window.abrirModalPonto()">+ Novo Local</button>
+                        <button class="btn btn-dark fw-bold" data-bs-toggle="modal" data-bs-target="#modalNovoGestor">+ Adicionar Equipe</button>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-md-6">
-                <div class="card-admin">
-                    <div class="card-header-admin" style="background-color: #00008b;"><span>👔 Equipe de Gestão</span></div>
-                    <div class="p-3"><ul class="list-group list-group-flush" id="lista-gestores"><li class="list-group-item text-center">Carregando...</li></ul></div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="card-admin">
-                    <div class="card-header-admin" style="background-color: #dc3545;"><span>👥 Gerenciar Usuários</span></div>
-                    <div class="p-3">
-                        <div class="input-group mb-3">
-                            <input type="text" id="busca-usuario" class="form-control" placeholder="Buscar nome ou e-mail...">
-                            <button class="btn btn-outline-danger" onclick="buscarUsuarios()">Buscar</button>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card-admin">
+                            <div class="card-header-custom bg-dark">
+                                <span>📍 Pontos Turísticos Ativos</span>
+                                <span class="badge bg-primary" id="cont-pontos">0</span>
+                            </div>
+                            <div class="table-responsive p-3">
+                                <table class="table table-hover align-middle">
+                                    <thead><tr><th>Foto</th><th>Nome</th><th>Categoria</th><th>Endereço</th><th class="text-end">Ações</th></tr></thead>
+                                    <tbody id="tabela-pontos"><tr><td colspan="5" class="text-center py-4">Carregando locais...</td></tr></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <ul class="list-group" id="lista-usuarios-busca"><li class="list-group-item text-center text-muted small">Busque para excluir.</li></ul>
                     </div>
+
+                    <div class="col-md-6">
+                        <div class="card-admin">
+                            <div class="card-header-custom bg-primary"><span>👔 Equipe (Admins, Produtores e Analistas)</span></div>
+                            <div class="p-3">
+                                <ul class="list-group list-group-flush" id="lista-gestores"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card-admin">
+                            <div class="card-header-custom bg-danger"><span>👥 Gerenciar Usuários</span></div>
+                            <div class="p-3">
+                                <div class="input-group mb-3">
+                                    <input type="text" id="busca-email" class="form-control" placeholder="E-mail do usuário...">
+                                    <button class="btn btn-outline-danger" onclick="window.buscarUsuario()">Buscar</button>
+                                </div>
+                                <div id="resultado-busca" class="p-2 border rounded d-none">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div><strong id="res-nome">...</strong><br><small id="res-email" class="text-muted">...</small></div>
+                                        <button class="btn btn-sm btn-danger fw-bold" id="btn-banir-acao" onclick="window.excluirUsuario()">DESATIVAR CONTA</button>
+                                    </div>
+                                </div>
+                                <p class="small text-muted mt-3">
+                                    <i class="bi bi-info-circle-fill"></i> <strong>Nota técnica:</strong> A desativação impede o acesso ao Mundoria, mas mantém o registro no sistema para auditoria (Exclusão Lógica).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPonto" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white"><h5>Cadastrar Novo Local</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="form-ponto-admin">
+                        <div class="row mb-3">
+                            <div class="col-md-8"><label class="fw-bold">Nome do Local</label><input type="text" id="p-nome" class="form-control" required></div>
+                            <div class="col-md-4"><label class="fw-bold">Categoria</label><select id="p-cat" class="form-select"><option>Parque</option><option>Museu</option><option>Cultura</option><option>Feira</option><option>Restaurante</option></select></div>
+                        </div>
+                        <div class="mb-3 position-relative"><label class="fw-bold">Endereço</label><input type="text" id="p-rua" class="form-control" oninput="window.buscarEndereco(this.value)" placeholder="Rua..."><div id="lista-sugestoes" class="lista-sugestoes"></div></div>
+                        <div class="row mb-3">
+                            <div class="col-md-4"><label class="fw-bold">Número</label><input type="text" id="p-num" class="form-control" placeholder="Número"></div>
+                            <div class="col-md-8 pt-4"><div class="form-check"><input type="checkbox" id="check-sn" class="form-check-input" onchange="window.toggleNum(this)"><label class="form-check-label">Sem Número</label></div></div>
+                        </div>
+                        <div id="mapa-ponto"></div>
+                        <input type="hidden" id="p-lat"><input type="hidden" id="p-lon">
+                        <div class="row mb-3 mt-4">
+                            <div class="col-md-12"><label class="fw-bold mb-2">Horário de Funcionamento</label></div>
+                            <div class="col-md-4">Abertura:<input type="time" id="p-hora-abre" class="form-control"></div>
+                            <div class="col-md-4">Fechamento:<input type="time" id="p-hora-fecha" class="form-control"></div>
+                            <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input type="checkbox" id="check-livre" class="form-check-input" onchange="window.toggleHora(this)"><label class="form-check-label">Horário Livre</label></div></div>
+                        </div>
+                        <div class="mb-3"><label class="fw-bold">Foto Oficial</label><input type="file" id="p-file" class="form-control" accept="image/*" onchange="window.abrirCrop(event)"><img id="p-preview" style="width:100%; height:150px; object-fit:cover; display:none; margin-top:10px; border-radius:10px;"></div>
+                        <div class="mb-3"><label class="fw-bold">Descrição</label><textarea id="p-desc" class="form-control" rows="3" required></textarea></div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2">SALVAR E ATIVAR LOCAL</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalPonto" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title" id="titulo-modal">Cadastrar Ponto Turístico</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="form-ponto"><div class="row mb-2"><div class="col-8"><label class="fw-bold">Nome</label><input type="text" name="nome" class="form-control" required></div><div class="col-4"><label class="fw-bold">Categoria</label><select name="categoria" class="form-select"><option>Parque</option><option>Museu</option><option>Monumento</option><option>Praça</option></select></div></div><div class="mb-2"><label class="fw-bold">Endereço</label><div class="position-relative"><input type="text" name="endereco_texto" id="inp-rua" class="form-control" oninput="buscarEndereco(this.value)"><div id="lista-sugestoes" class="lista-sugestoes"></div></div></div><div id="mapa-ponto"></div><input type="hidden" name="lat" id="inp-lat"><input type="hidden" name="lon" id="inp-lon"><div class="mb-2 mt-3"><label class="fw-bold">Foto</label><input type="file" id="input-foto" class="form-control" accept="image/*" onchange="abrirCortador(event)"><img id="preview-foto" class="mt-2" style="width:100%;height:150px;object-fit:cover;display:none;"></div><div class="mb-2"><label class="fw-bold">Descrição</label><textarea name="descricao" class="form-control" rows="3"></textarea></div></form></div><div class="modal-footer"><button class="btn btn-success w-100" onclick="salvarPonto()">Salvar</button></div></div></div></div>
-    <div class="modal fade" id="modalNovoGestor" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">Novo Gestor</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="novo-gestor-nome" class="form-control mb-2" placeholder="Nome"><input type="email" id="novo-gestor-email" class="form-control mb-2" placeholder="E-mail"><input type="password" id="novo-gestor-senha" class="form-control" placeholder="Senha"></div><div class="modal-footer"><button class="btn btn-dark w-100" onclick="salvarNovoGestor()">Cadastrar</button></div></div></div></div>
-    <div class="modal fade" id="modalCortar" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-body p-0"><div class="img-container-corte"><img id="img-crop" src="" style="max-width: 100%;"></div></div><div class="modal-footer"><button class="btn btn-success" onclick="confirmarCorte()">Confirmar</button></div></div></div></div>
+    <div class="modal fade" id="modalNovoGestor" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white"><h5>Promover Membro da Equipe</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <p class="small text-danger fw-bold">⚠️ O usuário deve estar cadastrado no sistema!</p>
+                    <div class="mb-3">
+                        <label class="fw-bold small">E-mail do Usuário:</label>
+                        <input type="email" id="g-email" class="form-control" placeholder="email@exemplo.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold small">Novo Cargo:</label>
+                        <select id="g-tipo" class="form-select">
+                            <option value="produtor">Produtor (Aprova locais)</option>
+                            <option value="admin">Administrador (Gestão Mestre)</option>
+                            <option value="analista">Analista (Relatórios BI)</option> </select>
+                    </div>
+                </div>
+                <div class="modal-footer"><button class="btn btn-primary w-100 fw-bold" onclick="window.salvarEquipe()">PROMOVER</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCrop" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-body p-0"><img id="crop-img" style="max-width: 100%;"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-success" id="btn-save-crop">Confirmar</button></div></div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <script>
-        let mapa=null, marcador=null, cropper=null, blobFoto=null, timeoutBusca=null;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
 
-        fetch('/api/usuario-atual').then(r=>r.json()).then(u => {
-            document.getElementById('nome-admin').innerText = u.nome;
-            carregarPontos();
-            
-            // Se for o ADMIN MESTRE, carrega a equipe
-            if (u.email === 'admin@mundoria.com') {
-                carregarGestores();
-            } else {
-                // Se não for mestre, esconde a gestão de equipe
-                document.getElementById('lista-gestores').innerHTML = '<li class="list-group-item text-muted text-center">Acesso restrito ao Admin Principal.</li>';
-            }
+        const firebaseConfig = { apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo", authDomain: "mundoria-53de5.firebaseapp.com", projectId: "mundoria-53de5", storageBucket: "mundoria-53de5.firebasestorage.app", messagingSenderId: "86901345396", appId: "1:86901345396:web:969fa3637292d0333e1521" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+
+        let mapa, marcador, cropper, blobFoto, userParaExcluir = "";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const snap = await getDoc(doc(db, "users", user.email.toLowerCase()));
+                if (snap.exists() && snap.data().tipo === 'admin') {
+                    carregarPontos(); carregarEquipe();
+                } else { window.location.href = "index.html"; }
+            } else { window.location.href = "login.html"; }
         });
 
-        // 1. PONTOS
-        function carregarPontos() {
-            fetch('/api/admin/pontos').then(r=>r.json()).then(pontos => {
-                document.getElementById('contador-pontos').innerText = pontos.length;
-                const tbody = document.getElementById('tabela-pontos');
-                tbody.innerHTML = pontos.length ? '' : '<tr><td colspan="5" class="text-center">Nenhum ponto.</td></tr>';
-                pontos.forEach(p => {
-                    tbody.innerHTML += `<tr><td><img src="${p.imagem}" width="50" height="50" style="border-radius:5px;object-fit:cover;"></td><td class="fw-bold">${p.nome}</td><td>${p.categoria}</td><td class="small text-muted">${p.endereco}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="excluirPonto(${p.id})">Excluir</button></td></tr>`;
-                });
+        async function carregarPontos() {
+            const snap = await getDocs(collection(db, "locais"));
+            const tbody = document.getElementById('tabela-pontos');
+            tbody.innerHTML = "";
+            document.getElementById('cont-pontos').innerText = snap.size;
+            snap.forEach(d => {
+                const l = d.data();
+                tbody.innerHTML += `<tr><td><img src="${l.imagem}" class="img-tabela"></td><td><strong>${l.nome}</strong></td><td><span class="badge bg-secondary">${l.categoria}</span></td><td class="small text-muted">${l.endereco}, ${l.numero || 'S/N'}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="window.excluirLocal('${d.id}')">Excluir</button></td></tr>`;
             });
         }
-        function salvarPonto() { const f=document.getElementById('form-ponto'); const fd=new FormData(f); if(blobFoto)fd.set('foto_ponto',blobFoto,'p.jpg'); fetch('/api/admin/salvar-ponto',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{ if(d.sucesso){alert("Salvo!");location.reload();}else alert("Erro"); }); }
-        function excluirPonto(id) { if(confirm("Excluir este local?")) { fetch('/api/admin/excluir', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) }).then(()=>carregarPontos()); } }
+        window.excluirLocal = async (id) => { if(confirm("Apagar local?")) { await deleteDoc(doc(db, "locais", id)); carregarPontos(); } };
 
-        // 2. GESTORES
-        function carregarGestores() {
-            fetch('/api/admin/gestores').then(r=>r.json()).then(lista => {
-                const ul = document.getElementById('lista-gestores');
-                ul.innerHTML = lista.map(g => `<li class="list-group-item d-flex justify-content-between"><div><strong>${g.nome}</strong><br><small>${g.email}</small></div>${g.email!=='admin@mundoria.com'?`<button class="btn btn-sm btn-danger" onclick="excluirGestor(${g.id})">X</button>`:''}</li>`).join('');
+        // ATUALIZADO: Agora busca também o cargo 'analista'
+        async function carregarEquipe() {
+            const q = query(collection(db, "users"), where("tipo", "in", ["produtor", "admin", "analista"]));
+            const snap = await getDocs(q);
+            const ul = document.getElementById('lista-gestores');
+            ul.innerHTML = "";
+            snap.forEach(d => {
+                const u = d.data();
+                let badge = 'bg-primary'; // Default Produtor
+                if(u.tipo === 'admin') badge = 'bg-danger';
+                if(u.tipo === 'analista') badge = 'bg-info'; // Badge azul claro para analista
+                
+                ul.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${u.nome}</strong> <span class="badge ${badge} ms-1">${u.tipo}</span><br><small class="text-muted">${u.email}</small></div><button class="btn btn-sm btn-danger" onclick="window.removerAcesso('${d.id}')">X</button></li>`;
             });
         }
-        function salvarNovoGestor() { const n=document.getElementById('novo-gestor-nome').value; const e=document.getElementById('novo-gestor-email').value; const s=document.getElementById('novo-gestor-senha').value; fetch('/api/admin/criar-gestor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,email:e,senha:s})}).then(r=>r.json()).then(d=>{ if(d.sucesso){alert("Criado!");location.reload();}else alert("Erro"); }); }
-        function excluirGestor(id) { if(confirm("Remover gestor?")) fetch('/api/admin/excluir-gestor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(()=>carregarGestores()); }
 
-        // 3. USUÁRIOS (BUSCA)
-        function buscarUsuarios() {
-            const termo = document.getElementById('busca-usuario').value;
-            if(!termo) return alert("Digite algo.");
-            fetch('/api/admin/usuarios/buscar', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({termo})}).then(r=>r.json()).then(lista => {
-                const ul = document.getElementById('lista-usuarios-busca');
-                if(lista.length===0){ ul.innerHTML='<li class="list-group-item text-center">Nada encontrado.</li>'; return; }
-                ul.innerHTML = lista.map(u => `<li class="list-group-item d-flex justify-content-between"><div><strong>${u.nome}</strong> (${u.tipo})<br><small>${u.email}</small></div><button class="btn btn-sm btn-danger" onclick="excluirUsuario(${u.id})">Excluir</button></li>`).join('');
-            });
-        }
-        function excluirUsuario(id) { if(confirm("Excluir TUDO deste usuário?")) fetch('/api/admin/usuarios/excluir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(()=>buscarUsuarios()); }
+        window.salvarEquipe = async () => {
+            const email = document.getElementById('g-email').value.toLowerCase().trim();
+            const tipo = document.getElementById('g-tipo').value;
+            if(!email) return alert("Digite o e-mail!");
+            const userRef = doc(db, "users", email);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                await updateDoc(userRef, { tipo: tipo });
+                alert(`Sucesso! ${userSnap.data().nome} agora é ${tipo}.`); 
+                location.reload();
+            } else { alert("Usuário não cadastrado no Mundoria!"); }
+        };
 
-        // UTILITÁRIOS
-        function abrirModalPonto() { new bootstrap.Modal(document.getElementById('modalPonto')).show(); setTimeout(iniciarMapa,500); }
-        function abrirModalNovoGestor() { new bootstrap.Modal(document.getElementById('modalNovoGestor')).show(); }
-        function iniciarMapa() { if(!mapa){ mapa=L.map('mapa-ponto').setView([-23.5505,-46.6333],13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa); mapa.on('click',e=>{ if(marcador)mapa.removeLayer(marcador); marcador=L.marker(e.latlng).addTo(mapa); document.getElementById('inp-lat').value=e.latlng.lat; document.getElementById('inp-lon').value=e.latlng.lng; fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`).then(r=>r.json()).then(d=>{ document.getElementById('inp-rua').value=d.display_name.split(',')[0]; }); }); }else{ mapa.invalidateSize(); } }
-        function buscarEndereco(q){ const l=document.getElementById('lista-sugestoes'); if(q.length<3){l.style.display='none';return;} clearTimeout(timeoutBusca); timeoutBusca=setTimeout(()=>{ fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&addressdetails=1&limit=5`).then(r=>r.json()).then(d=>{ l.innerHTML=''; if(d.length>0){l.style.display='block';d.forEach(i=>{ const x=document.createElement('div'); x.className='item-sugestao'; x.innerText=i.display_name; x.onclick=()=>{ selecionar(i); }; l.appendChild(x); });}else{l.style.display='none';} }); },300); }
-        function selecionar(i){ document.getElementById('inp-rua').value=i.display_name.split(',')[0]; document.getElementById('lista-sugestoes').style.display='none'; document.getElementById('inp-lat').value=i.lat; document.getElementById('inp-lon').value=i.lon; if(mapa){ mapa.setView([i.lat, i.lon], 16); if(marcador)mapa.removeLayer(marcador); marcador=L.marker([i.lat, i.lon]).addTo(mapa); } }
-        function abrirCortador(e){ const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ document.getElementById('img-crop').src=ev.target.result; new bootstrap.Modal(document.getElementById('modalCortar')).show(); setTimeout(()=>{ if(cropper)cropper.destroy(); cropper=new Cropper(document.getElementById('img-crop'),{aspectRatio:16/9,viewMode:2}); },200); }; r.readAsDataURL(f); } }
-        function confirmarCorte(){ cropper.getCroppedCanvas().toBlob(b=>{ blobFoto=b; bootstrap.Modal.getInstance(document.getElementById('modalCortar')).hide(); document.getElementById('preview-foto').src=URL.createObjectURL(b); document.getElementById('preview-foto').style.display='block'; }); }
+        window.removerAcesso = async (id) => { if(confirm("Remover da equipe?")) { await updateDoc(doc(db, "users", id), { tipo: "turista" }); carregarEquipe(); } };
+
+        window.buscarUsuario = async () => {
+            const email = document.getElementById('busca-email').value.toLowerCase().trim();
+            const snap = await getDoc(doc(db, "users", email));
+            const div = document.getElementById('resultado-busca');
+            if (snap.exists()) {
+                const u = snap.data();
+                document.getElementById('res-nome').innerText = u.nome + ` (${u.tipo})`;
+                document.getElementById('res-email').innerText = u.email;
+                userParaExcluir = email; 
+                div.classList.remove('d-none');
+                const btnBan = document.getElementById('btn-banir-acao');
+                if(u.status === 'banido') {
+                    btnBan.innerText = "REATIVAR CONTA"; btnBan.classList.replace('btn-danger', 'btn-success');
+                } else {
+                    btnBan.innerText = "DESATIVAR CONTA"; btnBan.classList.replace('btn-success', 'btn-danger');
+                }
+            } else { alert("Não encontrado!"); div.classList.add('d-none'); }
+        };
+
+        window.excluirUsuario = async () => { 
+            const docRef = doc(db, "users", userParaExcluir);
+            const snap = await getDoc(docRef);
+            const atualStatus = snap.data().status;
+            if(atualStatus === 'banido') {
+                if(confirm(`Deseja REATIVAR a conta de ${userParaExcluir}?`)) { await updateDoc(docRef, { status: 'ativo' }); alert("Conta reativada!"); location.reload(); }
+            } else {
+                if(confirm(`Deseja DESATIVAR permanentemente o acesso de ${userParaExcluir}?`)) { await updateDoc(docRef, { status: 'banido' }); alert("Acesso desativado!"); location.reload(); }
+            }
+        };
+
+        // --- UTILITÁRIOS ---
+        window.toggleNum = (c) => document.getElementById('p-num').disabled = c.checked;
+        window.toggleHora = (c) => { document.getElementById('p-hora-abre').disabled = c.checked; document.getElementById('p-hora-fecha').disabled = c.checked; };
+        window.abrirModalPonto = () => { new bootstrap.Modal(document.getElementById('modalPonto')).show(); setTimeout(() => { if(!mapa) { mapa = L.map('mapa-ponto').setView([-23.55, -46.63], 13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa); mapa.on('click', e => { if(marcador) mapa.removeLayer(marcador); marcador = L.marker(e.latlng).addTo(mapa); document.getElementById('p-lat').value = e.latlng.lat; document.getElementById('p-lon').value = e.latlng.lng; fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`).then(r=>r.json()).then(d => document.getElementById('p-rua').value = d.address.road || d.display_name.split(',')[0]); }); } else { mapa.invalidateSize(); } }, 500); };
+        window.buscarEndereco = (q) => { if(q.length < 3) return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`).then(r=>r.json()).then(d => { const l = document.getElementById('lista-sugestoes'); l.innerHTML = d.map(i => `<div class="item-sugestao" onclick="window.selectEnd('${i.display_name}', ${i.lat}, ${i.lon})">${i.display_name}</div>`).join(''); l.style.display = 'block'; }); };
+        window.selectEnd = (n, lat, lon) => { document.getElementById('p-rua').value = n.split(',')[0]; document.getElementById('lista-sugestoes').style.display = 'none'; document.getElementById('p-lat').value = lat; document.getElementById('p-lon').value = lon; mapa.setView([lat, lon], 16); if(marcador) mapa.removeLayer(marcador); marcador = L.marker([lat, lon]).addTo(mapa); };
+        window.abrirCrop = (e) => { const f = e.target.files[0]; const r = new FileReader(); r.onload = ev => { document.getElementById('crop-img').src = ev.target.result; new bootstrap.Modal(document.getElementById('modalCrop')).show(); if(cropper) cropper.destroy(); cropper = new Cropper(document.getElementById('crop-img'), { aspectRatio: 16/9 }); }; r.readAsDataURL(f); };
+        document.getElementById('btn-save-crop').onclick = () => { cropper.getCroppedCanvas().toBlob(b => { blobFoto = b; document.getElementById('p-preview').src = URL.createObjectURL(b); document.getElementById('p-preview').style.display = 'block'; bootstrap.Modal.getInstance(document.getElementById('modalCrop')).hide(); }); };
+        document.getElementById('form-ponto-admin').onsubmit = async (e) => { e.preventDefault(); let url = "https://via.placeholder.com/400x225"; if(blobFoto) { const refI = ref(storage, `locais/${Date.now()}.jpg`); await uploadBytes(refI, blobFoto); url = await getDownloadURL(refI); } const horarioFinal = document.getElementById('check-livre').checked ? 'Livre' : `${document.getElementById('p-hora-abre').value} ás ${document.getElementById('p-hora-fecha').value}`; await addDoc(collection(db, "locais"), { nome: document.getElementById('p-nome').value, categoria: document.getElementById('p-cat').value, endereco: document.getElementById('p-rua').value, numero: document.getElementById('check-sn').checked ? 'S/N' : document.getElementById('p-num').value, horario: horarioFinal, lat: document.getElementById('p-lat').value, lon: document.getElementById('p-lon').value, descricao: document.getElementById('p-desc').value, imagem: url, status: "ativo", tipo_local: "comum" }); alert("Local Ativado!"); location.reload(); };
+        document.getElementById('btn-sair-admin').onclick = () => signOut(auth).then(() => window.location.href = "login.html");
     </script>
 </body>
 </html>

@@ -30,8 +30,12 @@
         .btn-menu-azul:hover { background-color: #00005c; color: white; }
         .dropdown-toggle::after { display: none; }
         .user-avatar-mini { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #f67123; }
-        .btn-admin-link { background-color: #343a40; color: white; border-radius: 20px; padding: 8px 20px; font-size: 0.9em; text-decoration: none; font-weight: bold; transition: 0.2s; }
+        
+        /* ESTILO DOS BOTÕES DE GESTÃO (ADMIN, PRODUTOR, ANALISTA) */
+        .btn-admin-link { background-color: #343a40; color: white; border-radius: 20px; padding: 8px 20px; font-size: 0.9em; text-decoration: none; font-weight: bold; transition: 0.2s; border: none; }
         .btn-admin-link:hover { background-color: #23272b; color: white; transform: scale(1.05); }
+        .btn-analista-link { background-color: #00008b; color: white; border-radius: 20px; padding: 8px 20px; font-size: 0.9em; text-decoration: none; font-weight: bold; transition: 0.2s; border: none; }
+        .btn-analista-link:hover { background-color: #00005c; color: white; transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -108,7 +112,6 @@
     const dbFirebase = getFirestore(appFirebase);
     const authFirebase = getAuth(appFirebase);
 
-    // MUDANÇA: Expondo query e where para o script global
     window.dbFirebase = dbFirebase;
     window.collectionFirebase = collection;
     window.getDocsFirebase = getDocs;
@@ -131,10 +134,26 @@
             
             window.usuarioGlobal = { id: emailId, ...data };
 
-            if (data.tipo === 'admin' || data.tipo === 'produtor') {
-                const linkPainel = data.tipo === 'admin' ? 'painel_admin.html' : 'painel.html';
+            // ADICIONADO: Lógica expandida para incluir Analista no topo
+            if (data.tipo === 'admin' || data.tipo === 'produtor' || data.tipo === 'analista') {
+                let linkPainel = '';
+                let textoBotao = 'Painel de Gestão';
+                let classeBotao = 'btn-admin-link';
+                let icone = 'bi-gear-fill';
+
+                if (data.tipo === 'admin') {
+                    linkPainel = 'painel_admin.html';
+                } else if (data.tipo === 'produtor') {
+                    linkPainel = 'painel.html';
+                } else if (data.tipo === 'analista') {
+                    linkPainel = 'painel_analista.html';
+                    textoBotao = 'Relatórios BI';
+                    classeBotao = 'btn-analista-link';
+                    icone = 'bi-bar-chart-line-fill';
+                }
+
                 menu.innerHTML = `
-                    <a href="${linkPainel}" class="btn-admin-link"><i class="bi bi-gear-fill"></i> Painel de Gestão</a>
+                    <a href="${linkPainel}" class="${classeBotao}"><i class="bi ${icone}"></i> ${textoBotao}</a>
                     <a href="perfil.html" class="text-decoration-none d-flex align-items-center gap-2 text-dark">
                         <img src="${data.foto}" class="user-avatar-mini">
                         <span class="fw-bold d-none d-md-block">${data.nome}</span>
@@ -189,27 +208,20 @@
             window.location.href = 'login.html';
             return;
         }
-
         document.getElementById('id-local-temp').value = idLocal;
         const select = document.getElementById('select-roteiros');
         select.innerHTML = '<option value="">Buscando seus roteiros...</option>';
-
         const modal = new bootstrap.Modal(document.getElementById('modalAddRoteiro'));
         modal.show();
-
         try {
             const q = query(collection(dbFirebase, "roteiros"), where("id_usuario", "==", window.usuarioGlobal.id));
             const snap = await getDocs(q);
-
             if (snap.empty) {
                 select.innerHTML = '<option value="">Você não tem roteiros. Crie um no Painel!</option>';
                 return;
             }
-
             select.innerHTML = '<option value="" selected disabled>Escolha um roteiro...</option>';
-            snap.forEach(doc => {
-                select.innerHTML += `<option value="${doc.id}">${doc.data().nome_roteiro}</option>`;
-            });
+            snap.forEach(doc => { select.innerHTML += `<option value="${doc.id}">${doc.data().nome_roteiro}</option>`; });
         } catch (e) {
             console.error(e);
             select.innerHTML = '<option>Erro ao carregar roteiros.</option>';
@@ -221,11 +233,7 @@
         const idLocal = document.getElementById('id-local-temp').value;
         if (!idRoteiro) return alert("Selecione um roteiro da lista!");
         try {
-            await addDoc(collection(dbFirebase, "roteiro_itens"), {
-                id_roteiro: idRoteiro,
-                id_local: idLocal,
-                horario: ""
-            });
+            await addDoc(collection(dbFirebase, "roteiro_itens"), { id_roteiro: idRoteiro, id_local: idLocal, horario: "" });
             alert("Local adicionado com sucesso ao seu roteiro!");
             bootstrap.Modal.getInstance(document.getElementById('modalAddRoteiro')).hide();
         } catch (e) {
@@ -239,30 +247,25 @@
     let locaisGlobais = [];
     let filtroAtual = 'todos';
 
-    // MUDANÇA: Carrega apenas locais com status "ativo"
     async function carregarLocais() {
         try {
             const locaisRef = window.collectionFirebase(window.dbFirebase, "locais");
             const q = window.queryFirebase(locaisRef, window.whereFirebase("status", "==", "ativo"));
-            
             const snap = await window.getDocsFirebase(q);
             locaisGlobais = [];
-            snap.forEach((doc) => {
-                locaisGlobais.push({ id: doc.id, ...doc.data() });
-            });
+            snap.forEach((doc) => { locaisGlobais.push({ id: doc.id, ...doc.data() }); });
             renderizarLocais(locaisGlobais);
-        } catch (erro) {
-            console.error("Erro ao carregar locais:", erro);
-        }
+        } catch (erro) { console.error("Erro ao carregar locais:", erro); }
     }
 
     function renderizarLocais(lista) {
         const div = document.getElementById('grade-conteudo');
         div.innerHTML = lista.length === 0 ? '<div class="col-12 text-center text-muted py-5"><h4>Nenhum local encontrado ou aprovado ainda.</h4></div>' : '';
-        
         lista.forEach(item => {
             let etiqueta = item.tipo_local === 'evento' ? `📅 ${item.data_evento}` : `📍 ${item.categoria}`;
-            let botoesAcao = (window.usuarioGlobal && (window.usuarioGlobal.tipo === 'admin' || window.usuarioGlobal.tipo === 'produtor')) 
+            
+            // LÓGICA DE BOTÕES: Admin, Produtor e Analista veem botão de Gestão nos cards
+            let botoesAcao = (window.usuarioGlobal && (window.usuarioGlobal.tipo === 'admin' || window.usuarioGlobal.tipo === 'produtor' || window.usuarioGlobal.tipo === 'analista')) 
                 ? `<a href="detalhes.html?id=${item.id}" class="btn btn-primary w-100 btn-sm fw-bold">Ver Detalhes (Gestão)</a>`
                 : `<button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="window.abrirModalRoteiro('${item.id}')">+ Roteiro</button>
                    <a href="detalhes.html?id=${item.id}" class="btn btn-primary w-50 btn-sm fw-bold">Detalhes</a>`;

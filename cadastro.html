@@ -96,12 +96,15 @@
                 
                 // 2. Salva no Firestore usando o EMAIL como ID do documento
                 // MUDANÇA AQUI: doc(db, "users", email) em vez de user.uid
-                await setDoc(doc(db, "users", email), {
-                    nome: nome,
-                    email: email,
-                    tipo: "turista",
-                    foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                });
+                // Dentro da função de cadastro, após criar o usuário no Auth:
+            await setDoc(doc(db, "users", email.toLowerCase()), {
+                nome: nome,
+                email: email.toLowerCase(),
+                tipo: "turista", // ou o tipo padrão
+                foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                status: "ativo",
+                data_cadastro: new Date().toLocaleDateString('pt-BR') 
+            });
 
                 alert("Conta criada com sucesso!");
                 window.location.href = "login.html";

@@ -18,6 +18,10 @@
         .btn-salvar { background: #f67123; color: white; border: none; padding: 12px; font-weight: bold; width: 100%; border-radius: 8px; }
         /* Modal de Corte */
         .preview-crop { max-height: 400px; max-width: 100%; }
+        
+        /* ESTILO DO BOTÃO DE EXCLUIR */
+        .btn-excluir-conta { color: #dc3545; border: 1px solid #dc3545; background: none; font-size: 0.9em; transition: 0.3s; margin-top: 20px; }
+        .btn-excluir-conta:hover { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
@@ -72,6 +76,13 @@
 
                 <button type="submit" class="btn btn-salvar mt-3" id="btn-submit-perfil">Salvar Alterações</button>
             </form>
+
+            <hr class="mt-5">
+            <div class="text-center">
+                <button class="btn btn-sm btn-excluir-conta rounded-pill px-4" id="btn-deletar-perfil">
+                    <i class="bi bi-person-x"></i> Excluir Minha Conta Permanentemente
+                </button>
+            </div>
         </div>
     </div>
 
@@ -83,9 +94,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <div>
-                        <img id="image-to-crop" class="preview-crop">
-                    </div>
+                    <div><img id="image-to-crop" class="preview-crop"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -100,20 +109,13 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-        // ADICIONADO: Firebase Storage
+        // ADICIONADO: deleteUser para o Authentication
+        import { getAuth, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        // ADICIONADO: deleteDoc para o Firestore
+        import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
-            authDomain: "mundoria-53de5.firebaseapp.com",
-            projectId: "mundoria-53de5",
-            storageBucket: "mundoria-53de5.firebasestorage.app",
-            messagingSenderId: "86901345396",
-            appId: "1:86901345396:web:969fa3637292d0333e1521"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo", authDomain: "mundoria-53de5.firebaseapp.com", projectId: "mundoria-53de5", storageBucket: "mundoria-53de5.firebasestorage.app", messagingSenderId: "86901345396", appId: "1:86901345396:web:969fa3637292d0333e1521" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -139,73 +141,74 @@
             }
         });
 
-        // 1. Quando seleciona a imagem, abre o cortador
+        // --- CÓDIGO DA FOTO (PRESERVADO) ---
         document.getElementById('input-foto').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    imageToCrop.src = event.target.result;
-                    modalCrop.show();
+                    imageToCrop.src = event.target.result; modalCrop.show();
                     if (cropper) cropper.destroy();
-                    cropper = new Cropper(imageToCrop, {
-                        aspectRatio: 1, // Foto quadrada
-                        viewMode: 1
-                    });
+                    cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 1 });
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // 2. Quando confirma o corte, faz o upload para o Storage
         document.getElementById('btn-confirmar-corte').addEventListener('click', async () => {
             if (!cropper) return;
-            
             const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
             const btnConfirmar = document.getElementById('btn-confirmar-corte');
-            btnConfirmar.disabled = true;
-            btnConfirmar.innerText = "Enviando...";
-
+            btnConfirmar.disabled = true; btnConfirmar.innerText = "Enviando...";
             canvas.toBlob(async (blob) => {
                 const user = auth.currentUser;
                 const emailId = user.email.toLowerCase();
                 const storageRef = ref(storage, `perfis/${emailId}.png`);
-
                 try {
-                    // Upload para o Storage
                     await uploadBytes(storageRef, blob);
                     const photoURL = await getDownloadURL(storageRef);
-
-                    // Atualiza no Firestore
                     await updateDoc(doc(db, "users", emailId), { foto: photoURL });
-                    
                     document.getElementById('img-perfil').src = photoURL;
-                    modalCrop.hide();
-                    alert("Foto atualizada com sucesso!");
-                } catch (error) {
-                    console.error(error);
-                    alert("Erro ao enviar a imagem. Verifique as regras do Storage.");
-                } finally {
-                    btnConfirmar.disabled = false;
-                    btnConfirmar.innerText = "Cortar e Salvar";
-                }
+                    modalCrop.hide(); alert("Foto atualizada!");
+                } catch (e) { alert("Erro no Storage."); } finally { btnConfirmar.disabled = false; btnConfirmar.innerText = "Cortar e Salvar"; }
             });
         });
 
-        // Salvar dados de texto
+        // --- SALVAR DADOS (PRESERVADO) ---
         document.getElementById('form-perfil').addEventListener('submit', async (e) => {
             e.preventDefault();
             const emailId = auth.currentUser.email.toLowerCase();
-            const novosDados = {
-                nome: document.getElementById('perfil-nome').value,
-                endereco: document.getElementById('perfil-endereco').value,
-                cidade: document.getElementById('perfil-cidade').value,
-                estado: document.getElementById('perfil-estado').value
-            };
-            try {
-                await updateDoc(doc(db, "users", emailId), novosDados);
-                alert("Dados atualizados!");
-            } catch (e) { alert("Erro ao salvar."); }
+            const novosDados = { nome: document.getElementById('perfil-nome').value, endereco: document.getElementById('perfil-endereco').value, cidade: document.getElementById('perfil-cidade').value, estado: document.getElementById('perfil-estado').value };
+            try { await updateDoc(doc(db, "users", emailId), novosDados); alert("Dados atualizados!"); } catch (e) { alert("Erro ao salvar."); }
+        });
+
+        // --- NOVO: EXCLUIR CONTA (AUTENTICAÇÃO + FIRESTORE) ---
+        document.getElementById('btn-deletar-perfil').addEventListener('click', async () => {
+            const confirmacao = confirm("ATENÇÃO: Você tem certeza que deseja excluir sua conta permanentemente? Esta ação não pode ser desfeita e todos os seus dados (favoritos, roteiros) serão apagados.");
+            
+            if (confirmacao) {
+                const user = auth.currentUser;
+                const emailId = user.email.toLowerCase();
+
+                try {
+                    // 1. Apaga do Firestore primeiro
+                    await deleteDoc(doc(db, "users", emailId));
+                    
+                    // 2. Apaga do Firebase Authentication
+                    await deleteUser(user);
+
+                    alert("Sua conta foi excluída com sucesso. Sentiremos sua falta!");
+                    window.location.href = "index.html";
+
+                } catch (error) {
+                    console.error(error);
+                    if (error.code === 'auth/requires-recent-login') {
+                        alert("Por segurança, você precisa sair e fazer login novamente para excluir sua conta.");
+                    } else {
+                        alert("Erro ao excluir conta. Tente novamente mais tarde.");
+                    }
+                }
+            }
         });
     </script>
 </body>

@@ -41,7 +41,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        // Adicionado signOut para expulsar usuários banidos
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -71,31 +72,35 @@
                 const userCredential = await signInWithEmailAndPassword(auth, email, senha);
                 const user = userCredential.user;
 
-                // Busca o documento pelo email em minúsculo [cite: 20, 208]
+                // Busca o documento no Firestore
                 const userSnap = await getDoc(doc(db, "users", user.email.toLowerCase()));
                 
                 if (userSnap.exists()) {
                     const dados = userSnap.data();
-                    
-                    // DEBUG: Veja no console o que está vindo do banco!
-                    console.log("Usuário logado:", dados.nome);
-                    console.log("Tipo detectado:", dados.tipo);
 
+                    // --- TRAVA DE SEGURANÇA: BANIMENTO LÓGICO ---
+                    if (dados.status === 'banido') {
+                        await signOut(auth); // Expulsa do sistema imediatamente
+                        alert("ACESSO NEGADO: Esta conta foi desativada por violar as diretrizes do Mundoria.");
+                        window.location.href = "index.html";
+                        return; // Interrompe o login
+                    }
+
+                    console.log("Tipo detectado:", dados.tipo);
                     alert("Bem-vindo, " + dados.nome + "!");
 
-                    // REDIRECIONAMENTO RÍGIDO [cite: 209, 210, 211]
+                    // REDIRECIONAMENTO POR CARGO
                     if (dados.tipo === 'admin') {
                         window.location.href = "painel_admin.html";
                     } else if (dados.tipo === 'produtor') {
-                        // Força o redirecionamento para o painel escuro de gestão
                         window.location.href = "painel.html";
                     } else if (dados.tipo === 'analista') {
                         window.location.href = "painel_analista.html";
                     } else {
-                        // Turistas e Parceiros caem aqui
                         window.location.href = "meu_painel.html";
                     }
                 } else {
+                    // Se não houver documento no Firestore (usuário fantasma), manda para o perfil
                     window.location.href = "meu_painel.html";
                 }
             } catch (error) {

@@ -1,35 +1,97 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <title>Analista BI - Mundoria</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <style>
-        :root { --laranja: #f67123; --azul: #00008b; }
-        body { background-color: #f8f9fa; font-family: sans-serif; }
-        
+        :root {
+            --laranja: #f67123;
+            --azul: #00008b;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: sans-serif;
+        }
+
         /* SIDEBAR */
-        .sidebar { background: #212529; min-height: 100vh; color: white; padding: 20px; position: sticky; top: 0; }
-        .nav-link { color: rgba(255,255,255,0.7); transition: 0.2s; }
-        .nav-link:hover, .nav-link.active { color: var(--laranja) !important; }
+        .sidebar {
+            background: #212529;
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            transition: 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--laranja) !important;
+        }
 
         /* CARDS E GRÁFICOS */
-        .card-metric { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: none; border-bottom: 5px solid; }
-        .metric-num { font-size: 2.5rem; font-weight: bold; }
-        .chart-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 25px; min-height: 350px; }
+        .card-metric {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: none;
+            border-bottom: 5px solid;
+        }
+
+        .metric-num {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .chart-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            min-height: 350px;
+        }
 
         /* AJUSTE PARA EXPORTAÇÃO PDF/IMPRESSÃO */
         @media print {
-            .sidebar, .btn-export, .badge-user { display: none !important; }
-            main { width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            .card-metric, .chart-box { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
-            body { background: white !important; }
+
+            .sidebar,
+            .btn-export,
+            .badge-user {
+                display: none !important;
+            }
+
+            main {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .card-metric,
+            .chart-box {
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+                break-inside: avoid;
+            }
+
+            body {
+                background: white !important;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div class="container-fluid">
@@ -39,12 +101,14 @@
                     <h4 class="fw-bold mb-4 text-center">🌍 Mundoria</h4>
                     <hr>
                     <ul class="nav flex-column gap-2">
-                        <li class="nav-item"><a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Site Público</a></li>
-                        <li class="nav-item"><a href="#" class="nav-link active"><i class="bi bi-graph-up-arrow me-2"></i> Business Intelligence</a></li>
-                        <li class="nav-item"><a href="meu_painel.html" class="nav-link"><i class="bi bi-person me-2"></i> Meu Perfil</a></li>
+                        <li class="nav-item"><a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Site
+                                Público</a></li>
+                        <li class="nav-item"><a href="#" class="nav-link active"><i
+                                    class="bi bi-graph-up-arrow me-2"></i> Business Intelligence</a></li>
                     </ul>
                     <hr>
-                    <button class="btn btn-sm btn-outline-danger w-100 mt-4" onclick="window.sair()">Sair do Sistema</button>
+                    <button class="btn btn-sm btn-outline-danger w-100 mt-4" onclick="window.sair()">Sair do
+                        Sistema</button>
                 </div>
             </nav>
 
@@ -55,16 +119,37 @@
                         <p class="text-muted m-0">Análise de engajamento e crescimento do ecossistema</p>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-warning fw-bold btn-export" onclick="window.print()"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</button>
+                        <button class="btn btn-warning fw-bold btn-export" onclick="window.print()"><i
+                                class="bi bi-file-earmark-pdf"></i> Exportar PDF</button>
                         <div id="badge-user" class="badge bg-dark p-2 badge-user">Analista</div>
                     </div>
                 </div>
 
                 <div class="row mb-4">
-                    <div class="col-md-3"><div class="card-metric" style="border-color: #00008b;"><small class="text-muted fw-bold">TURISTAS</small><div class="metric-num text-primary" id="m-users">0</div></div></div>
-                    <div class="col-md-3"><div class="card-metric" style="border-color: #28a745;"><small class="text-muted fw-bold">LOCAIS ATIVOS</small><div class="metric-num text-success" id="m-locais">0</div></div></div>
-                    <div class="col-md-3"><div class="card-metric" style="border-color: #f67123;"><small class="text-muted fw-bold">AVALIAÇÕES</small><div class="metric-num" style="color: var(--laranja)" id="m-reviews">0</div></div></div>
-                    <div class="col-md-3"><div class="card-metric" style="border-color: #6f42c1;"><small class="text-muted fw-bold">ROTEIROS</small><div class="metric-num" style="color: #6f42c1;" id="m-roteiros">0</div></div></div>
+                    <div class="col-md-3">
+                        <div class="card-metric" style="border-color: #00008b;"><small
+                                class="text-muted fw-bold">TURISTAS</small>
+                            <div class="metric-num text-primary" id="m-users">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card-metric" style="border-color: #28a745;"><small class="text-muted fw-bold">LOCAIS
+                                ATIVOS</small>
+                            <div class="metric-num text-success" id="m-locais">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card-metric" style="border-color: #f67123;"><small
+                                class="text-muted fw-bold">AVALIAÇÕES</small>
+                            <div class="metric-num" style="color: var(--laranja)" id="m-reviews">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card-metric" style="border-color: #6f42c1;"><small
+                                class="text-muted fw-bold">ROTEIROS</small>
+                            <div class="metric-num" style="color: #6f42c1;" id="m-roteiros">0</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="row">
@@ -74,7 +159,7 @@
                             <div style="height: 300px;"><canvas id="chart-growth"></canvas></div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <div class="chart-box">
                             <h5 class="fw-bold mb-4">❤️ Top 5 Locais Favoritos</h5>
@@ -106,21 +191,25 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const snap = await getDoc(doc(db, "users", user.email.toLowerCase()));
+                // SEGURANÇA: Só Analista ou Admin entra aqui
                 if (snap.exists() && (snap.data().tipo === 'analista' || snap.data().tipo === 'admin')) {
-                    document.getElementById('badge-user').innerText = "Acesso: " + snap.data().nome;
+                    document.getElementById('badge-user').innerText = "Analista: " + snap.data().nome;
                     processarDadosBI();
-                } else { window.location.href = "index.html"; }
+                } else {
+                    alert("Acesso restrito ao time de Inteligência.");
+                    window.location.href = "index.html";
+                }
             } else { window.location.href = "login.html"; }
         });
 
         async function processarDadosBI() {
-            // 1. BUSCAR LOCAIS ATIVOS (Para filtrar o que foi excluído)
+            // 1. LOCAIS ATIVOS
             const locaisSnap = await getDocs(query(collection(db, "locais"), where("status", "==", "ativo")));
             const locaisValidosIds = [];
             const nomesLocaisMap = {};
-            locaisSnap.forEach(l => { 
-                locaisValidosIds.push(l.id); 
-                nomesLocaisMap[l.id] = l.data().nome; 
+            locaisSnap.forEach(l => {
+                locaisValidosIds.push(l.id);
+                nomesLocaisMap[l.id] = l.data().nome;
             });
             document.getElementById('m-locais').innerText = locaisSnap.size;
 
@@ -134,36 +223,39 @@
             // 3. GRÁFICO DE CRESCIMENTO (Usuários por Mês)
             const contagemMeses = Array(12).fill(0);
             usersSnap.forEach(u => {
-                const data = u.data().data_cadastro; // Formato esperado: DD/MM/AAAA
-                if(data) {
-                    const mes = parseInt(data.split('/')[1]) - 1;
-                    contagemMeses[mes]++;
+                const data = u.data().data_cadastro;
+                if (data) {
+                    const partes = data.split('/');
+                    if (partes.length >= 2) {
+                        const mes = parseInt(partes[1]) - 1;
+                        if (mes >= 0 && mes <= 11) contagemMeses[mes]++;
+                    }
                 }
             });
             gerarGraficoLinha(contagemMeses);
 
-            // 4. FAVORITOS (Filtrando apenas locais ativos)
+            // 4. FAVORITOS (Ranking)
             const favsSnap = await getDocs(collection(db, "favoritos"));
             const contFavs = {};
             favsSnap.forEach(f => {
                 const id = f.data().id_local;
-                if(locaisValidosIds.includes(id)) {
+                if (locaisValidosIds.includes(id)) {
                     const nome = nomesLocaisMap[id];
                     contFavs[nome] = (contFavs[nome] || 0) + 1;
                 }
             });
-            const topFavs = Object.entries(contFavs).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const topFavs = Object.entries(contFavs).sort((a, b) => b[1] - a[1]).slice(0, 5);
             gerarBarraH(topFavs);
 
-            // 5. AVALIAÇÕES E NOTAS (Filtrando apenas locais ativos)
+            // 5. AVALIAÇÕES (Qualidade)
             const avsSnap = await getDocs(collection(db, "avaliacoes"));
             document.getElementById('m-reviews').innerText = avsSnap.size;
-            const notas = {}; // { id: { soma: X, qtd: Y } }
+            const notas = {};
             avsSnap.forEach(a => {
                 const id = a.data().id_local;
                 const nota = a.data().nota;
-                if(locaisValidosIds.includes(id)) {
-                    if(!notas[id]) notas[id] = { soma: 0, qtd: 0 };
+                if (locaisValidosIds.includes(id)) {
+                    if (!notas[id]) notas[id] = { soma: 0, qtd: 0 };
                     notas[id].soma += nota;
                     notas[id].qtd++;
                 }
@@ -171,20 +263,19 @@
             const medias = Object.entries(notas).map(([id, d]) => ({
                 nome: nomesLocaisMap[id],
                 media: d.soma / d.qtd
-            })).sort((a,b) => b.media - a.media).slice(0, 5);
+            })).sort((a, b) => b.media - a.media).slice(0, 5);
             gerarBarraV(medias);
         }
 
-        // --- FUNÇÕES DE GRÁFICOS ---
-
+        // --- CHART.JS CONFIGS ---
         function gerarGraficoLinha(dados) {
             new Chart(document.getElementById('chart-growth'), {
                 type: 'line',
                 data: {
                     labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                    datasets: [{ label: 'Novos Turistas', data: dados, borderColor: '#00008b', backgroundColor: 'rgba(0, 0, 139, 0.1)', fill: true, tension: 0.3 }]
+                    datasets: [{ label: 'Novos Turistas', data: dados, borderColor: '#f67123', backgroundColor: 'rgba(246, 113, 35, 0.1)', fill: true, tension: 0.4 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
             });
         }
 
@@ -193,7 +284,7 @@
                 type: 'bar',
                 data: {
                     labels: dados.map(d => d[0]),
-                    datasets: [{ label: 'Favoritos', data: dados.map(d => d[1]), backgroundColor: '#f67123' }]
+                    datasets: [{ label: 'Favoritos', data: dados.map(d => d[1]), backgroundColor: '#00008b', borderRadius: 5 }]
                 },
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
@@ -204,11 +295,11 @@
                 type: 'bar',
                 data: {
                     labels: dados.map(d => d.nome),
-                    datasets: [{ label: 'Nota Média', data: dados.map(d => d.media.toFixed(1)), backgroundColor: '#28a745' }]
+                    datasets: [{ label: 'Nota Média', data: dados.map(d => d.media.toFixed(1)), backgroundColor: '#28a745', borderRadius: 5 }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     scales: { y: { beginAtZero: true, max: 5 } },
                     plugins: { legend: { display: false } }
                 }
@@ -218,4 +309,5 @@
         window.sair = () => signOut(auth).then(() => window.location.href = "login.html");
     </script>
 </body>
+
 </html>

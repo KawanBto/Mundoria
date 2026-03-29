@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <title>Área do Produtor - Mundoria</title>
@@ -7,24 +8,92 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
-    
+
     <style>
-        :root { --laranja-mundoria: #f67123; }
-        body { background-color: #f8f9fa; font-family: sans-serif; }
-        .sidebar { background: #212529; min-height: 100vh; color: white; padding: 20px; position: sticky; top: 0; }
-        .form-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        .img-pendente { width: 80px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; }
-        .nav-link { color: rgba(255,255,255,0.7); transition: 0.2s; }
-        .nav-link:hover { color: #f67123; }
-        .nav-link.active { color: #f67123 !important; font-weight: bold; }
-        
-        /* ESTILOS DO MAPA E BUSCA */
-        #mapa-ponto { height: 300px; width: 100%; border-radius: 10px; border: 1px solid #ccc; margin-top: 10px; }
-        .lista-sugestoes { position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ccc; z-index: 1000; border-radius: 0 0 10px 10px; max-height: 150px; overflow-y: auto; display: none; }
-        .item-sugestao { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.9em; }
-        .item-sugestao:hover { background: #f8f9fa; }
+        :root {
+            --laranja-mundoria: #f67123;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: sans-serif;
+        }
+
+        .sidebar {
+            background: #212529;
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+        }
+
+        .form-box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .img-pendente {
+            width: 80px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            transition: 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #f67123;
+        }
+
+        .nav-link.active {
+            color: #f67123 !important;
+            font-weight: bold;
+        }
+
+        #mapa-ponto {
+            height: 300px;
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+            margin-top: 10px;
+            z-index: 1;
+        }
+
+        .lista-sugestoes {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #ccc;
+            z-index: 1000;
+            border-radius: 0 0 10px 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .item-sugestao {
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+
+        .item-sugestao:hover {
+            background: #f8f9fa;
+        }
     </style>
 </head>
+
 <body>
 
     <div class="container-fluid">
@@ -34,12 +103,14 @@
                     <h4 class="fw-bold mb-4 text-center">🌍 Mundoria</h4>
                     <hr>
                     <ul class="nav flex-column gap-2">
-                        <li class="nav-item"><a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Ir para o Site</a></li>
-                        <li class="nav-item"><a href="#" class="nav-link active"><i class="bi bi-patch-check me-2"></i> Aprovações</a></li>
-                        <li class="nav-item"><a href="meu_painel.html" class="nav-link"><i class="bi bi-person me-2"></i> Meu Painel Pessoal</a></li>
+                        <li class="nav-item"><a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Ir
+                                para o Site</a></li>
+                        <li class="nav-item"><a href="#" class="nav-link active"><i class="bi bi-patch-check me-2"></i>
+                                Aprovações</a></li>
                     </ul>
                     <hr>
-                    <button class="btn btn-sm btn-outline-danger w-100 mt-4" id="btn-sair-produtor">Sair do Sistema</button>
+                    <button class="btn btn-sm btn-outline-danger w-100 mt-4" id="btn-sair-produtor">Sair do
+                        Sistema</button>
                 </div>
             </nav>
 
@@ -48,7 +119,8 @@
                     <h1 class="h2 fw-bold">Gestão de Conteúdo</h1>
                     <div class="d-flex align-items-center gap-3">
                         <button class="btn btn-primary fw-bold" onclick="window.abrirModalPonto()">+ Novo Local</button>
-                        <div id="badge-user" class="badge bg-dark p-2">Verificando...</div>
+                        <div id="badge-user" class="badge bg-dark p-2 text-wrap" style="max-width: 200px;">
+                            Verificando...</div>
                     </div>
                 </div>
 
@@ -66,7 +138,9 @@
                                 </tr>
                             </thead>
                             <tbody id="tabela-pendentes">
-                                <tr><td colspan="5" class="text-center py-5">Carregando lista...</td></tr>
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">Carregando lista...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -78,40 +152,80 @@
     <div class="modal fade" id="modalPonto" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white"><h5 class="modal-title">Cadastrar Novo Ponto Turístico</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Cadastrar Novo Ponto Turístico</h5><button class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
                     <form id="form-ponto-produtor">
                         <div class="row mb-3">
-                            <div class="col-md-8"><label class="fw-bold">Nome do Local</label><input type="text" id="p-nome" class="form-control" required></div>
-                            <div class="col-md-4"><label class="fw-bold">Categoria</label><select id="p-cat" class="form-select"><option>Parque</option><option>Museu</option><option>Cultura</option><option>Feira</option><option>Restaurante</option></select></div>
+                            <div class="col-md-8"><label class="fw-bold">Nome do Local</label><input type="text"
+                                    id="p-nome" class="form-control" required></div>
+                            <div class="col-md-4"><label class="fw-bold">Categoria</label><select id="p-cat"
+                                    class="form-select">
+                                    <option>Parque</option>
+                                    <option>Museu</option>
+                                    <option>Cultura</option>
+                                    <option>Feira</option>
+                                    <option>Restaurante</option>
+                                </select></div>
                         </div>
-                        <div class="mb-3 position-relative"><label class="fw-bold">Endereço</label><input type="text" id="p-rua" class="form-control" oninput="window.buscarEndereco(this.value)" placeholder="Rua..."><div id="lista-sugestoes" class="lista-sugestoes"></div></div>
-                        
+                        <div class="mb-3 position-relative"><label class="fw-bold">Endereço</label><input type="text"
+                                id="p-rua" class="form-control" oninput="window.buscarEndereco(this.value)"
+                                placeholder="Rua...">
+                            <div id="lista-sugestoes" class="lista-sugestoes"></div>
+                        </div>
+
                         <div class="row mb-3">
-                            <div class="col-md-4"><label class="fw-bold">Número</label><input type="text" id="p-num" class="form-control" placeholder="Número"></div>
-                            <div class="col-md-8 pt-4"><div class="form-check"><input type="checkbox" id="check-sn" class="form-check-input" onchange="window.toggleNum(this)"><label class="form-check-label">Sem Número</label></div></div>
+                            <div class="col-md-4"><label class="fw-bold">Número</label><input type="text" id="p-num"
+                                    class="form-control" placeholder="Número"></div>
+                            <div class="col-md-8 pt-4">
+                                <div class="form-check"><input type="checkbox" id="check-sn" class="form-check-input"
+                                        onchange="window.toggleNum(this)"><label class="form-check-label">Sem
+                                        Número</label></div>
+                            </div>
                         </div>
 
                         <div id="mapa-ponto"></div>
                         <input type="hidden" id="p-lat"><input type="hidden" id="p-lon">
-                        
+
                         <div class="row mb-3 mt-4">
-                            <div class="col-md-12"><label class="fw-bold mb-2">Horário de Funcionamento</label></div>
-                            <div class="col-md-4">Abertura:<input type="time" id="p-hora-abre" class="form-control"></div>
-                            <div class="col-md-4">Fechamento:<input type="time" id="p-hora-fecha" class="form-control"></div>
-                            <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input type="checkbox" id="check-livre" class="form-check-input" onchange="window.toggleHora(this)"><label class="form-check-label">Horário Livre</label></div></div>
+                            <div class="col-md-4">Abertura:<input type="time" id="p-hora-abre" class="form-control">
+                            </div>
+                            <div class="col-md-4">Fechamento:<input type="time" id="p-hora-fecha" class="form-control">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <div class="form-check mb-2"><input type="checkbox" id="check-livre"
+                                        class="form-check-input" onchange="window.toggleHora(this)"><label
+                                        class="form-check-label">Horário Livre</label></div>
+                            </div>
                         </div>
 
-                        <div class="mb-3"><label class="fw-bold">Foto Oficial</label><input type="file" id="p-file" class="form-control" accept="image/*" onchange="window.abrirCrop(event)"><img id="p-preview" style="width:100%; height:150px; object-fit:cover; display:none; margin-top:10px; border-radius:10px;"></div>
-                        <div class="mb-3"><label class="fw-bold">Descrição</label><textarea id="p-desc" class="form-control" rows="3" required></textarea></div>
-                        <button type="submit" class="btn btn-success w-100 fw-bold py-2">PUBLICAR PONTO TURÍSTICO</button>
+                        <div class="mb-3"><label class="fw-bold">Foto Oficial</label><input type="file" id="p-file"
+                                class="form-control" accept="image/*" onchange="window.abrirCrop(event)"><img
+                                id="p-preview"
+                                style="width:100%; height:180px; object-fit:cover; display:none; margin-top:10px; border-radius:10px; border: 1px solid #ddd;">
+                        </div>
+                        <div class="mb-3"><label class="fw-bold">Descrição</label><textarea id="p-desc"
+                                class="form-control" rows="3" required></textarea></div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2">PUBLICAR PONTO
+                            TURÍSTICO</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalCrop" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-body p-0"><img id="crop-img" style="max-width: 100%;"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-success" id="btn-save-crop">Confirmar Corte</button></div></div></div></div>
+    <div class="modal fade" id="modalCrop" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body p-0"><img id="crop-img" style="max-width: 100%;"></div>
+                <div class="modal-footer"><button class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancelar</button><button class="btn btn-success"
+                        id="btn-save-crop">Confirmar Corte</button></div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -119,7 +233,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
 
@@ -130,11 +244,18 @@
         const storage = getStorage(app);
 
         let mapa, marcador, cropper, blobFoto;
+        const modalPontoInstancia = new bootstrap.Modal(document.getElementById('modalPonto'));
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                document.getElementById('badge-user').innerText = "Produtor: " + user.email;
-                carregarLista();
+                const userSnap = await getDoc(doc(db, "users", user.email.toLowerCase()));
+                if (userSnap.exists() && (userSnap.data().tipo === 'produtor' || userSnap.data().tipo === 'admin')) {
+                    document.getElementById('badge-user').innerText = "Acesso: " + user.email;
+                    carregarLista();
+                } else {
+                    alert("Acesso negado para o seu nível de permissão.");
+                    window.location.href = "index.html";
+                }
             } else { window.location.href = "login.html"; }
         });
 
@@ -153,53 +274,56 @@
             } catch (e) { console.error(e); }
         }
 
-        window.aprovar = async (id) => { if(confirm("Aprovar este local?")) { await updateDoc(doc(db, "locais", id), { status: "ativo" }); carregarLista(); } };
-        window.rejeitar = async (id) => { if(confirm("Deletar solicitação?")) { await deleteDoc(doc(db, "locais", id)); carregarLista(); } };
+        window.aprovar = async (id) => { if (confirm("Aprovar este local?")) { await updateDoc(doc(db, "locais", id), { status: "ativo" }); carregarLista(); } };
+        window.rejeitar = async (id) => { if (confirm("Deletar solicitação?")) { await deleteDoc(doc(db, "locais", id)); carregarLista(); } };
 
         // --- CADASTRO DE NOVO LOCAL ---
         window.toggleNum = (c) => document.getElementById('p-num').disabled = c.checked;
         window.toggleHora = (c) => { document.getElementById('p-hora-abre').disabled = c.checked; document.getElementById('p-hora-fecha').disabled = c.checked; };
 
-        window.abrirModalPonto = () => { 
-            new bootstrap.Modal(document.getElementById('modalPonto')).show();
-            setTimeout(() => { 
-                if(!mapa) { 
-                    mapa = L.map('mapa-ponto').setView([-23.55, -46.63], 13); 
+        window.abrirModalPonto = () => {
+            modalPontoInstancia.show();
+            // FIX LAG: Redimensiona o mapa após o modal abrir
+            setTimeout(() => {
+                if (!mapa) {
+                    mapa = L.map('mapa-ponto').setView([-23.55, -46.63], 13);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-                    mapa.on('click', e => { 
-                        if(marcador) mapa.removeLayer(marcador); 
-                        marcador = L.marker(e.latlng).addTo(mapa); 
-                        document.getElementById('p-lat').value = e.latlng.lat; 
-                        document.getElementById('p-lon').value = e.latlng.lng; 
-                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`).then(r=>r.json()).then(d => document.getElementById('p-rua').value = d.address.road || d.display_name.split(',')[0]); 
-                    }); 
-                } else { mapa.invalidateSize(); } 
-            }, 500);
+                    mapa.on('click', e => {
+                        if (marcador) mapa.removeLayer(marcador);
+                        marcador = L.marker(e.latlng).addTo(mapa);
+                        document.getElementById('p-lat').value = e.latlng.lat;
+                        document.getElementById('p-lon').value = e.latlng.lng;
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`).then(r => r.json()).then(d => document.getElementById('p-rua').value = d.address.road || d.display_name.split(',')[0]);
+                    });
+                }
+                mapa.invalidateSize();
+            }, 400);
         };
 
-        window.buscarEndereco = (q) => { if(q.length < 3) return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`).then(r=>r.json()).then(d => { const l = document.getElementById('lista-sugestoes'); l.innerHTML = d.map(i => `<div class="item-sugestao" onclick="window.selectEnd('${i.display_name}', ${i.lat}, ${i.lon})">${i.display_name}</div>`).join(''); l.style.display = 'block'; }); };
-        window.selectEnd = (n, lat, lon) => { document.getElementById('p-rua').value = n.split(',')[0]; document.getElementById('lista-sugestoes').style.display = 'none'; document.getElementById('p-lat').value = lat; document.getElementById('p-lon').value = lon; mapa.setView([lat, lon], 16); if(marcador) mapa.removeLayer(marcador); marcador = L.marker([lat, lon]).addTo(mapa); };
+        window.buscarEndereco = (q) => { if (q.length < 3) return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`).then(r => r.json()).then(d => { const l = document.getElementById('lista-sugestoes'); l.innerHTML = d.map(i => `<div class="item-sugestao" onclick="window.selectEnd('${i.display_name.replace(/'/g, "")}', ${i.lat}, ${i.lon})">${i.display_name}</div>`).join(''); l.style.display = 'block'; }); };
+        window.selectEnd = (n, lat, lon) => { document.getElementById('p-rua').value = n.split(',')[0]; document.getElementById('lista-sugestoes').style.display = 'none'; document.getElementById('p-lat').value = lat; document.getElementById('p-lon').value = lon; mapa.setView([lat, lon], 16); if (marcador) mapa.removeLayer(marcador); marcador = L.marker([lat, lon]).addTo(mapa); };
 
-        window.abrirCrop = (e) => { const f = e.target.files[0]; const r = new FileReader(); r.onload = ev => { document.getElementById('crop-img').src = ev.target.result; new bootstrap.Modal(document.getElementById('modalCrop')).show(); if(cropper) cropper.destroy(); cropper = new Cropper(document.getElementById('crop-img'), { aspectRatio: 16/9 }); }; r.readAsDataURL(f); };
+        window.abrirCrop = (e) => { const f = e.target.files[0]; const r = new FileReader(); r.onload = ev => { document.getElementById('crop-img').src = ev.target.result; new bootstrap.Modal(document.getElementById('modalCrop')).show(); if (cropper) cropper.destroy(); cropper = new Cropper(document.getElementById('crop-img'), { aspectRatio: 16 / 9 }); }; r.readAsDataURL(f); };
         document.getElementById('btn-save-crop').onclick = () => { cropper.getCroppedCanvas().toBlob(b => { blobFoto = b; document.getElementById('p-preview').src = URL.createObjectURL(b); document.getElementById('p-preview').style.display = 'block'; bootstrap.Modal.getInstance(document.getElementById('modalCrop')).hide(); }); };
 
         document.getElementById('form-ponto-produtor').onsubmit = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button'); btn.disabled = true; btn.innerText = "Salvando...";
             let url = "https://via.placeholder.com/400x225";
-            if(blobFoto) { const refI = ref(storage, `locais/${Date.now()}.jpg`); await uploadBytes(refI, blobFoto); url = await getDownloadURL(refI); }
+            if (blobFoto) { const refI = ref(storage, `locais/${Date.now()}.jpg`); await uploadBytes(refI, blobFoto); url = await getDownloadURL(refI); }
             const horarioFinal = document.getElementById('check-livre').checked ? 'Livre' : `${document.getElementById('p-hora-abre').value} ás ${document.getElementById('p-hora-fecha').value}`;
-            
-            await addDoc(collection(db, "locais"), { 
-                nome: document.getElementById('p-nome').value, categoria: document.getElementById('p-cat').value, endereco: document.getElementById('p-rua').value, 
+
+            await addDoc(collection(db, "locais"), {
+                nome: document.getElementById('p-nome').value, categoria: document.getElementById('p-cat').value, endereco: document.getElementById('p-rua').value,
                 numero: document.getElementById('check-sn').checked ? 'S/N' : document.getElementById('p-num').value,
-                horario: horarioFinal, lat: document.getElementById('p-lat').value, lon: document.getElementById('p-lon').value, 
-                descricao: document.getElementById('p-desc').value, imagem: url, status: "ativo", tipo_local: "comum" 
+                horario: horarioFinal, lat: parseFloat(document.getElementById('p-lat').value), lon: parseFloat(document.getElementById('p-lon').value),
+                descricao: document.getElementById('p-desc').value, imagem: url, status: "ativo", tipo_local: "comum"
             });
-            alert("Local Publicado!"); location.reload();
+            alert("Ponto Turístico Publicado!"); location.reload();
         };
 
         document.getElementById('btn-sair-produtor').onclick = () => signOut(auth).then(() => window.location.href = "login.html");
     </script>
 </body>
+
 </html>

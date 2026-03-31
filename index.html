@@ -21,7 +21,7 @@
         .filtros-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 40px; }
         .btn-nicho { background-color: white; border: 2px solid #00008b; color: #00008b; padding: 10px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
         .btn-nicho:hover, .btn-nicho.ativo { background-color: #00008b; color: white; transform: translateY(-3px); box-shadow: 0 5px 10px rgba(0,0,139,0.2); }
-        .card-evento { transition: transform 0.2s; cursor: pointer; border: none; border-radius: 15px; overflow: hidden; }
+        .card-evento { transition: transform 0.2s; cursor: pointer; border: none; border-radius: 15px; overflow: hidden; position: relative; }
         .card-evento:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .card-img-top { height: 200px; object-fit: cover; }
         .badge-data { background: #f67123; color: white; font-size: 0.8em; padding: 5px 10px; border-radius: 5px; }
@@ -30,8 +30,6 @@
         .btn-menu-azul:hover { background-color: #00005c; color: white; }
         .dropdown-toggle::after { display: none; }
         .user-avatar-mini { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #f67123; }
-        
-        /* ESTILO DOS BOTÕES DE GESTÃO (ADMIN, PRODUTOR, ANALISTA) */
         .btn-admin-link { background-color: #343a40; color: white; border-radius: 20px; padding: 8px 20px; font-size: 0.9em; text-decoration: none; font-weight: bold; transition: 0.2s; border: none; }
         .btn-admin-link:hover { background-color: #23272b; color: white; transform: scale(1.05); }
         .btn-analista-link { background-color: #00008b; color: white; border-radius: 20px; padding: 8px 20px; font-size: 0.9em; text-decoration: none; font-weight: bold; transition: 0.2s; border: none; }
@@ -107,7 +105,6 @@
         messagingSenderId: "86901345396",
         appId: "1:86901345396:web:969fa3637292d0333e1521"
     };
-
     const appFirebase = initializeApp(firebaseConfig);
     const dbFirebase = getFirestore(appFirebase);
     const authFirebase = getAuth(appFirebase);
@@ -119,7 +116,6 @@
     window.whereFirebase = where;
 
     const menu = document.getElementById('menu-usuario');
-
     onAuthStateChanged(authFirebase, async (user) => {
         if (user) {
             window.isLogado = true;
@@ -134,7 +130,6 @@
             
             window.usuarioGlobal = { id: emailId, ...data };
 
-            // ADICIONADO: Lógica expandida para incluir Analista no topo
             if (data.tipo === 'admin' || data.tipo === 'produtor' || data.tipo === 'analista') {
                 let linkPainel = '';
                 let textoBotao = 'Painel de Gestão';
@@ -190,7 +185,6 @@
                     signOut(authFirebase).then(() => location.reload());
                 }
             });
-
         } else {
             window.isLogado = false;
             window.usuarioGlobal = null;
@@ -202,7 +196,8 @@
         carregarLocais();
     });
 
-    window.abrirModalRoteiro = async (idLocal) => {
+    window.abrirModalRoteiro = async (idLocal, event) => {
+        if (event) event.stopPropagation(); // Impede o clique de ir para o card
         if(!window.isLogado) {
             alert("Faça login para adicionar ao roteiro!");
             window.location.href = 'login.html';
@@ -264,15 +259,14 @@
         lista.forEach(item => {
             let etiqueta = item.tipo_local === 'evento' ? `📅 ${item.data_evento}` : `📍 ${item.categoria}`;
             
-            // LÓGICA DE BOTÕES: Admin, Produtor e Analista veem botão de Gestão nos cards
             let botoesAcao = (window.usuarioGlobal && (window.usuarioGlobal.tipo === 'admin' || window.usuarioGlobal.tipo === 'produtor' || window.usuarioGlobal.tipo === 'analista')) 
                 ? `<a href="detalhes.html?id=${item.id}" class="btn btn-primary w-100 btn-sm fw-bold">Ver Detalhes (Gestão)</a>`
-                : `<button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="window.abrirModalRoteiro('${item.id}')">+ Roteiro</button>
+                : `<button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="window.abrirModalRoteiro('${item.id}', event)">+ Roteiro</button>
                    <a href="detalhes.html?id=${item.id}" class="btn btn-primary w-50 btn-sm fw-bold">Detalhes</a>`;
 
             div.innerHTML += `
                 <div class="col-md-4 mb-4">
-                    <div class="card card-evento h-100 shadow-sm">
+                    <div class="card card-evento h-100 shadow-sm" onclick="window.location.href='detalhes.html?id=${item.id}'">
                         <img src="${item.imagem}" class="card-img-top">
                         <div class="card-body d-flex flex-column">
                             <div>

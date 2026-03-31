@@ -190,8 +190,7 @@
                                     </div>
                                 </div>
                                 <p class="small text-muted mt-3">
-                                    <i class="bi bi-info-circle-fill"></i> O Admin pode desativar qualquer conta que
-                                    viole as diretrizes.
+                                    <i class="bi bi-info-circle-fill"></i> Use a busca para gerenciar o status (Ativo/Banido) das contas.
                                 </p>
                             </div>
                         </div>
@@ -355,6 +354,7 @@
             });
         }
 
+        // ATUALIZADO: Busca agora identifica se o usuário está banido para sugerir reativação
         window.buscarUsuario = async () => {
             const email = document.getElementById('busca-email').value.toLowerCase().trim();
             const snap = await getDoc(doc(db, "users", email));
@@ -362,16 +362,33 @@
                 const u = snap.data(); userParaExcluir = email;
                 document.getElementById('res-nome').innerText = u.nome + ` (${u.tipo})`; document.getElementById('res-email').innerText = u.email;
                 document.getElementById('resultado-busca').classList.remove('d-none');
+                
                 const btn = document.getElementById('btn-banir-acao');
-                btn.innerText = u.status === 'banido' ? "REATIVAR CONTA" : "DESATIVAR CONTA";
-                btn.className = u.status === 'banido' ? "btn btn-sm btn-success fw-bold" : "btn btn-sm btn-danger fw-bold";
-            } else { alert("Não encontrado."); }
+                // Lógica de visualização do botão
+                if (u.status === 'banido') {
+                    btn.innerText = "REATIVAR CONTA";
+                    btn.className = "btn btn-sm btn-success fw-bold";
+                } else {
+                    btn.innerText = "DESATIVAR CONTA";
+                    btn.className = "btn btn-sm btn-danger fw-bold";
+                }
+            } else { alert("Usuário não encontrado."); document.getElementById('resultado-busca').classList.add('d-none'); }
         };
 
+        // ATUALIZADO: Agora alterna entre Ativo e Banido
         window.excluirUsuario = async () => {
             const refU = doc(db, "users", userParaExcluir); const snap = await getDoc(refU);
-            const status = snap.data().status === 'banido' ? 'ativo' : 'banido';
-            if (confirm(`Deseja mudar o status para ${status.toUpperCase()}?`)) { await updateDoc(refU, { status }); location.reload(); }
+            if (!snap.exists()) return;
+
+            const statusAtual = snap.data().status;
+            const novoStatus = statusAtual === 'banido' ? 'ativo' : 'banido';
+            const acaoTexto = novoStatus === 'ativo' ? "REATIVAR" : "DESATIVAR";
+
+            if (confirm(`Deseja mudar o status para ${novoStatus.toUpperCase()}?`)) { 
+                await updateDoc(refU, { status: novoStatus }); 
+                alert(`Usuário ${userParaExcluir} agora está ${novoStatus.toUpperCase()}.`);
+                location.reload(); 
+            }
         };
 
         window.salvarEquipe = async () => {

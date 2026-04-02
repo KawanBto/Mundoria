@@ -162,6 +162,34 @@
                         </div>
                     </div>
 
+                    <div class="col-12">
+                        <div class="card-admin border-warning">
+                            <div class="card-header-custom bg-warning text-dark">
+                                <span>⏳ Sugestões Aguardando Aprovação</span>
+                                <span class="badge bg-dark" id="cont-pendentes">0</span>
+                            </div>
+                            <div class="table-responsive p-3">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Foto</th>
+                                            <th>Nome</th>
+                                            <th>Categoria</th>
+                                            <th>Autor</th>
+                                            <th class="text-end">Decisão</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-pendentes">
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">Nenhuma pendência
+                                                encontrada.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-md-6">
                         <div class="card-admin">
                             <div class="card-header-custom bg-primary"><span>👔 Equipe Mundoria</span></div>
@@ -190,7 +218,8 @@
                                     </div>
                                 </div>
                                 <p class="small text-muted mt-3">
-                                    <i class="bi bi-info-circle-fill"></i> Use a busca para gerenciar o status (Ativo/Banido) das contas.
+                                    <i class="bi bi-info-circle-fill"></i> Use a busca para gerenciar o status
+                                    (Ativo/Banido) das contas.
                                 </p>
                             </div>
                         </div>
@@ -225,10 +254,8 @@
                                 placeholder="Busque a rua...">
                             <div id="lista-sugestoes" class="lista-sugestoes"></div>
                         </div>
-
                         <div id="mapa-ponto"></div>
                         <input type="hidden" id="p-lat"><input type="hidden" id="p-lon">
-
                         <div class="row mb-3 mt-4">
                             <div class="col-md-4">Abertura:<input type="time" id="p-hora-abre" class="form-control">
                             </div>
@@ -240,7 +267,6 @@
                                         class="form-check-label">Horário Livre</label></div>
                             </div>
                         </div>
-
                         <div class="mb-3"><label class="fw-bold">Foto</label><input type="file" id="p-file"
                                 class="form-control" onchange="window.abrirCrop(event)"><img id="p-preview"
                                 style="width:100%; height:150px; object-fit:cover; display:none; margin-top:10px; border-radius:10px; border: 1px solid #ddd;">
@@ -309,12 +335,69 @@
             if (user) {
                 const snap = await getDoc(doc(db, "users", user.email.toLowerCase()));
                 if (snap.exists() && snap.data().tipo === 'admin') {
-                    carregarPontos(); carregarEquipe();
+                    carregarPontos();
+                    carregarEquipe();
+                    carregarPendentes(); // Chamada da função de pendentes
                 } else { window.location.href = "index.html"; }
             } else { window.location.href = "login.html"; }
         });
 
-        // --- MAPA LAG FIX ---
+        // --- FUNÇÕES DE CARREGAMENTO ---
+        async function carregarPontos() {
+            const snap = await getDocs(query(collection(db, "locais"), where("status", "==", "ativo")));
+            const tbody = document.getElementById('tabela-pontos'); tbody.innerHTML = "";
+            document.getElementById('cont-pontos').innerText = snap.size;
+            snap.forEach(d => {
+                const l = d.data();
+                tbody.innerHTML += `<tr><td><img src="${l.imagem}" class="img-tabela"></td><td><strong>${l.nome}</strong></td><td><span class="badge bg-secondary">${l.categoria}</span></td><td><small>${l.endereco}</small></td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="window.excluirLocal('${d.id}')">Excluir</button></td></tr>`;
+            });
+        }
+
+        async function carregarPendentes() {
+            const snap = await getDocs(query(collection(db, "locais"), where("status", "==", "pendente")));
+            const tbody = document.getElementById('tabela-pendentes'); tbody.innerHTML = "";
+            document.getElementById('cont-pendentes').innerText = snap.size;
+
+            if (snap.empty) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Nenhuma sugestão pendente.</td></tr>`;
+                return;
+            }
+
+            snap.forEach(d => {
+                const l = d.data();
+                tbody.innerHTML += `
+                <tr>
+                    <td><img src="${l.imagem}" class="img-tabela"></td>
+                    <td><strong>${l.nome}</strong></td>
+                    <td><span class="badge bg-warning text-dark">${l.categoria}</span></td>
+                    <td><small>${l.autor_email || 'Anônimo'}</small></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-success fw-bold me-1" onclick="window.aprovarLocal('${d.id}')">Aprovar</button>
+                        <button class="btn btn-sm btn-outline-danger fw-bold" onclick="window.rejeitarLocal('${d.id}')">Recusar</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        // --- LÓGICA DE APROVAÇÃO ---
+        window.aprovarLocal = async (id) => {
+            if (confirm("Deseja aprovar e publicar este local?")) {
+                await updateDoc(doc(db, "locais", id), { status: "ativo" });
+                alert("Local aprovado com sucesso!");
+                carregarPontos();
+                carregarPendentes();
+            }
+        };
+
+        window.rejeitarLocal = async (id) => {
+            if (confirm("Deseja recusar e excluir esta sugestão?")) {
+                await deleteDoc(doc(db, "locais", id));
+                alert("Sugestão excluída.");
+                carregarPendentes();
+            }
+        };
+
+        // --- OUTRAS FUNÇÕES ---
         window.abrirModalPonto = () => {
             new bootstrap.Modal(document.getElementById('modalPonto')).show();
             setTimeout(() => {
@@ -333,16 +416,6 @@
             }, 500);
         };
 
-        // --- LOGICA ADMIN ---
-        async function carregarPontos() {
-            const snap = await getDocs(collection(db, "locais"));
-            const tbody = document.getElementById('tabela-pontos'); tbody.innerHTML = "";
-            document.getElementById('cont-pontos').innerText = snap.size;
-            snap.forEach(d => {
-                const l = d.data();
-                tbody.innerHTML += `<tr><td><img src="${l.imagem}" class="img-tabela"></td><td><strong>${l.nome}</strong></td><td><span class="badge bg-secondary">${l.categoria}</span></td><td><small>${l.endereco}</small></td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="window.excluirLocal('${d.id}')">Excluir</button></td></tr>`;
-            });
-        }
         window.excluirLocal = async (id) => { if (confirm("Remover este local permanentemente?")) { await deleteDoc(doc(db, "locais", id)); carregarPontos(); } };
 
         async function carregarEquipe() {
@@ -354,7 +427,6 @@
             });
         }
 
-        // ATUALIZADO: Busca agora identifica se o usuário está banido para sugerir reativação
         window.buscarUsuario = async () => {
             const email = document.getElementById('busca-email').value.toLowerCase().trim();
             const snap = await getDoc(doc(db, "users", email));
@@ -362,32 +434,24 @@
                 const u = snap.data(); userParaExcluir = email;
                 document.getElementById('res-nome').innerText = u.nome + ` (${u.tipo})`; document.getElementById('res-email').innerText = u.email;
                 document.getElementById('resultado-busca').classList.remove('d-none');
-                
                 const btn = document.getElementById('btn-banir-acao');
-                // Lógica de visualização do botão
                 if (u.status === 'banido') {
-                    btn.innerText = "REATIVAR CONTA";
-                    btn.className = "btn btn-sm btn-success fw-bold";
+                    btn.innerText = "REATIVAR CONTA"; btn.className = "btn btn-sm btn-success fw-bold";
                 } else {
-                    btn.innerText = "DESATIVAR CONTA";
-                    btn.className = "btn btn-sm btn-danger fw-bold";
+                    btn.innerText = "DESATIVAR CONTA"; btn.className = "btn btn-sm btn-danger fw-bold";
                 }
             } else { alert("Usuário não encontrado."); document.getElementById('resultado-busca').classList.add('d-none'); }
         };
 
-        // ATUALIZADO: Agora alterna entre Ativo e Banido
         window.excluirUsuario = async () => {
             const refU = doc(db, "users", userParaExcluir); const snap = await getDoc(refU);
             if (!snap.exists()) return;
-
             const statusAtual = snap.data().status;
             const novoStatus = statusAtual === 'banido' ? 'ativo' : 'banido';
-            const acaoTexto = novoStatus === 'ativo' ? "REATIVAR" : "DESATIVAR";
-
-            if (confirm(`Deseja mudar o status para ${novoStatus.toUpperCase()}?`)) { 
-                await updateDoc(refU, { status: novoStatus }); 
+            if (confirm(`Deseja mudar o status para ${novoStatus.toUpperCase()}?`)) {
+                await updateDoc(refU, { status: novoStatus });
                 alert(`Usuário ${userParaExcluir} agora está ${novoStatus.toUpperCase()}.`);
-                location.reload(); 
+                location.reload();
             }
         };
 

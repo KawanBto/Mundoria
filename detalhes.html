@@ -89,6 +89,8 @@
 
         .comentario-texto {
             word-wrap: break-word;
+            word-break: break-word;
+            /* Evita travamento com palavras gigantes */
             white-space: pre-wrap;
             color: #555;
             margin-bottom: 0;
@@ -164,16 +166,12 @@
                 <img id="img-local" src="" class="img-local mb-4 shadow-sm">
                 <div class="box-info">
                     <h4 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle"></i> Sobre o Local</h4>
-
                     <p class="mb-2"><strong>📍 Endereço:</strong> <span id="end-local">...</span></p>
                     <p id="linha-data" class="mb-2 d-none"><strong>📅 Data do Evento:</strong> <span
                             id="data-local"></span></p>
-
                     <p id="linha-dias" class="mb-2 d-none"><strong><i class="bi bi-calendar-check text-primary"></i>
                             Dias:</strong> <span id="det-dias">...</span></p>
-
                     <p id="linha-hora" class="mb-2 d-none"><strong>⏰ Horário:</strong> <span id="hora-local"></span></p>
-
                     <hr>
                     <p id="desc-local" style="white-space: pre-wrap; line-height: 1.6;">...</p>
                     <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-map"></i> Localização</h5>
@@ -247,6 +245,9 @@
                 document.getElementById('aviso-login').classList.remove('d-none');
             }
         });
+
+        // Chamada imediata para evitar lentidão do setTimeout
+        carregarDetalhesFirebase();
     </script>
 
     <script>
@@ -266,10 +267,8 @@
                 document.getElementById('end-local').innerText = `${local.endereco}, ${local.numero || 'S/N'}`;
                 document.getElementById('desc-local').innerText = local.descricao;
 
-                // --- LÓGICA DE DIAS DE FUNCIONAMENTO (ARRAY) ---
                 if (local.dias_semana) {
                     document.getElementById('linha-dias').classList.remove('d-none');
-                    // Se for Array, junta com vírgula. Se for String, exibe direto.
                     const textoDias = Array.isArray(local.dias_semana) ? local.dias_semana.join(", ") : local.dias_semana;
                     document.getElementById('det-dias').innerText = textoDias;
                 }
@@ -292,17 +291,74 @@
             } catch (erro) { console.error(erro); }
         }
 
-        setTimeout(carregarDetalhesFirebase, 500);
-
-        // Funções de Favorito, Avaliação e Estrelas preservadas...
         async function verificarStatusFavorito(email) { const snap = await window.getDocFirebase(window.docFirebase(window.dbFirebase, "favoritos", `${email}_${idLocal}`)); if (snap.exists()) { isFavoritoAtivo = true; atualizarIconeCoracao(true); } }
-        async function toggleFavorito() { const user = window.usuarioAtual; if (!user || !user.logado) return window.location.href = 'login.html'; const docRef = window.docFirebase(window.dbFirebase, "favoritos", `${user.id}_${idLocal}`); if (isFavoritoAtivo) { await window.deleteDocFirebase(docRef); isFavoritoAtivo = false; atualizarIconeCoracao(false); } else { await window.setDocFirebase(docRef, { id_usuario: user.id, id_local: idLocal, nome_local: document.getElementById('nome-local').innerText, imagem: document.getElementById('img-local').src, categoria: document.getElementById('categoria-local').innerText, data_favoritado: new Date().toLocaleDateString('pt-BR') }); isFavoritoAtivo = true; atualizarIconeCoracao(true); } }
+
+        async function toggleFavorito() {
+            const user = window.usuarioAtual;
+            if (!user || !user.logado) return window.location.href = 'login.html';
+            const docRef = window.docFirebase(window.dbFirebase, "favoritos", `${user.id}_${idLocal}`);
+            if (isFavoritoAtivo) {
+                await window.deleteDocFirebase(docRef);
+                isFavoritoAtivo = false;
+                atualizarIconeCoracao(false);
+            } else {
+                await window.setDocFirebase(docRef, { id_usuario: user.id, id_local: idLocal, nome_local: document.getElementById('nome-local').innerText, imagem: document.getElementById('img-local').src, categoria: document.getElementById('categoria-local').innerText, data_favoritado: new Date().toLocaleDateString('pt-BR') });
+                isFavoritoAtivo = true;
+                atualizarIconeCoracao(true);
+            }
+        }
+
         function atualizarIconeCoracao(ativo) { const i = document.getElementById('icone-coracao'); if (ativo) { i.classList.replace('bi-heart', 'bi-heart-fill'); i.classList.add('coracao-ativo'); } else { i.classList.replace('bi-heart-fill', 'bi-heart'); i.classList.remove('coracao-ativo'); } }
-        async function carregarComentariosFirebase() { const q = window.queryFirebase(window.collectionFirebase(window.dbFirebase, "avaliacoes"), window.whereFirebase("id_local", "==", idLocal)); const snap = await window.getDocsFirebase(q); renderizarComentarios(snap.docs.map(d => ({ id: d.id, ...d.data() }))); }
-        function renderizarComentarios(lista) { const div = document.getElementById('lista-comentarios'); div.innerHTML = lista.length === 0 ? '<p class="text-center small mt-3 text-muted">Sem comentários.</p>' : ''; lista.forEach(av => { const resp = av.resposta_parceiro ? `<div class="resposta-dono"><strong>Proprietário:</strong><br>${av.resposta_parceiro}</div>` : ''; div.innerHTML += `<div class="comentario-item"><div class="d-flex align-items-center gap-2 mb-2"><img src="${av.foto_usuario}" style="width:35px;height:35px;border-radius:50%;object-fit:cover;"><strong class="small">@${av.nome_usuario}</strong><span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span></div><p class="comentario-texto mb-0">"${av.comentario}"</p>${resp}</div>`; }); }
+
+        async function carregarComentariosFirebase() {
+            const q = window.queryFirebase(window.collectionFirebase(window.dbFirebase, "avaliacoes"), window.whereFirebase("id_local", "==", idLocal));
+            const snap = await window.getDocsFirebase(q);
+            renderizarComentarios(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }
+
+        function renderizarComentarios(lista) {
+            const div = document.getElementById('lista-comentarios');
+            div.innerHTML = lista.length === 0 ? '<p class="text-center small mt-3 text-muted">Sem comentários.</p>' : '';
+            lista.forEach(av => {
+                const resp = av.resposta_parceiro ? `<div class="resposta-dono"><strong>Proprietário:</strong><br>${av.resposta_parceiro}</div>` : '';
+                div.innerHTML += `<div class="comentario-item"><div class="d-flex align-items-center gap-2 mb-2"><img src="${av.foto_usuario}" style="width:35px;height:35px;border-radius:50%;object-fit:cover;"><strong class="small">@${av.nome_usuario}</strong><span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span></div><p class="comentario-texto mb-0">"${av.comentario}"</p>${resp}</div>`;
+            });
+        }
+
         function contarCaracteres(c) { document.getElementById('contador-chars').innerText = c.value.length + " / 250"; }
+
         function setNota(n) { notaSelecionada = n; document.querySelectorAll('.estrela').forEach(s => s.classList.toggle('ativa', Number(s.getAttribute('data-nota')) <= n)); }
-        async function enviarAvaliacao() { const txt = document.getElementById('texto-comentario').value; if (!notaSelecionada) return alert("Dê uma nota!"); const u = window.usuarioAtual; try { const snap = await window.getDocsFirebase(window.queryFirebase(window.collectionFirebase(window.dbFirebase, "avaliacoes"), window.whereFirebase("id_usuario", "==", u.id), window.whereFirebase("id_local", "==", idLocal))); if (!snap.empty) return alert("Você já avaliou!"); await window.addDocFirebase(window.collectionFirebase(window.dbFirebase, "avaliacoes"), { comentario: txt, data_avaliacao: new Date().toLocaleDateString('pt-BR'), foto_usuario: u.foto, id_local: idLocal, id_usuario: u.id, nome_usuario: u.nome, nota: notaSelecionada }); alert("Enviado!"); document.getElementById('texto-comentario').value = ""; setNota(0); carregarComentariosFirebase(); } catch (e) { alert("Erro."); } }
+
+        async function enviarAvaliacao() {
+            const areaTexto = document.getElementById('texto-comentario');
+            // Limpa espaços extras e quebras de linha excessivas
+            const txt = areaTexto.value.trim().replace(/\n{3,}/g, '\n\n');
+
+            if (!notaSelecionada) return alert("Dê uma nota!");
+            if (txt.length < 2) return alert("Escreva um comentário válido!");
+
+            const u = window.usuarioAtual;
+            try {
+                const snap = await window.getDocsFirebase(window.queryFirebase(window.collectionFirebase(window.dbFirebase, "avaliacoes"), window.whereFirebase("id_usuario", "==", u.id), window.whereFirebase("id_local", "==", idLocal)));
+                if (!snap.empty) return alert("Você já avaliou!");
+
+                await window.addDocFirebase(window.collectionFirebase(window.dbFirebase, "avaliacoes"), {
+                    comentario: txt,
+                    data_avaliacao: new Date().toLocaleDateString('pt-BR'),
+                    foto_usuario: u.foto,
+                    id_local: idLocal,
+                    id_usuario: u.id,
+                    nome_usuario: u.nome,
+                    nota: notaSelecionada
+                });
+
+                alert("Enviado!");
+                areaTexto.value = "";
+                setNota(0);
+                document.getElementById('contador-chars').innerText = "0 / 250";
+                carregarComentariosFirebase();
+            } catch (e) { alert("Erro."); }
+        }
     </script>
 </body>
 

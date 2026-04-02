@@ -222,6 +222,31 @@
             border-bottom: 1px solid #eee;
             padding: 15px 0;
         }
+
+        /* Define uma altura máxima para a lista de comentários e ativa o scroll */
+        #lista-reviews-parceiro {
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        #lista-reviews-parceiro::-webkit-scrollbar-thumb {
+            background-color: #ddd;
+            border-radius: 10px;
+        }
+
+        /* Remove o esticamento automático das colunas na aba de gestão */
+        #meu-negocio .row {
+            align-items: flex-start !important;
+        }
+
+        #lista-reviews-parceiro {
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 10px;
+            /* Adicione isto para garantir que a lista ocupe apenas o espaço necessário */
+            height: auto;
+        }
     </style>
 </head>
 
@@ -335,7 +360,7 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-7">
-                            <div class="bg-white p-4 rounded shadow-sm h-100">
+                            <div class="bg-white p-4 rounded shadow-sm">
                                 <h5>Comentários dos Turistas</h5>
                                 <div id="lista-reviews-parceiro"></div>
                             </div>
@@ -364,7 +389,8 @@
                                     <div class="form-check mb-3"><input class="form-check-input" type="checkbox"
                                             id="edit-check-livre" onchange="window.toggleHora(this, 'edit')"><label
                                             class="form-check-label">Livre</label></div>
-                                    <input type="file" id="edit-foto" class="form-control mb-3" accept="image/*" onchange="window.abrirCropNegocio(event, 'edit')">
+                                    <input type="file" id="edit-foto" class="form-control mb-3" accept="image/*"
+                                        onchange="window.abrirCropNegocio(event, 'edit')">
                                     <button type="submit" class="btn btn-primary w-100 fw-bold"
                                         id="btn-salvar-negocio">SALVAR MUDANÇAS</button>
                                 </form>
@@ -389,8 +415,8 @@
                                     <option>Cultura</option>
                                 </select></div>
                         </div>
-                        <div class="mb-3 position-relative"><label class="fw-bold small">Endereço (Rua/Bairro)</label><input
-                                type="text" id="sol-rua" class="form-control"
+                        <div class="mb-3 position-relative"><label class="fw-bold small">Endereço
+                                (Rua/Bairro)</label><input type="text" id="sol-rua" class="form-control"
                                 oninput="window.buscarEndereco(this.value, 'sol')">
                             <div id="lista-sugestoes-sol" class="lista-sugestoes"></div>
                         </div>
@@ -402,7 +428,8 @@
                             </div>
                             <div class="col-md-6 d-flex align-items-end">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="sol-check-sn" onchange="window.toggleNum(this, 'sol')">
+                                    <input class="form-check-input" type="checkbox" id="sol-check-sn"
+                                        onchange="window.toggleNum(this, 'sol')">
                                     <label class="form-check-label small fw-bold">Sem Número (S/N)</label>
                                 </div>
                             </div>
@@ -414,20 +441,22 @@
                             <div class="check-dias-container" id="container-dias-sol"></div>
                         </div>
                         <div class="row g-3 mb-2">
-                            <div class="col-6"><label class="small fw-bold">Abre</label><input type="time" id="sol-hora-abre"
-                                    class="form-control"></div>
-                            <div class="col-6"><label class="small fw-bold">Fecha</label><input type="time" id="sol-hora-fecha"
-                                    class="form-control"></div>
+                            <div class="col-6"><label class="small fw-bold">Abre</label><input type="time"
+                                    id="sol-hora-abre" class="form-control"></div>
+                            <div class="col-6"><label class="small fw-bold">Fecha</label><input type="time"
+                                    id="sol-hora-fecha" class="form-control"></div>
                         </div>
 
                         <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="sol-check-livre" onchange="window.toggleHora(this, 'sol')">
+                            <input class="form-check-input" type="checkbox" id="sol-check-livre"
+                                onchange="window.toggleHora(this, 'sol')">
                             <label class="form-check-label small fw-bold">Horário Livre / 24 Horas</label>
                         </div>
 
                         <div class="mb-3"><label class="fw-bold small">Foto</label><input type="file"
-                                id="input-foto-sol" class="form-control" onchange="window.abrirCropNegocio(event, 'sol')"><img
-                                id="preview-foto-sol" class="img-preview-form"></div>
+                                id="input-foto-sol" class="form-control"
+                                onchange="window.abrirCropNegocio(event, 'sol')"><img id="preview-foto-sol"
+                                class="img-preview-form"></div>
                         <div class="mb-3"><label class="fw-bold small">Descrição</label><textarea id="sol-desc"
                                 class="form-control" rows="3" required></textarea></div>
                         <button type="submit" class="btn btn-primary w-100 fw-bold">ENVIAR PEDIDO</button>
@@ -637,27 +666,74 @@
             btn.disabled = true; btn.innerText = "Processando...";
 
             try {
+                // Busca todos os locais ativos (incluindo eventos)
                 const snap = await getDocs(query(collection(db, "locais"), where("status", "==", "ativo")));
                 let candidatos = [];
+
                 for (const d of snap.docs) {
                     const l = d.data();
-                    if (cats.includes(l.categoria)) {
+
+                    // MELHORIA: Verifica se é categoria selecionada OU se é um 'evento' ativo
+                    const ehCategoriaAlvo = cats.includes(l.categoria);
+                    const ehEventoAtivo = l.tipo_local === 'evento';
+
+                    if (ehCategoriaAlvo || ehEventoAtivo) {
                         const dist = calcDist(lat, lon, l.lat, l.lon);
+
                         if (dist <= raio) {
+                            // Busca popularidade para o ranking
                             const fSnap = await getDocs(query(collection(db, "favoritos"), where("id_local", "==", d.id)));
-                            candidatos.push({ id: d.id, ...l, fama: fSnap.size });
+                            candidatos.push({
+                                id: d.id,
+                                ...l,
+                                fama: fSnap.size,
+                                // Prioridade extra para eventos na ordenação se estiverem próximos
+                                pesoEvento: ehEventoAtivo ? 2 : 1
+                            });
                         }
                     }
                 }
-                if (candidatos.length === 0) { btn.disabled = false; btn.innerText = "CRIAR MEU ROTEIRO ✨"; return alert("Região sem locais cadastrados!"); }
-                candidatos.sort((a, b) => prio === 'nota' ? (b.nota || 0) - (a.nota || 0) : b.fama - a.fama);
 
-                const nRot = await addDoc(collection(db, "roteiros"), { id_usuario: emailLogado, nome_roteiro: "Roteiro Automático", data_criacao: new Date().toLocaleDateString('pt-BR'), foto_capa: candidatos[0].imagem });
-                for (let i = 0; i < Math.min(candidatos.length, dias * 3); i++) {
-                    await addDoc(collection(db, "roteiro_itens"), { id_roteiro: nRot.id, id_local: candidatos[i].id, horario: (9 + (i % 3) * 4) + ":00", data_item: "" });
+                if (candidatos.length === 0) {
+                    btn.disabled = false;
+                    btn.innerText = "CRIAR MEU ROTEIRO ✨";
+                    return alert("Nenhum local ou evento encontrado neste raio de distância!");
                 }
-                alert("Roteiro Criado!"); location.reload();
-            } catch (e) { alert("Erro."); btn.disabled = false; }
+
+                // Ordenação: Considera a prioridade (Nota/Fama) e dá um leve empurrão em Eventos
+                candidatos.sort((a, b) => {
+                    const scoreA = prio === 'nota' ? (a.nota || 0) : a.fama;
+                    const scoreB = prio === 'nota' ? (b.nota || 0) : b.fama;
+                    return (scoreB * b.pesoEvento) - (scoreA * a.pesoEvento);
+                });
+
+                // Criação do Roteiro
+                const nRot = await addDoc(collection(db, "roteiros"), {
+                    id_usuario: emailLogado,
+                    nome_roteiro: "Meu Mundo Inteligente",
+                    data_criacao: new Date().toLocaleDateString('pt-BR'),
+                    foto_capa: candidatos[0].imagem
+                });
+
+                // Adiciona os itens ao roteiro (limite de 3 por dia)
+                for (let i = 0; i < Math.min(candidatos.length, dias * 3); i++) {
+                    await addDoc(collection(db, "roteiro_itens"), {
+                        id_roteiro: nRot.id,
+                        id_local: candidatos[i].id,
+                        horario: (9 + (i % 3) * 4) + ":00",
+                        data_item: ""
+                    });
+                }
+
+                alert("Roteiro gerado com sucesso incluindo locais e eventos próximos!");
+                location.reload();
+
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao processar inteligência do roteiro.");
+                btn.disabled = false;
+                btn.innerText = "CRIAR MEU ROTEIRO ✨";
+            }
         };
 
         function calcDist(la1, lo1, la2, lo2) {
@@ -774,13 +850,13 @@
         async function carregarNegocioParceiro(email) {
             const snap = await getDocs(query(collection(db, "locais"), where("id_parceiro", "==", email)));
             document.getElementById('loading-negocio').classList.add('d-none');
-            
+
             const pendente = snap.docs.some(d => d.data().status === 'pendente');
             const ativos = snap.docs.filter(d => d.data().status !== 'pendente');
 
             if (snap.empty) { document.getElementById('area-solicitacao').classList.remove('d-none'); return; }
             if (pendente && ativos.length === 0) { document.getElementById('area-pendente').classList.remove('d-none'); return; }
-            
+
             estabelecimentosDoUsuario = ativos.map(d => ({ id: d.id, ...d.data() }));
             document.getElementById('header-multi-negocio').classList.remove('d-none');
             const sel = document.getElementById('select-estabelecimento');
@@ -794,8 +870,8 @@
             const l = estabelecimentosDoUsuario.find(x => x.id === id);
             document.getElementById('dash-nome-local').innerText = l.nome;
             document.getElementById('badge-status').innerText = l.status.toUpperCase();
-            document.getElementById('badge-status').className = `badge mt-1 ${l.status==='ativo'?'bg-success':'bg-warning'}`;
-            
+            document.getElementById('badge-status').className = `badge mt-1 ${l.status === 'ativo' ? 'bg-success' : 'bg-warning'}`;
+
             // CORREÇÃO: Botão dinâmico Ativar/Desativar
             const btnStatus = document.getElementById('btn-toggle-status');
             btnStatus.innerText = l.status === 'ativo' ? 'Desativar' : 'Ativar';
@@ -812,34 +888,89 @@
             carregarEstatisticas(id); carregarReviewsNegocio(id); marcarDiasNoForm('edit', l.dias_semana); iniciarMapaEdicao(l.lat, l.lon);
         }
 
-        window.responderComentario = async (idAvaliacao) => {
-            const respTxt = document.getElementById(`res-text-${idAvaliacao}`).value;
-            if (!respTxt) return alert("Escreva uma resposta!");
+        // Abre o campo de texto preenchido para edição
+        window.prepararEdicaoResposta = (idAvaliacao, textoAntigo) => {
+            const container = document.getElementById(`container-resposta-${idAvaliacao}`);
+            container.innerHTML = `
+        <div class="mt-2">
+            <textarea class="form-control form-control-sm" id="res-text-${idAvaliacao}" maxlength="250">${textoAntigo}</textarea>
+            <div class="mt-1 d-flex gap-2">
+                <button class="btn btn-sm btn-success fw-bold" onclick="window.responderComentario('${idAvaliacao}', true)">SALVAR EDIÇÃO</button>
+                <button class="btn btn-sm btn-secondary fw-bold" onclick="carregarReviewsNegocio(idLocalParceiroGlobal)">CANCELAR</button>
+            </div>
+        </div>
+    `;
+        };
+
+        // Exclui apenas a resposta do parceiro, mantendo a avaliação do turista
+        window.excluirRespostaParceiro = async (idAvaliacao) => {
+            if (confirm("Deseja apagar sua resposta? A avaliação do cliente continuará visível.")) {
+                try {
+                    await updateDoc(doc(db, "avaliacoes", idAvaliacao), {
+                        resposta_parceiro: "" // Remove o texto no Firebase
+                    });
+                    alert("Resposta removida.");
+                    carregarReviewsNegocio(idLocalParceiroGlobal);
+                } catch (e) {
+                    alert("Erro ao excluir.");
+                }
+            }
+        };
+
+        // Atualização da função original para suportar o alerta de "já respondido" e edições
+        window.responderComentario = async (idAvaliacao, isEdicao = false) => {
+            const campoTexto = document.getElementById(`res-text-${idAvaliacao}`);
+            const respTxt = campoTexto.value.trim().replace(/\n{3,}/g, '\n\n').substring(0, 250);
+
+            if (!respTxt) return alert("Escreva uma resposta válida!");
+
             try {
-                await updateDoc(doc(db, "avaliacoes", idAvaliacao), { resposta_parceiro: respTxt });
-                alert("Resposta enviada!");
+                await updateDoc(doc(db, "avaliacoes", idAvaliacao), {
+                    resposta_parceiro: respTxt
+                });
+                alert(isEdicao ? "Resposta editada!" : "Resposta enviada!");
                 carregarReviewsNegocio(idLocalParceiroGlobal);
-            } catch (e) { alert("Erro ao responder."); }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar.");
+            }
         };
 
         async function carregarReviewsNegocio(id) {
             const snap = await getDocs(query(collection(db, "avaliacoes"), where("id_local", "==", id)));
             const div = document.getElementById('lista-reviews-parceiro');
             div.innerHTML = snap.empty ? "<p class='text-muted small'>Sem avaliações.</p>" : "";
+
             snap.forEach(d => {
                 const rev = d.data();
-                const respExistente = rev.resposta_parceiro ? `<div class="bg-light p-2 rounded mt-2 border-start border-primary border-3"><strong>Sua Resposta:</strong><br><small>${rev.resposta_parceiro}</small></div>` : "";
-                
+                const temResposta = rev.resposta_parceiro && rev.resposta_parceiro.trim() !== "";
+
+                // Se já tem resposta, mostra a resposta com botões de gestão
+                // Se não tem, mostra o campo para criar a primeira resposta
+                const areaResposta = temResposta ? `
+            <div class="bg-light p-2 rounded mt-2 border-start border-primary border-3">
+                <strong>Sua Resposta:</strong><br>
+                <small id="text-display-${d.id}">${rev.resposta_parceiro}</small>
+                <div class="mt-2 d-flex gap-2">
+                    <button class="btn btn-xs btn-outline-primary p-1" style="font-size: 10px;" onclick="window.prepararEdicaoResposta('${d.id}', '${rev.resposta_parceiro.replace(/'/g, "\\'")}')">EDITAR</button>
+                    <button class="btn btn-xs btn-outline-danger p-1" style="font-size: 10px;" onclick="window.excluirRespostaParceiro('${d.id}')">EXCLUIR</button>
+                </div>
+            </div>
+        ` : `
+            <div class="mt-2" id="form-resposta-${d.id}">
+                <input type="text" class="form-control form-control-sm" id="res-text-${d.id}" maxlength="250" placeholder="Responder este comentário...">
+                <button class="btn btn-sm btn-primary mt-1 fw-bold" onclick="window.responderComentario('${d.id}')">RESPONDER</button>
+            </div>
+        `;
+
                 div.innerHTML += `
-                    <div class="review-parceiro">
-                        <strong>@${rev.nome_usuario}</strong> <span class="text-warning">${'★'.repeat(rev.nota)}</span>
-                        <p class="small text-secondary italic mb-1">"${rev.comentario}"</p>
-                        ${respExistente}
-                        <div class="mt-2">
-                            <input type="text" class="form-control form-control-sm" id="res-text-${d.id}" placeholder="Responder este comentário...">
-                            <button class="btn btn-sm btn-primary mt-1 fw-bold" onclick="window.responderComentario('${d.id}')">RESPONDER</button>
-                        </div>
-                    </div>`;
+            <div class="review-parceiro">
+                <strong>@${rev.nome_usuario}</strong> <span class="text-warning">${'★'.repeat(rev.nota)}</span>
+                <p class="small text-secondary italic mb-1">"${rev.comentario}"</p>
+                <div id="container-resposta-${d.id}">
+                    ${areaResposta}
+                </div>
+            </div>`;
             });
         }
 
@@ -877,9 +1008,9 @@
             e.preventDefault(); const btn = document.getElementById('btn-salvar-negocio'); btn.disabled = true;
             try {
                 const h = document.getElementById('edit-check-livre').checked ? 'Livre' : `${document.getElementById('edit-hora-abre').value} ás ${document.getElementById('edit-hora-fecha').value}`;
-                const d = { 
-                    descricao: document.getElementById('edit-desc').value, endereco: document.getElementById('edit-rua').value, numero: document.getElementById('edit-check-sn').checked ? 'S/N' : document.getElementById('edit-num').value, 
-                    horario: h, dias_semana: obterDiasMarcados('edit'), lat: parseFloat(document.getElementById('edit-lat').value), lon: parseFloat(document.getElementById('edit-lon').value) 
+                const d = {
+                    descricao: document.getElementById('edit-desc').value, endereco: document.getElementById('edit-rua').value, numero: document.getElementById('edit-check-sn').checked ? 'S/N' : document.getElementById('edit-num').value,
+                    horario: h, dias_semana: obterDiasMarcados('edit'), lat: parseFloat(document.getElementById('edit-lat').value), lon: parseFloat(document.getElementById('edit-lon').value)
                 };
                 if (blobFinalNegocio) {
                     const r = ref(storage, `locais/${idLocalParceiroGlobal}_${Date.now()}.jpg`);

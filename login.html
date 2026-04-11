@@ -1,49 +1,126 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <title>Login - Mundoria</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #f67123; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .card-login { background: white; padding: 40px; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .btn-azul { background: #00008b; color: white; width: 100%; font-weight: bold; padding: 10px; border: none; border-radius: 5px; }
-        .btn-azul:hover { background: #00005c; }
-        .form-check-input:checked { background-color: #f67123; border-color: #f67123; }
+        body {
+            background: #f67123;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .card-login {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-azul {
+            background: #00008b;
+            color: white;
+            width: 100%;
+            font-weight: bold;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .btn-azul:hover {
+            background: #00005c;
+        }
+
+        .form-check-input:checked {
+            background-color: #f67123;
+            border-color: #f67123;
+        }
+
+        .btn-google {
+            background: white;
+            color: #444;
+            width: 100%;
+            font-weight: bold;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-google:hover {
+            background: #f8f9fa;
+            border-color: #ccc;
+        }
+
+        .btn-google img {
+            width: 18px;
+            height: 18px;
+        }
     </style>
 </head>
+
 <body>
     <div class="card-login text-center">
         <h2 class="mb-4 fw-bold text-dark">Login</h2>
-        
+
         <form id="form-login">
             <div class="mb-3 text-start">
                 <label class="form-label fw-bold">E-mail</label>
                 <input type="email" name="email" class="form-control" required>
             </div>
-            
+
             <div class="mb-2 text-start">
                 <label class="form-label fw-bold">Senha</label>
                 <input type="password" name="senha" id="senha" class="form-control" required>
+            </div>
+
+            <div class="text-end mb-3">
+                <a href="redefinir.html" class="small text-muted text-decoration-none">Esqueceu a senha?
+                    <b>Redefinir</b></a>
             </div>
 
             <div class="mb-4 text-start form-check">
                 <input type="checkbox" class="form-check-input" id="check-mostrar">
                 <label class="form-check-label small" for="check-mostrar">Exibir senha</label>
             </div>
-            
+
             <button type="submit" class="btn btn-azul mb-3">ACESSAR</button>
         </form>
 
-        <p class="small">Não tem uma conta? <a href="cadastro.html" class="fw-bold text-decoration-none" style="color: #f67123;">CADASTRE-SE</a></p>
+        <div class="text-center mb-3">
+            <span class="small text-muted">ou</span>
+        </div>
+
+        <button type="button" id="btn-google" class="btn-google mb-3">
+            <img src="https://www.google.com/favicon.ico" alt="Google">
+            ENTRAR COM GOOGLE
+        </button>
+
+        <p class="small">Não tem uma conta? <a href="cadastro.html" class="fw-bold text-decoration-none"
+                style="color: #f67123;">CADASTRE-SE</a></p>
         <a href="index.html" class="small text-muted text-decoration-none">Voltar para Home</a>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        // Adicionado signOut para expulsar usuários banidos
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            signOut,
+            GoogleAuthProvider,
+            signInWithPopup
+        } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
@@ -58,56 +135,72 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        document.getElementById('check-mostrar').addEventListener('change', function() {
+        document.getElementById('check-mostrar').addEventListener('change', function () {
             document.getElementById('senha').type = this.checked ? "text" : "password";
         });
 
-        const formLogin = document.getElementById('form-login');
-        formLogin.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = formLogin.email.value;
-            const senha = formLogin.senha.value;
+        async function validarAcesso(user) {
+            const emailBaixo = user.email.toLowerCase();
+            const userSnap = await getDoc(doc(db, "users", emailBaixo));
 
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-                const user = userCredential.user;
+            if (userSnap.exists()) {
+                const dados = userSnap.data();
 
-                // Busca o documento no Firestore
-                const userSnap = await getDoc(doc(db, "users", user.email.toLowerCase()));
-                
-                if (userSnap.exists()) {
-                    const dados = userSnap.data();
-
-                    // --- TRAVA DE SEGURANÇA: BANIMENTO LÓGICO ---
-                    if (dados.status === 'banido') {
-                        await signOut(auth); // Expulsa do sistema imediatamente
-                        alert("ACESSO NEGADO: Esta conta foi desativada por violar as diretrizes do Mundoria.");
-                        window.location.href = "index.html";
-                        return; // Interrompe o login
-                    }
-
-                    console.log("Tipo detectado:", dados.tipo);
-                    alert("Bem-vindo, " + dados.nome + "!");
-
-                    // REDIRECIONAMENTO POR CARGO
-                    if (dados.tipo === 'admin') {
-                        window.location.href = "painel_admin.html";
-                    } else if (dados.tipo === 'produtor') {
-                        window.location.href = "painel.html";
-                    } else if (dados.tipo === 'analista') {
-                        window.location.href = "painel_analista.html";
-                    } else {
-                        window.location.href = "meu_painel.html";
-                    }
-                } else {
-                    // Se não houver documento no Firestore (usuário fantasma), manda para o perfil
-                    window.location.href = "meu_painel.html";
+                if (dados.status === 'banido') {
+                    await signOut(auth);
+                    alert("ACESSO NEGADO: Esta conta foi desativada.");
+                    window.location.href = "index.html";
+                    return;
                 }
+
+                if (dados.tipo === 'admin') window.location.href = "painel_admin.html";
+                else if (dados.tipo === 'produtor') window.location.href = "painel.html";
+                else if (dados.tipo === 'analista') window.location.href = "painel_analista.html";
+                else window.location.href = "meu_painel.html";
+            } else {
+                // Pergunta ao usuário se ele deseja criar a conta caso não exista no Firestore
+                const desejaCriar = confirm("Conta com este Google não encontrada. Deseja criar uma conta nova agora?");
+
+                if (desejaCriar) {
+                    await setDoc(doc(db, "users", emailBaixo), {
+                        nome: user.displayName || "Usuário Mundoria",
+                        email: emailBaixo,
+                        tipo: "turista",
+                        foto: user.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                        status: "ativo",
+                        data_cadastro: new Date().toLocaleDateString('pt-BR')
+                    });
+                    alert("Conta criada com sucesso!");
+                    window.location.href = "meu_painel.html";
+                } else {
+                    // Desloga para evitar que a sessão do Auth fique ativa sem documento no Firestore
+                    await signOut(auth);
+                    alert("Login cancelado.");
+                }
+            }
+        }
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, e.target.email.value, e.target.senha.value);
+                validarAcesso(userCredential.user);
             } catch (error) {
-                console.error("Erro no login:", error.code);
                 alert("E-mail ou senha incorretos.");
+            }
+        });
+
+        document.getElementById('btn-google').addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                validarAcesso(result.user);
+            } catch (error) {
+                console.error("Erro Google Auth:", error);
+                alert("Erro ao entrar com Google.");
             }
         });
     </script>
 </body>
+
 </html>

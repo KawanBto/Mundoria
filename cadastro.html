@@ -1,36 +1,92 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <title>Cadastro - Mundoria</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #f67123; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .card-cadastro { background: white; padding: 40px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .btn-azul { background: #00008b; color: white; width: 100%; font-weight: bold; padding: 10px; border: none; border-radius: 5px; }
-        .btn-azul:hover { background: #00005c; }
-        .form-check-input:checked { background-color: #f67123; border-color: #f67123; }
+        body {
+            background: #f67123;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .card-cadastro {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-azul {
+            background: #00008b;
+            color: white;
+            width: 100%;
+            font-weight: bold;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .btn-azul:hover {
+            background: #00005c;
+        }
+
+        .form-check-input:checked {
+            background-color: #f67123;
+            border-color: #f67123;
+        }
+
+        .btn-google {
+            background: white;
+            color: #444;
+            width: 100%;
+            font-weight: bold;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-google:hover {
+            background: #f8f9fa;
+            border-color: #ccc;
+        }
+
+        .btn-google img {
+            width: 20px;
+        }
     </style>
 </head>
+
 <body>
     <div class="card-cadastro">
         <h2 class="mb-4 text-center fw-bold" style="color: #f67123;">CADASTRO</h2>
-        
+
         <form id="form-cadastro">
-            
             <div class="mb-3">
                 <label class="form-label fw-bold">Usuário (Nome)</label>
                 <input type="text" name="nome" class="form-control" required>
             </div>
-            
+
             <div class="mb-3">
                 <label class="form-label fw-bold">E-mail</label>
-                <input type="email" name="email" class="form-control" required>
+                <input type="email" name="email" id="email-input" class="form-control" required>
             </div>
-            
+
             <div class="mb-3">
                 <label class="form-label fw-bold">Senha</label>
-                <input type="password" name="senha" id="senha" class="form-control" placeholder="Crie uma senha" required>
+                <input type="password" name="senha" id="senha" class="form-control" placeholder="Crie uma senha"
+                    required>
             </div>
 
             <div class="mb-3">
@@ -43,18 +99,32 @@
                 <input type="checkbox" class="form-check-input" id="check-mostrar">
                 <label class="form-check-label small" for="check-mostrar">Exibir senhas</label>
             </div>
-            
+
             <button type="submit" class="btn btn-azul mb-3">CADASTRAR-SE</button>
         </form>
-        
-        <div class="text-center">
+
+        <div class="text-center mb-3">
             <a href="login.html" class="small text-muted text-decoration-none">Já tenho conta? <b>Faça Login</b></a>
         </div>
+
+        <div class="text-center mb-3">
+            <span class="small text-muted">ou</span>
+        </div>
+
+        <button type="button" id="btn-google" class="btn-google mb-3">
+            <img src="https://www.google.com/favicon.ico" alt="Google">
+            CADASTRAR COM GOOGLE
+        </button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            GoogleAuthProvider,
+            signInWithPopup
+        } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -70,12 +140,14 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        document.getElementById('check-mostrar').addEventListener('change', function() {
+        // Mostrar/Ocultar senhas
+        document.getElementById('check-mostrar').addEventListener('change', function () {
             const type = this.checked ? "text" : "password";
             document.getElementById('senha').type = type;
             document.getElementById('confirma_senha').type = type;
         });
 
+        // --- CADASTRO MANUAL ---
         const form = document.getElementById('form-cadastro');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -88,23 +160,21 @@
             if (senha !== confirma) {
                 document.getElementById('erro-senha').classList.remove('d-none');
                 return;
+            } else {
+                document.getElementById('erro-senha').classList.add('d-none');
             }
 
             try {
-                // 1. Cria o usuário no Firebase Auth
                 const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-                
-                // 2. Salva no Firestore usando o EMAIL como ID do documento
-                // MUDANÇA AQUI: doc(db, "users", email) em vez de user.uid
-                // Dentro da função de cadastro, após criar o usuário no Auth:
-            await setDoc(doc(db, "users", email.toLowerCase()), {
-                nome: nome,
-                email: email.toLowerCase(),
-                tipo: "turista", // ou o tipo padrão
-                foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-                status: "ativo",
-                data_cadastro: new Date().toLocaleDateString('pt-BR') 
-            });
+
+                await setDoc(doc(db, "users", email.toLowerCase()), {
+                    nome: nome,
+                    email: email.toLowerCase(),
+                    tipo: "turista",
+                    foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                    status: "ativo",
+                    data_cadastro: new Date().toLocaleDateString('pt-BR')
+                });
 
                 alert("Conta criada com sucesso!");
                 window.location.href = "login.html";
@@ -113,6 +183,30 @@
                 alert("Erro ao cadastrar: " + error.message);
             }
         });
+
+        // --- LOGIN/CADASTRO COM GOOGLE ---
+        document.getElementById('btn-google').addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                await setDoc(doc(db, "users", user.email.toLowerCase()), {
+                    nome: user.displayName,
+                    email: user.email.toLowerCase(),
+                    tipo: "turista",
+                    foto: user.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                    status: "ativo",
+                    data_cadastro: new Date().toLocaleDateString('pt-BR')
+                });
+
+                alert("Login via Google realizado!");
+                window.location.href = "index.html";
+            } catch (error) {
+                alert("Erro no Google: " + error.message);
+            }
+        });
     </script>
 </body>
+
 </html>

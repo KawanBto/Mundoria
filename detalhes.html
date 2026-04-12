@@ -270,7 +270,18 @@
                 document.getElementById('nome-local').innerText = local.nome;
                 document.getElementById('categoria-local').innerText = local.categoria;
                 document.getElementById('img-local').src = local.imagem;
-                document.getElementById('end-local').innerText = `${local.endereco}, ${local.numero || 'S/N'}`;
+                // CORREÇÃO: Trata o endereço se for Objeto ou String (para manter compatibilidade)
+                let enderecoTexto = "";
+                if (typeof local.endereco === 'object' && local.endereco !== null) {
+                    // Se for o novo formato (Objeto), monta a string formatada
+                    const e = local.endereco;
+                    enderecoTexto = `${e.rua || ''}${e.cidade ? ', ' + e.cidade : ''}${e.cep ? ' - CEP: ' + e.cep : ''}`;
+                } else {
+                    // Se for o formato antigo (String), usa como está
+                    enderecoTexto = local.endereco || "Endereço não informado";
+                }
+
+                document.getElementById('end-local').innerText = `${enderecoTexto}, ${local.numero || 'S/N'}`;
                 document.getElementById('desc-local').innerText = local.descricao;
 
                 if (local.dias_semana) {
@@ -291,7 +302,7 @@
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaDetalhe);
                         L.marker([local.lat, local.lon]).addTo(mapaDetalhe).bindPopup(local.nome).openPopup();
                     }
-                    document.getElementById('btn-rota').href = `https://www.google.com/maps?q=${local.lat},${local.lon}`;
+                    document.getElementById('btn-rota').href = `https://www.google.com/maps/search/?api=1&query=${local.lat},${local.lon}`;
                 }
                 await carregarComentariosFirebase();
             } catch (erro) { console.error(erro); }

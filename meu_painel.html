@@ -324,13 +324,18 @@
                                 class="badge mt-1">STATUS</span>
                         </div>
                         <div class="d-flex gap-2">
-                            <a id="btn-ver-publico" href="#"
-                                class="btn btn-outline-primary btn-sm fw-bold rounded-pill"><i
-                                    class="bi bi-eye-fill"></i> Ver Página</a>
+                            <a id="btn-ver-publico" href="#" target="_blank"
+                                class="btn btn-outline-primary btn-sm fw-bold rounded-pill">
+                                <i class="bi bi-eye-fill"></i> Ver Página
+                            </a>
                             <button id="btn-toggle-status" class="btn btn-outline-warning btn-sm fw-bold rounded-pill"
-                                onclick="window.toggleStatusLocal()">Desativar</button>
+                                onclick="window.toggleStatusLocal()">
+                                Desativar
+                            </button>
                             <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill"
-                                onclick="window.excluirLocal()">Excluir</button>
+                                onclick="window.excluirLocal()">
+                                Excluir
+                            </button>
                         </div>
                     </div>
                     <div class="row mb-4 text-center">
@@ -369,30 +374,59 @@
                             <div class="bg-white p-4 rounded shadow-sm">
                                 <h5>Editar Informações</h5>
                                 <form id="form-edicao-parceiro">
-                                    <textarea id="edit-desc" class="form-control mb-3" rows="3"></textarea>
-                                    <div class="check-dias-container mb-3" id="container-dias-edit"></div>
-                                    <input type="text" id="edit-rua" class="form-control mb-2"
-                                        oninput="window.buscarEndereco(this.value, 'edit')">
-                                    <div id="lista-sugestoes-edit" class="lista-sugestoes"></div>
-                                    <div id="mapa-edicao"></div>
-                                    <input type="hidden" id="edit-lat"><input type="hidden" id="edit-lon">
-                                    <input type="text" id="edit-num" class="form-control my-2" placeholder="Número">
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
-                                            id="edit-check-sn" onchange="window.toggleNum(this, 'edit')"><label
-                                            class="form-check-label">S/N</label></div>
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-6"><input type="time" id="edit-hora-abre" class="form-control">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small">Descrição do Local</label>
+                                        <textarea id="edit-desc" class="form-control" rows="3"></textarea>
+                                    </div>
+
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-8">
+                                            <label class="form-label fw-bold small">Rua / Logradouro</label>
+                                            <input type="text" id="edit-rua" class="form-control form-control-sm">
                                         </div>
-                                        <div class="col-6"><input type="time" id="edit-hora-fecha" class="form-control">
+                                        <div class="col-4">
+                                            <label class="form-label fw-bold small">Número</label>
+                                            <input type="text" id="edit-num" class="form-control form-control-sm">
                                         </div>
                                     </div>
-                                    <div class="form-check mb-3"><input class="form-check-input" type="checkbox"
-                                            id="edit-check-livre" onchange="window.toggleHora(this, 'edit')"><label
-                                            class="form-check-label">Livre</label></div>
-                                    <input type="file" id="edit-foto" class="form-control mb-3" accept="image/*"
-                                        onchange="window.abrirCropNegocio(event, 'edit')">
-                                    <button type="submit" class="btn btn-primary w-100 fw-bold"
-                                        id="btn-salvar-negocio">SALVAR MUDANÇAS</button>
+
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold small">CEP</label>
+                                            <input type="text" id="edit-cep" class="form-control form-control-sm">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold small">Cidade</label>
+                                            <input type="text" id="edit-cidade" class="form-control form-control-sm">
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-bold small">Estado (UF)</label>
+                                            <input type="text" id="edit-estado" class="form-control form-control-sm">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-end">
+                                            <div class="form-check mb-1">
+                                                <input class="form-check-input" type="checkbox" id="edit-check-sn"
+                                                    onchange="window.toggleNum(this, 'edit')">
+                                                <label class="form-check-label small">Sem Número</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="mapa-edicao"
+                                        style="height: 250px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ccc;">
+                                    </div>
+                                    <input type="hidden" id="edit-lat"><input type="hidden" id="edit-lon">
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small d-block">Dias de Funcionamento</label>
+                                        <div id="container-dias-edit" class="d-flex flex-wrap gap-1"></div>
+                                    </div>
+
+                                    <button type="submit" id="btn-salvar-negocio"
+                                        class="btn btn-warning w-100 fw-bold">SALVAR ALTERAÇÕES</button>
                                 </form>
                             </div>
                         </div>
@@ -404,8 +438,9 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-8"><label class="fw-bold small">Nome</label><input type="text"
                                     id="sol-nome" class="form-control" required></div>
-                            <div class="col-md-4"><label class="fw-bold small">Categoria</label><select id="sol-cat"
-                                    class="form-select">
+                            <div class="col-md-4">
+                                <label class="fw-bold small">Categoria</label>
+                                <select id="sol-cat" class="form-select">
                                     <option>Restaurante</option>
                                     <option>Bar</option>
                                     <option>Café</option>
@@ -413,19 +448,39 @@
                                     <option>Parque</option>
                                     <option>Museu</option>
                                     <option>Cultura</option>
-                                </select></div>
+                                </select>
+                            </div>
                         </div>
-                        <div class="mb-3 position-relative"><label class="fw-bold small">Endereço
-                                (Rua/Bairro)</label><input type="text" id="sol-rua" class="form-control"
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="fw-bold small">CEP</label>
+                                <input type="text" id="sol-cep" class="form-control" placeholder="00000-000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold small">País</label>
+                                <input type="text" id="sol-pais" class="form-control" value="Brasil" readonly
+                                    style="background: #f1f3f5;">
+                            </div>
+                        </div>
+
+                        <div class="mb-2 position-relative">
+                            <label class="fw-bold small">Logradouro (Rua/Bairro)</label>
+                            <input type="text" id="sol-rua" class="form-control"
                                 oninput="window.buscarEndereco(this.value, 'sol')">
                             <div id="lista-sugestoes-sol" class="lista-sugestoes"></div>
                         </div>
 
+                        <div class="row g-2 mb-3">
+                            <div class="col-8"><label class="fw-bold small">Cidade</label><input type="text"
+                                    id="sol-cidade" class="form-control"></div>
+                            <div class="col-4"><label class="fw-bold small">Estado (UF)</label><input type="text"
+                                    id="sol-estado" class="form-control"></div>
+                        </div>
+
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="fw-bold small">Número</label>
-                                <input type="text" id="sol-num" class="form-control" placeholder="Número">
-                            </div>
+                            <div class="col-md-6"><label class="fw-bold small">Número</label><input type="text"
+                                    id="sol-num" class="form-control" placeholder="Número"></div>
                             <div class="col-md-6 d-flex align-items-end">
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="checkbox" id="sol-check-sn"
@@ -435,11 +490,15 @@
                             </div>
                         </div>
 
-                        <div id="mapa-evento"></div>
+                        <div id="mapa-evento"
+                            style="height: 300px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #ccc;">
+                        </div>
                         <input type="hidden" id="sol-lat"><input type="hidden" id="sol-lon">
+
                         <div class="mb-3 mt-3"><label class="fw-bold small">Dias de Funcionamento</label>
                             <div class="check-dias-container" id="container-dias-sol"></div>
                         </div>
+
                         <div class="row g-3 mb-2">
                             <div class="col-6"><label class="small fw-bold">Abre</label><input type="time"
                                     id="sol-hora-abre" class="form-control"></div>
@@ -453,10 +512,12 @@
                             <label class="form-check-label small fw-bold">Horário Livre / 24 Horas</label>
                         </div>
 
-                        <div class="mb-3"><label class="fw-bold small">Foto</label><input type="file"
-                                id="input-foto-sol" class="form-control"
-                                onchange="window.abrirCropNegocio(event, 'sol')"><img id="preview-foto-sol"
-                                class="img-preview-form"></div>
+                        <div class="mb-3">
+                            <label class="fw-bold small">Foto</label>
+                            <input type="file" id="input-foto-sol" class="form-control"
+                                onchange="window.abrirCropNegocio(event, 'sol')">
+                            <img id="preview-foto-sol" class="img-preview-form">
+                        </div>
                         <div class="mb-3"><label class="fw-bold small">Descrição</label><textarea id="sol-desc"
                                 class="form-control" rows="3" required></textarea></div>
                         <button type="submit" class="btn btn-primary w-100 fw-bold">ENVIAR PEDIDO</button>
@@ -488,67 +549,96 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalGeradorRoteiro" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="fw-bold m-0"><i class="bi bi-magic"></i> Mundoria Inteligente</h5><button
-                        class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal fade" id="modalGeradorRoteiro" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 text-white"
+                    style="background: linear-gradient(45deg, #f67123, #ff914d);">
+                    <h5 class="fw-bold m-0"><i class="bi bi-magic me-2"></i>Mundoria Inteligente</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+
+                <div class="modal-body p-4">
                     <form id="form-gerador">
-                        <div class="row mb-3">
-                            <div class="col-md-8 position-relative"><label class="fw-bold">Cidade / Região</label><input
-                                    type="text" id="gen-origem" class="form-control"
-                                    oninput="window.buscarEndereco(this.value, 'gen')"
-                                    placeholder="Ex: Curitiba, São Paulo...">
-                                <div id="lista-sugestoes-gen" class="lista-sugestoes"></div><input type="hidden"
-                                    id="gen-lat"><input type="hidden" id="gen-lon">
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-bold text-secondary small">ONDE VOCÊ QUER EXPLORAR?</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-white border-end-0"><i
+                                            class="bi bi-geo-alt text-laranja"></i></span>
+                                    <input type="text" id="gen-origem" class="form-control border-start-0 ps-0"
+                                        oninput="window.buscarEndereco(this.value, 'gen')"
+                                        placeholder="Bairro, Cidade ou Ponto de Referência">
+                                </div>
+                                <div id="lista-sugestoes-gen" class="lista-sugestoes shadow-sm"></div>
+
+                                <input type="hidden" id="gen-cidade-filtro">
+                                <input type="hidden" id="gen-lat"><input type="hidden" id="gen-lon">
                             </div>
-                            <div class="col-md-4"><label class="fw-bold">Dias</label><select id="gen-dias"
-                                    class="form-select">
-                                    <option value="1">1 Dia</option>
-                                    <option value="2">2 Dias</option>
-                                    <option value="3">3 Dias</option>
-                                </select></div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6"><label class="fw-bold">Raio (km)</label><input type="range"
-                                    class="form-range" id="gen-distancia" min="1" max="50" value="10">
-                                <div class="text-end"><small id="val-distancia">10 km</small></div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-secondary small">DURAÇÃO DA VIAGEM</label>
+                                <select id="gen-dias" class="form-select shadow-sm">
+                                    <option value="1">⏱️ 1 Dia (Bate e Volta)</option>
+                                    <option value="2">⏱️ 2 Dias (Final de Semana)</option>
+                                    <option value="3">⏱️ 3 Dias (Feriado)</option>
+                                </select>
                             </div>
-                            <div class="col-md-6"><label class="fw-bold">Prioridade</label><select id="gen-prioridade"
-                                    class="form-select">
-                                    <option value="nota">Melhores Avaliados ⭐</option>
-                                    <option value="fama">Mais Populares ❤️</option>
-                                </select></div>
-                        </div>
-                        <div class="mb-3"><label class="fw-bold">Categorias</label>
-                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Parque" checked> Parque</div>
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Museu" checked> Museu</div>
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Cultura" checked> Cultura</div>
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Restaurante"> Restaurante</div>
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Bar"> Bar</div>
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Shopping"> Shopping</div>
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Praia"> Praia</div>
-                                <div class="form-check"><input class="form-check-input check-gen-cat" type="checkbox"
-                                        value="Teatro"> Teatro</div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-secondary small">PRIORIZAR POR</label>
+                                <select id="gen-prioridade" class="form-select shadow-sm">
+                                    <option value="nota">⭐ Melhores Avaliados</option>
+                                    <option value="favoritos">❤️ Mais Favoritados</option>
+                                    <option value="roteiros">🗺️ Mais Populares</option>
+                                </select>
                             </div>
                         </div>
-                        <div id="mapa-gerador"></div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary small d-block mb-3">O QUE NÃO PODE
+                                FALTAR?</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-parque" value="Parque"
+                                    checked>
+                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                                    for="cat-parque">🌳 Parques</label>
+
+                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-museu" value="Museu"
+                                    checked>
+                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                                    for="cat-museu">🏛️ Museus</label>
+
+                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-restaurante"
+                                    value="Restaurante" checked>
+                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                                    for="cat-restaurante">🍽️ Gastronomia</label>
+
+                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-cultura" value="Cultura"
+                                    checked>
+                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                                    for="cat-cultura">🎨 Cultura</label>
+                            </div>
+                        </div>
+
+                        <div class="position-relative mb-4">
+                            <div id="mapa-gerador"
+                                style="height: 250px; width: 100%; border-radius: 15px; border: 2px solid #eee;"
+                                class="shadow-sm"></div>
+                            <div class="position-absolute bottom-0 end-0 p-2 bg-white m-2 rounded shadow-sm small fw-bold text-muted"
+                                style="z-index: 1000; opacity: 0.8;">
+                                📍 Clique no mapa para definir o ponto central
+                            </div>
+                        </div>
+
+                        <button type="button" id="btn-executar-gerador"
+                            class="btn btn-warning w-100 py-3 fw-bold shadow mt-2 text-white"
+                            style="background: #f67123; border: none; font-size: 1.1rem; letter-spacing: 1px;">
+                            CRIAR MEU ROTEIRO AGORA ✨
+                        </button>
                     </form>
                 </div>
-                <div class="modal-footer"><button class="btn btn-secondary"
-                        data-bs-dismiss="modal">Cancelar</button><button class="btn btn-warning fw-bold"
-                        id="btn-executar-gerador">CRIAR MEU MUNDO ✨</button></div>
             </div>
         </div>
     </div>
@@ -643,96 +733,99 @@
         };
 
         // --- GERADOR AUTOMÁTICO ✨ ---
-        document.getElementById('gen-distancia').oninput = (e) => document.getElementById('val-distancia').innerText = e.target.value + ' km';
         document.getElementById('modalGeradorRoteiro').addEventListener('shown.bs.modal', () => {
-            if (!mapaGerador) {
-                mapaGerador = L.map('mapa-gerador').setView([-23.55, -46.63], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaGerador);
-                mapaGerador.on('click', e => window.handleMapClick(e, 'gen'));
+            // 1. Limpa o mapa se ele já existir para evitar erro de inicialização duplicada
+            if (mapaGerador) {
+                mapaGerador.remove();
+                mapaGerador = null;
             }
-            setTimeout(() => mapaGerador.invalidateSize(), 400);
+
+            // 2. Inicializa o mapa com um pequeno atraso para o modal estar 100% aberto e visível
+            setTimeout(() => {
+                mapaGerador = L.map('mapa-gerador').setView([-23.55, -46.63], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaGerador);
+
+                // 3. Configura o clique no mapa para capturar as coordenadas
+                mapaGerador.on('click', e => window.handleMapClick(e, 'gen'));
+
+                // 4. ESSENCIAL: Força o Leaflet a renderizar todos os blocos do mapa corretamente
+                mapaGerador.invalidateSize();
+            }, 300);
         });
 
         document.getElementById('btn-executar-gerador').onclick = async () => {
             const btn = document.getElementById('btn-executar-gerador');
-            const lat = parseFloat(document.getElementById('gen-lat').value);
-            const lon = parseFloat(document.getElementById('gen-lon').value);
-            const raio = parseInt(document.getElementById('gen-distancia').value);
+            // Captura os valores corretamente
+            const cidadeBuscada = document.getElementById('gen-cidade-filtro').value.toLowerCase().trim();
+            const localidadeTexto = document.getElementById('gen-origem').value.toLowerCase().trim();
             const dias = parseInt(document.getElementById('gen-dias').value);
-            const prio = document.getElementById('gen-prioridade').value;
-            const cats = Array.from(document.querySelectorAll('.check-gen-cat:checked')).map(c => c.value);
+            const categoriasSelecionadas = Array.from(document.querySelectorAll('.check-gen-cat:checked')).map(c => c.value);
 
-            if (!lat) return alert("Busque a região ou clique no mapa!");
-            btn.disabled = true; btn.innerText = "Processando...";
+            if (!localidadeTexto) return alert("Por favor, selecione uma localização no mapa ou busca!");
+
+            btn.disabled = true;
+            btn.innerText = "Mundoria está analisando a região...";
 
             try {
-                // Busca todos os locais ativos (incluindo eventos)
                 const snap = await getDocs(query(collection(db, "locais"), where("status", "==", "ativo")));
                 let candidatos = [];
 
-                for (const d of snap.docs) {
+                snap.forEach(d => {
                     const l = d.data();
+                    const end = l.endereco;
 
-                    // MELHORIA: Verifica se é categoria selecionada OU se é um 'evento' ativo
-                    const ehCategoriaAlvo = cats.includes(l.categoria);
-                    const ehEventoAtivo = l.tipo_local === 'evento';
+                    // CORREÇÃO: Usa 'categoriasSelecionadas' em vez de 'cats'
+                    const bateCidade = end?.cidade?.toLowerCase().trim().includes(cidadeBuscada);
+                    const bateBairro = end?.rua?.toLowerCase().trim().includes(localidadeTexto);
+                    const bateCategoria = categoriasSelecionadas.includes(l.categoria);
 
-                    if (ehCategoriaAlvo || ehEventoAtivo) {
-                        const dist = calcDist(lat, lon, l.lat, l.lon);
-
-                        if (dist <= raio) {
-                            // Busca popularidade para o ranking
-                            const fSnap = await getDocs(query(collection(db, "favoritos"), where("id_local", "==", d.id)));
-                            candidatos.push({
-                                id: d.id,
-                                ...l,
-                                fama: fSnap.size,
-                                // Prioridade extra para eventos na ordenação se estiverem próximos
-                                pesoEvento: ehEventoAtivo ? 2 : 1
-                            });
-                        }
+                    // Filtro inteligente por região e categoria
+                    if ((bateCidade || bateBairro) && (bateCategoria || l.tipo_local === 'evento')) {
+                        candidatos.push({ id: d.id, ...l });
                     }
-                }
+                });
 
                 if (candidatos.length === 0) {
                     btn.disabled = false;
-                    btn.innerText = "CRIAR MEU ROTEIRO ✨";
-                    return alert("Nenhum local ou evento encontrado neste raio de distância!");
+                    btn.innerText = "CRIAR MEU MUNDO ✨";
+                    return alert("Não encontramos locais nesta região específica. Tente buscar apenas pela Cidade.");
                 }
 
-                // Ordenação: Considera a prioridade (Nota/Fama) e dá um leve empurrão em Eventos
-                candidatos.sort((a, b) => {
-                    const scoreA = prio === 'nota' ? (a.nota || 0) : a.fama;
-                    const scoreB = prio === 'nota' ? (b.nota || 0) : b.fama;
-                    return (scoreB * b.pesoEvento) - (scoreA * a.pesoEvento);
-                });
+                // Montagem do roteiro (3 locais por dia)
+                const roteiroFinal = [];
+                for (let i = 0; i < dias; i++) {
+                    const locaisDoDia = candidatos.splice(0, 3);
+                    if (locaisDoDia.length > 0) {
+                        roteiroFinal.push({ dia: i + 1, locais: locaisDoDia });
+                    }
+                }
 
-                // Criação do Roteiro
-                const nRot = await addDoc(collection(db, "roteiros"), {
+                // Gravação no Firebase
+                const docRoteiro = await addDoc(collection(db, "roteiros"), {
                     id_usuario: emailLogado,
-                    nome_roteiro: "Meu Mundo Inteligente",
+                    nome_roteiro: `Explorando ${localidadeTexto}`,
                     data_criacao: new Date().toLocaleDateString('pt-BR'),
-                    foto_capa: candidatos[0].imagem
+                    foto_capa: "https://via.placeholder.com/400x300",
+                    dias: dias
                 });
 
-                // Adiciona os itens ao roteiro (limite de 3 por dia)
-                for (let i = 0; i < Math.min(candidatos.length, dias * 3); i++) {
-                    await addDoc(collection(db, "roteiro_itens"), {
-                        id_roteiro: nRot.id,
-                        id_local: candidatos[i].id,
-                        horario: (9 + (i % 3) * 4) + ":00",
-                        data_item: ""
-                    });
+                for (const diaObj of roteiroFinal) {
+                    for (const loc of diaObj.locais) {
+                        await addDoc(collection(db, "roteiro_itens"), {
+                            id_roteiro: docRoteiro.id,
+                            id_local: loc.id,
+                            dia: diaObj.dia
+                        });
+                    }
                 }
 
-                alert("Roteiro gerado com sucesso incluindo locais e eventos próximos!");
+                alert("Roteiro Criado com Sucesso!");
                 location.reload();
 
             } catch (e) {
-                console.error(e);
-                alert("Erro ao processar inteligência do roteiro.");
+                console.error("Erro no gerador:", e);
                 btn.disabled = false;
-                btn.innerText = "CRIAR MEU ROTEIRO ✨";
+                btn.innerText = "CRIAR MEU MUNDO ✨";
             }
         };
 
@@ -835,17 +928,32 @@
         window.handleMapClick = (e, p) => {
             const map = p === 'gen' ? mapaGerador : (p === 'sol' ? mapaSol : mapaEdicao);
             let mk = p === 'gen' ? marcadorGerador : (p === 'sol' ? marcadorSol : marcadorEdicao);
+
             if (mk) map.removeLayer(mk);
             mk = L.marker(e.latlng).addTo(map);
-            if (p === 'gen') marcadorGerador = mk; else if (p === 'sol') marcadorSol = mk; else marcadorEdicao = mk;
-            document.getElementById(`${p}-lat`).value = e.latlng.lat; document.getElementById(`${p}-lon`).value = e.latlng.lng;
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`).then(r => r.json()).then(d => {
-                const c = document.getElementById(p === 'gen' ? 'gen-origem' : (p === 'sol' ? 'sol-rua' : 'edit-rua'));
-                const rua = d.address.road || ""; const bairro = d.address.suburb || d.address.neighbourhood || "";
-                c.value = (rua && bairro) ? `${rua}, ${bairro}` : (d.address.city || d.display_name.split(',')[0]);
-            });
-        };
 
+            if (p === 'gen') marcadorGerador = mk;
+            else if (p === 'sol') marcadorSol = mk;
+            else marcadorEdicao = mk;
+
+            document.getElementById(`${p}-lat`).value = e.latlng.lat;
+            document.getElementById(`${p}-lon`).value = e.latlng.lng;
+
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
+                .then(r => r.json()).then(d => {
+                    const addr = d.address;
+                    const cidade = addr.city || addr.town || addr.village || addr.municipality || "";
+                    const rua = addr.road || addr.suburb || "";
+
+                    document.getElementById(p === 'gen' ? 'gen-origem' : (p === 'sol' ? 'sol-rua' : 'edit-rua')).value =
+                        rua ? `${rua}, ${cidade}` : cidade;
+
+                    if (p === 'gen') {
+                        const campoFiltro = document.getElementById('gen-cidade-filtro');
+                        if (campoFiltro) campoFiltro.value = cidade;
+                    }
+                });
+        };
         // --- GESTÃO NEGÓCIO ---
         async function carregarNegocioParceiro(email) {
             const snap = await getDocs(query(collection(db, "locais"), where("id_parceiro", "==", email)));
@@ -866,26 +974,58 @@
         }
 
         async function carregarDadosEstabelecimento(id) {
-            idLocalParceiroGlobal = id;
-            const l = estabelecimentosDoUsuario.find(x => x.id === id);
-            document.getElementById('dash-nome-local').innerText = l.nome;
-            document.getElementById('badge-status').innerText = l.status.toUpperCase();
-            document.getElementById('badge-status').className = `badge mt-1 ${l.status === 'ativo' ? 'bg-success' : 'bg-warning'}`;
+            try {
+                idLocalParceiroGlobal = id;
+                const l = estabelecimentosDoUsuario.find(x => x.id === id);
+                if (!l) return;
 
-            // CORREÇÃO: Botão dinâmico Ativar/Desativar
-            const btnStatus = document.getElementById('btn-toggle-status');
-            btnStatus.innerText = l.status === 'ativo' ? 'Desativar' : 'Ativar';
+                // Nome e Descrição
+                const titulo = document.getElementById('dash-nome-local');
+                if (titulo) titulo.innerText = l.nome || "Nome não definido";
 
-            document.getElementById('btn-ver-publico').href = `detalhes.html?id=${id}`;
-            document.getElementById('edit-desc').value = l.descricao;
-            document.getElementById('edit-rua').value = l.endereco;
-            document.getElementById('edit-num').value = l.numero || '';
-            document.getElementById('edit-check-sn').checked = (l.numero === 'S/N');
-            document.getElementById('edit-lat').value = l.lat; document.getElementById('edit-lon').value = l.lon;
-            document.getElementById('edit-check-livre').checked = (l.horario === 'Livre');
-            if (l.horario !== 'Livre') { const p = l.horario.split(' ás '); document.getElementById('edit-hora-abre').value = p[0]; document.getElementById('edit-hora-fecha').value = p[1]; }
-            document.getElementById('area-gestao').classList.remove('d-none');
-            carregarEstatisticas(id); carregarReviewsNegocio(id); marcarDiasNoForm('edit', l.dias_semana); iniciarMapaEdicao(l.lat, l.lon);
+                const desc = document.getElementById('edit-desc');
+                if (desc) desc.value = l.descricao || "";
+
+                // Endereço (Objeto ou String)
+                const end = l.endereco;
+                if (typeof end === 'object' && end !== null) {
+                    if (document.getElementById('edit-cep')) document.getElementById('edit-cep').value = end.cep || '';
+                    if (document.getElementById('edit-rua')) document.getElementById('edit-rua').value = end.rua || '';
+                    if (document.getElementById('edit-cidade')) document.getElementById('edit-cidade').value = end.cidade || '';
+                    if (document.getElementById('edit-estado')) document.getElementById('edit-estado').value = end.estado || '';
+                } else {
+                    if (document.getElementById('edit-rua')) document.getElementById('edit-rua').value = end || '';
+                }
+
+                if (document.getElementById('edit-num')) document.getElementById('edit-num').value = l.numero || '';
+                if (document.getElementById('edit-lat')) document.getElementById('edit-lat').value = l.lat || 0;
+                if (document.getElementById('edit-lon')) document.getElementById('edit-lon').value = l.lon || 0;
+
+                // Botões de Ação
+                const btnVer = document.getElementById('btn-ver-publico');
+                if (btnVer) btnVer.href = `detalhes.html?id=${id}`;
+
+                const btnStatus = document.getElementById('btn-toggle-status');
+                if (btnStatus) {
+                    const isAtivo = l.status === 'ativo';
+                    btnStatus.innerText = isAtivo ? "Desativar" : "Ativar";
+                    btnStatus.className = `btn btn-sm fw-bold rounded-pill ${isAtivo ? 'btn-outline-warning' : 'btn-outline-success'}`;
+                }
+
+                document.getElementById('area-gestao')?.classList.remove('d-none');
+
+                // Chamadas auxiliares
+                if (typeof carregarEstatisticas === "function") carregarEstatisticas(id);
+                if (typeof carregarReviewsNegocio === "function") carregarReviewsNegocio(id);
+                if (typeof marcarDiasNoForm === "function") marcarDiasNoForm('edit', l.dias_semana);
+
+                setTimeout(() => {
+                    if (typeof iniciarMapaEdicao === "function") iniciarMapaEdicao(l.lat, l.lon);
+                }, 400);
+
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+            }
         }
 
         // Abre o campo de texto preenchido para edição
@@ -984,7 +1124,10 @@
         };
 
         document.getElementById('form-solicitacao-local').onsubmit = async (e) => {
-            e.preventDefault(); const btn = e.target.querySelector('button'); btn.disabled = true;
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+
             try {
                 let url = "https://via.placeholder.com/400x300";
                 if (blobFinalNegocio) {
@@ -992,38 +1135,105 @@
                     await uploadBytes(refImg, blobFinalNegocio);
                     url = await getDownloadURL(refImg);
                 }
+
                 const h = document.getElementById('sol-check-livre').checked ? 'Livre' : `${document.getElementById('sol-hora-abre').value} ás ${document.getElementById('sol-hora-fecha').value}`;
                 const num = document.getElementById('sol-check-sn').checked ? 'S/N' : document.getElementById('sol-num').value;
+
+                // NOVO: Objeto de endereço estruturado
+                const enderecoObj = {
+                    cep: document.getElementById('sol-cep').value,
+                    rua: document.getElementById('sol-rua').value,
+                    cidade: document.getElementById('sol-cidade').value,
+                    estado: document.getElementById('sol-estado').value
+                };
+
                 await addDoc(collection(db, "locais"), {
-                    nome: document.getElementById('sol-nome').value, categoria: document.getElementById('sol-cat').value, endereco: document.getElementById('sol-rua').value, numero: num,
-                    lat: parseFloat(document.getElementById('sol-lat').value), lon: parseFloat(document.getElementById('sol-lon').value), horario: h,
-                    dias_semana: obterDiasMarcados('sol'), descricao: document.getElementById('sol-desc').value, imagem: url,
-                    id_parceiro: emailLogado, status: "pendente", tipo_local: "comum", data_solicitacao: new Date().toLocaleDateString('pt-BR')
+                    nome: document.getElementById('sol-nome').value,
+                    categoria: document.getElementById('sol-cat').value,
+                    endereco: enderecoObj,
+                    numero: num,
+                    lat: parseFloat(document.getElementById('sol-lat').value),
+                    lon: parseFloat(document.getElementById('sol-lon').value),
+                    horario: h,
+                    dias_semana: obterDiasMarcados('sol'),
+                    descricao: document.getElementById('sol-desc').value,
+                    imagem: url,
+                    id_parceiro: emailLogado,
+                    status: "pendente",
+                    tipo_local: "comum",
+                    data_solicitacao: new Date().toLocaleDateString('pt-BR')
                 });
-                alert("Pedido enviado! Aguarde aprovação."); location.reload();
-            } catch (err) { btn.disabled = false; }
+
+                alert("Pedido enviado com sucesso! Aguarde a aprovação.");
+                location.reload();
+            } catch (err) {
+                console.error("Erro ao enviar pedido:", err);
+                btn.disabled = false;
+            }
         };
 
         document.getElementById('form-edicao-parceiro').onsubmit = async (e) => {
-            e.preventDefault(); const btn = document.getElementById('btn-salvar-negocio'); btn.disabled = true;
+            e.preventDefault();
+            const btn = document.getElementById('btn-salvar-negocio');
+            btn.disabled = true;
+            btn.innerText = "Salvando...";
+
             try {
-                const h = document.getElementById('edit-check-livre').checked ? 'Livre' : `${document.getElementById('edit-hora-abre').value} ás ${document.getElementById('edit-hora-fecha').value}`;
-                const d = {
-                    descricao: document.getElementById('edit-desc').value, endereco: document.getElementById('edit-rua').value, numero: document.getElementById('edit-check-sn').checked ? 'S/N' : document.getElementById('edit-num').value,
-                    horario: h, dias_semana: obterDiasMarcados('edit'), lat: parseFloat(document.getElementById('edit-lat').value), lon: parseFloat(document.getElementById('edit-lon').value)
+                // Monta o objeto com os novos campos de endereço
+                const dadosAtualizados = {
+                    descricao: document.getElementById('edit-desc').value,
+                    endereco: {
+                        cep: document.getElementById('edit-cep').value,
+                        rua: document.getElementById('edit-rua').value,
+                        cidade: document.getElementById('edit-cidade').value,
+                        estado: document.getElementById('edit-estado').value
+                    },
+                    numero: document.getElementById('edit-check-sn').checked ? 'S/N' : document.getElementById('edit-num').value,
+                    lat: parseFloat(document.getElementById('edit-lat').value),
+                    lon: parseFloat(document.getElementById('edit-lon').value),
+                    dias_semana: obterDiasMarcados('edit')
                 };
-                if (blobFinalNegocio) {
-                    const r = ref(storage, `locais/${idLocalParceiroGlobal}_${Date.now()}.jpg`);
-                    await uploadBytes(r, blobFinalNegocio); d.imagem = await getDownloadURL(r);
-                }
-                await updateDoc(doc(db, "locais", idLocalParceiroGlobal), d);
-                alert("Dados salvos!"); location.reload();
-            } catch (err) { btn.disabled = false; }
+
+                // Salva no Firebase
+                await updateDoc(doc(db, "locais", idLocalParceiroGlobal), dadosAtualizados);
+
+                alert("Dados atualizados com sucesso!");
+                location.reload(); // Recarrega para limpar o cache e mostrar o novo endereço
+            } catch (err) {
+                console.error("Erro ao atualizar:", err);
+                alert("Erro ao salvar as mudanças.");
+                btn.disabled = false;
+                btn.innerText = "SALVAR ALTERAÇÕES";
+            }
         };
 
         // --- AUXILIARES GERAIS PRESERVADOS ---
         window.buscarEndereco = (q, p) => { const list = document.getElementById(`lista-sugestoes-${p}`); if (q.length < 3) return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`).then(r => r.json()).then(d => { list.innerHTML = d.map(i => `<div class="item-sugestao" onclick="window.selecionarEnd('${i.display_name.replace(/'/g, "")}', ${i.lat}, ${i.lon}, '${p}')">${i.display_name}</div>`).join(''); list.style.display = 'block'; }); };
-        window.selecionarEnd = (n, lat, lon, p) => { document.getElementById(p === 'gen' ? 'gen-origem' : (p === 'sol' ? 'sol-rua' : 'edit-rua')).value = n.split(',')[0]; document.getElementById(`lista-sugestoes-${p}`).style.display = 'none'; document.getElementById(`${p}-lat`).value = lat; document.getElementById(`${p}-lon`).value = lon; const m = p === 'gen' ? mapaGerador : (p === 'sol' ? mapaSol : mapaEdicao); m.setView([lat, lon], 16); if (p === 'gen') { if (marcadorGerador) m.removeLayer(marcadorGerador); marcadorGerador = L.marker([lat, lon]).addTo(m); } };
+        window.selecionarEnd = (n, lat, lon, p) => {
+            const inputId = p === 'gen' ? 'gen-origem' : (p === 'sol' ? 'sol-rua' : 'edit-rua');
+            const partes = n.split(',');
+
+            // Nome principal para o usuário ver
+            document.getElementById(inputId).value = partes[0].trim() + (partes[1] ? ", " + partes[1].trim() : "");
+            document.getElementById(`lista-sugestoes-${p}`).style.display = 'none';
+            document.getElementById(`${p}-lat`).value = lat;
+            document.getElementById(`${p}-lon`).value = lon;
+
+            if (p === 'gen') {
+                // Pega a cidade da string: geralmente está 3 posições antes do fim (Cidade, Estado, País)
+                const cidadeDetectada = partes.length >= 3 ? partes[partes.length - 3].trim() : partes[0].trim();
+                document.getElementById('gen-cidade-filtro').value = cidadeDetectada;
+            }
+
+            const m = p === 'gen' ? mapaGerador : (p === 'sol' ? mapaSol : mapaEdicao);
+            if (m) {
+                m.setView([lat, lon], 16);
+                if (p === 'gen') {
+                    if (marcadorGerador) m.removeLayer(marcadorGerador);
+                    marcadorGerador = L.marker([lat, lon]).addTo(m);
+                }
+            }
+        };
         window.triggerTrocaFoto = (id, e) => { e.stopPropagation(); window.idRoteiroAtualFoto = id; document.getElementById('input-file-roteiro').click(); };
         document.getElementById('input-file-roteiro').onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => { const img = document.getElementById('img-crop-geral'); img.src = ev.target.result; const modal = new bootstrap.Modal(document.getElementById('modalCropGeral')); modal.show(); if (cropperGeral) cropperGeral.destroy(); cropperGeral = new Cropper(img, { aspectRatio: 4 / 3 }); document.getElementById('btn-confirmar-crop-geral').onclick = async () => { cropperGeral.getCroppedCanvas().toBlob(async blob => { const path = `roteiros/${window.idRoteiroAtualFoto}_${Date.now()}.jpg`; const rI = ref(storage, path); await uploadBytes(rI, blob); const url = await getDownloadURL(rI); await updateDoc(doc(db, "roteiros", window.idRoteiroAtualFoto), { foto_capa: url }); alert("Capa atualizada!"); location.reload(); }, 'image/jpeg'); }; }; r.readAsDataURL(f); };
         window.delItem = async (id, idR) => { if (confirm("Remover?")) { await deleteDoc(doc(db, "roteiro_itens", id)); window.atualizarConteudoRoteiro(idR); } };
@@ -1039,7 +1249,23 @@
         function iniciarMapaEdicao(lat, lon) { if (mapaEdicao) { mapaEdicao.setView([lat, lon], 16); if (marcadorEdicao) marcadorEdicao.setLatLng([lat, lon]); } else { mapaEdicao = L.map('mapa-edicao').setView([lat, lon], 16); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaEdicao); marcadorEdicao = L.marker([lat, lon]).addTo(mapaEdicao); mapaEdicao.on('click', e => window.handleMapClick(e, 'edit')); } setTimeout(() => mapaEdicao.invalidateSize(), 400); }
         async function carregarAvaliacoes(email) { const snap = await getDocs(query(collection(db, "avaliacoes"), where("id_usuario", "==", email))); const div = document.getElementById('lista-minhas-avaliacoes'); div.innerHTML = snap.empty ? "<p class='text-center py-4 text-muted'>Nenhuma avaliação.</p>" : ""; for (const d of snap.docs) { const c = d.data(); const lD = await getDoc(doc(db, "locais", c.id_local)); if (lD.exists()) { div.innerHTML += `<a href="detalhes.html?id=${c.id_local}" class="card-wrapper d-flex gap-3"><img src="${lD.data().imagem}" style="width:70px;height:70px;object-fit:cover;border-radius:10px;"><div class="flex-grow-1"><h6 class="fw-bold">${lD.data().nome} <span class="text-warning">${c.nota}★</span></h6><p class="small text-secondary m-0">"${c.comentario}"</p></div></a>`; } } }
         async function carregarEstatisticas(id) { const snapF = await getDocs(query(collection(db, "favoritos"), where("id_local", "==", id))); document.getElementById('stat-favs').innerText = snapF.size; const snapR = await getDocs(query(collection(db, "roteiro_itens"), where("id_local", "==", id))); document.getElementById('stat-roteiros').innerText = snapR.size; const snapRev = await getDocs(query(collection(db, "avaliacoes"), where("id_local", "==", id))); let total = 0; snapRev.forEach(d => total += d.data().nota); document.getElementById('stat-nota').innerText = snapRev.size > 0 ? (total / snapRev.size).toFixed(1) + "★" : "0.0★"; document.getElementById('stat-reviews').innerText = snapRev.size; }
-        window.toggleStatusLocal = async () => { const l = estabelecimentosDoUsuario.find(x => x.id === idLocalParceiroGlobal); const s = l.status === 'ativo' ? 'desativado' : 'ativo'; if (confirm(`Deseja ${s}?`)) { await updateDoc(doc(db, "locais", idLocalParceiroGlobal), { status: s }); location.reload(); } };
+        window.toggleStatusLocal = async () => {
+            const l = estabelecimentosDoUsuario.find(x => x.id === idLocalParceiroGlobal);
+            if (!l) return;
+
+            const novoStatus = l.status === 'ativo' ? 'desativado' : 'ativo';
+            const acao = novoStatus === 'ativo' ? 'Ativar' : 'Desativar';
+
+            if (confirm(`Deseja realmente ${acao} este local?`)) {
+                try {
+                    await updateDoc(doc(db, "locais", idLocalParceiroGlobal), { status: novoStatus });
+                    alert(`Local ${novoStatus === 'ativo' ? 'ativado' : 'desativado'} com sucesso!`);
+                    location.reload(); // Garante que o botão e o badge mudem de cor
+                } catch (e) {
+                    alert("Erro ao mudar status.");
+                }
+            }
+        };
         window.excluirLocal = async () => { if (confirm("EXCLUIR LOCAL?")) { await deleteDoc(doc(db, "locais", idLocalParceiroGlobal)); location.reload(); } };
     </script>
 </body>

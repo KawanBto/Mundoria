@@ -349,7 +349,27 @@
             document.getElementById('cont-pontos').innerText = snap.size;
             snap.forEach(d => {
                 const l = d.data();
-                tbody.innerHTML += `<tr><td><img src="${l.imagem}" class="img-tabela"></td><td><strong>${l.nome}</strong></td><td><span class="badge bg-secondary">${l.categoria}</span></td><td><small>${l.endereco}</small></td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="window.excluirLocal('${d.id}')">Excluir</button></td></tr>`;
+
+                // TRATAMENTO DO ENDEREÇO
+                let enderecoExibicao = "";
+                if (typeof l.endereco === 'object' && l.endereco !== null) {
+                    // Se for o novo formato (objeto), mostra Rua e Cidade
+                    enderecoExibicao = `${l.endereco.rua || ''}, ${l.endereco.cidade || ''}`;
+                } else {
+                    // Se for o formato antigo (string), mostra direto
+                    enderecoExibicao = l.endereco || "Sem endereço";
+                }
+
+                tbody.innerHTML += `
+    <tr>
+        <td><img src="${l.imagem}" class="img-tabela"></td>
+        <td><strong>${l.nome}</strong></td>
+        <td><span class="badge bg-secondary">${l.categoria}</span></td>
+        <td><small>${enderecoExibicao}</small></td>
+        <td class="text-end">
+            <button class="btn btn-sm btn-outline-danger" onclick="window.excluirLocal('${d.id}')">Excluir</button>
+        </td>
+    </tr>`;
             });
         }
 
@@ -365,17 +385,29 @@
 
             snap.forEach(d => {
                 const l = d.data();
+
+                // Tratamento de Endereço para pendentes
+                let enderecoPendente = "";
+                if (typeof l.endereco === 'object' && l.endereco !== null) {
+                    enderecoPendente = `${l.endereco.rua || ''}, ${l.endereco.cidade || ''}`;
+                } else {
+                    enderecoPendente = l.endereco || "Sem endereço";
+                }
+
+                // MELHORIA: Usa o e-mail do parceiro se existir
+                const autor = l.id_parceiro || l.autor_email || 'Anônimo';
+
                 tbody.innerHTML += `
-                <tr>
-                    <td><img src="${l.imagem}" class="img-tabela"></td>
-                    <td><strong>${l.nome}</strong></td>
-                    <td><span class="badge bg-warning text-dark">${l.categoria}</span></td>
-                    <td><small>${l.autor_email || 'Anônimo'}</small></td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-success fw-bold me-1" onclick="window.aprovarLocal('${d.id}')">Aprovar</button>
-                        <button class="btn btn-sm btn-outline-danger fw-bold" onclick="window.rejeitarLocal('${d.id}')">Recusar</button>
-                    </td>
-                </tr>`;
+    <tr>
+        <td><img src="${l.imagem}" class="img-tabela"></td>
+        <td><strong>${l.nome}</strong><br><small class="text-muted">${enderecoPendente}</small></td>
+        <td><span class="badge bg-warning text-dark">${l.categoria}</span></td>
+        <td><small>${autor}</small></td>
+        <td class="text-end">
+            <button class="btn btn-sm btn-success fw-bold me-1" onclick="window.aprovarLocal('${d.id}')">Aprovar</button>
+            <button class="btn btn-sm btn-outline-danger fw-bold" onclick="window.rejeitarLocal('${d.id}')">Recusar</button>
+        </td>
+    </tr>`;
             });
         }
 

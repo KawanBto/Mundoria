@@ -374,70 +374,94 @@
                             <div class="bg-white p-4 rounded shadow-sm">
                                 <h5>Editar Informações</h5>
                                 <form id="form-edicao-parceiro">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small">Descrição do Local</label>
-                                        <textarea id="edit-desc" class="form-control" rows="3"></textarea>
-                                    </div>
+                                    <form id="form-edicao-parceiro">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small">Nome do Local</label>
+                                            <input type="text" id="edit-nome" class="form-control" maxlength="60"
+                                                placeholder="Máximo 60 caracteres">
+                                        </div>
 
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-8">
-                                            <label class="form-label fw-bold small">Rua / Logradouro</label>
-                                            <input type="text" id="edit-rua" class="form-control form-control-sm">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between">
+                                                <label class="form-label fw-bold small">Descrição do Local</label>
+                                                <span id="char-count-edit" class="small text-muted">0 / 500</span>
+                                            </div>
+                                            <textarea id="edit-desc" class="form-control" rows="3"
+                                                maxlength="500"></textarea>
                                         </div>
-                                        <div class="col-4">
-                                            <label class="form-label fw-bold small">Número</label>
-                                            <input type="text" id="edit-num" class="form-control form-control-sm">
-                                        </div>
-                                    </div>
 
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold small">CEP</label>
-                                            <input type="text" id="edit-cep" class="form-control form-control-sm">
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold small">Cidade</label>
-                                            <input type="text" id="edit-cidade" class="form-control form-control-sm">
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold small">Estado (UF)</label>
-                                            <input type="text" id="edit-estado" class="form-control form-control-sm">
-                                        </div>
-                                        <div class="col-6 d-flex align-items-end">
-                                            <div class="form-check mb-1">
-                                                <input class="form-check-input" type="checkbox" id="edit-check-sn"
-                                                    onchange="window.toggleNum(this, 'edit')">
-                                                <label class="form-check-label small">Sem Número</label>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-8">
+                                                <label class="form-label fw-bold small">Rua / Logradouro</label>
+                                                <input type="text" id="edit-rua" class="form-control form-control-sm">
+                                            </div>
+                                            <div class="col-4">
+                                                <label class="form-label fw-bold small">Número</label>
+                                                <input type="text" id="edit-num" class="form-control form-control-sm">
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div id="mapa-edicao"
-                                        style="height: 250px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ccc;">
-                                    </div>
-                                    <input type="hidden" id="edit-lat"><input type="hidden" id="edit-lon">
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-6">
+                                                <label class="form-label fw-bold small">CEP</label>
+                                                <input type="text" id="edit-cep" class="form-control form-control-sm"
+                                                    placeholder="00000-000">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label fw-bold small">Cidade</label>
+                                                <input type="text" id="edit-cidade"
+                                                    class="form-control form-control-sm">
+                                            </div>
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small d-block">Dias de Funcionamento</label>
-                                        <div id="container-dias-edit" class="d-flex flex-wrap gap-1"></div>
-                                    </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label fw-bold small">Estado (UF)</label>
+                                                <input type="text" id="edit-estado"
+                                                    class="form-control form-control-sm">
+                                            </div>
+                                            <div class="col-6 d-flex align-items-end">
+                                                <div class="form-check mb-1">
+                                                    <input class="form-check-input" type="checkbox" id="edit-check-sn"
+                                                        onchange="window.toggleNum(this, 'edit')">
+                                                    <label class="form-check-label small">Sem Número</label>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                    <button type="submit" id="btn-salvar-negocio"
-                                        class="btn btn-warning w-100 fw-bold">SALVAR ALTERAÇÕES</button>
-                                </form>
+                                        <div id="mapa-edicao"
+                                            style="height: 250px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ccc;">
+                                        </div>
+                                        <input type="hidden" id="edit-lat"><input type="hidden" id="edit-lon">
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small d-block">Dias de
+                                                Funcionamento</label>
+                                            <div id="container-dias-edit" class="d-flex flex-wrap gap-1"></div>
+                                        </div>
+
+                                        <button type="submit" id="btn-salvar-negocio"
+                                            class="btn btn-warning w-100 fw-bold">SALVAR ALTERAÇÕES</button>
+                                    </form>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div id="area-solicitacao" class="bg-white p-4 rounded shadow-sm d-none">
-                    <h4 class="fw-bold mb-4">Novo Pedido</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold m-0">Novo Pedido</h4>
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill"
+                            onclick="location.reload()">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                    </div>
+
                     <form id="form-solicitacao-local">
                         <div class="row g-3 mb-3">
-                            <div class="col-md-8"><label class="fw-bold small">Nome</label><input type="text"
-                                    id="sol-nome" class="form-control" required></div>
+                            <div class="col-md-8">
+                                <label class="fw-bold small">Nome</label>
+                                <input type="text" id="sol-nome" class="form-control" maxlength="60" required>
+                            </div>
                             <div class="col-md-4">
                                 <label class="fw-bold small">Categoria</label>
                                 <select id="sol-cat" class="form-select">
@@ -518,8 +542,13 @@
                                 onchange="window.abrirCropNegocio(event, 'sol')">
                             <img id="preview-foto-sol" class="img-preview-form">
                         </div>
-                        <div class="mb-3"><label class="fw-bold small">Descrição</label><textarea id="sol-desc"
-                                class="form-control" rows="3" required></textarea></div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <label class="fw-bold small">Descrição</label>
+                                <span id="char-count-sol" class="small text-muted">0 / 500</span>
+                            </div>
+                            <textarea id="sol-desc" class="form-control" rows="3" maxlength="500" required></textarea>
+                        </div>
                         <button type="submit" class="btn btn-primary w-100 fw-bold">ENVIAR PEDIDO</button>
                     </form>
                 </div>
@@ -563,7 +592,8 @@
 
                         <div class="row g-3 mb-4">
                             <div class="col-12">
-                                <label class="form-label fw-bold text-secondary small">ONDE VOCÊ QUER EXPLORAR?</label>
+                                <label class="form-label fw-bold text-secondary small">ONDE VOCÊ QUER
+                                    EXPLORAR?</label>
                                 <div class="input-group shadow-sm">
                                     <span class="input-group-text bg-white border-end-0"><i
                                             class="bi bi-geo-alt text-laranja"></i></span>
@@ -668,6 +698,43 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
 
+        // Função para higienizar espaços e garantir limites no 'blur' [cite: 940, 941]
+        function aplicarLimitesTexto(id, limite, idContador) {
+            const campo = document.getElementById(id);
+            const contador = document.getElementById(idContador);
+            if (!campo) return;
+
+            campo.addEventListener('input', () => {
+                let texto = campo.value;
+                const quebras = (texto.match(/\n/g) || []).length;
+                // Cada quebra de linha "custa" 50 caracteres para proteger seu layout
+                const pesoExtra = quebras * 50;
+                const totalSimulado = texto.length + pesoExtra;
+
+                if (contador) {
+                    contador.innerText = `${totalSimulado} / ${limite}`;
+                    contador.className = totalSimulado > limite ? "small fw-bold text-danger" : "small text-muted";
+                }
+
+                // CORTA O TEXTO NA HORA SE PASSAR DO LIMITE (Trava o Shift+Enter)
+                if (totalSimulado > limite) {
+                    campo.value = texto.substring(0, texto.length - 1);
+                }
+            });
+
+            campo.addEventListener('blur', () => {
+                // Remove espaços duplicados e espaços no início/fim (resolve o "bar muito gostoso")
+                campo.value = campo.value.trim().replace(/\s+/g, ' ');
+            });
+        }
+
+        // Aplicando aos campos de Solicitação
+        aplicarLimitesTexto('sol-nome', 60);
+        aplicarLimitesTexto('sol-desc', 500, 'char-count-sol');
+
+        // Aplicando ao campo de Edição
+        aplicarLimitesTexto('edit-desc', 500, 'char-count-edit');
+
         const firebaseConfig = { apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo", authDomain: "mundoria-53de5.firebaseapp.com", projectId: "mundoria-53de5", storageBucket: "mundoria-53de5.firebasestorage.app", messagingSenderId: "86901345396", appId: "1:86901345396:web:969fa3637292d0333e1521" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -678,6 +745,45 @@
         let estabelecimentosDoUsuario = [];
         let editandoRoteiroId = null;
         const DIAS_LISTA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+        document.addEventListener('input', (e) => {
+            // Verifica se o ID é do novo pedido (sol) ou da edição (edit)
+            if (e.target.id === 'sol-cep' || e.target.id === 'edit-cep') {
+                let v = e.target.value.replace(/\D/g, "");
+                v = v.replace(/^(\d{5})(\d)/, "$1-$2");
+                e.target.value = v.substring(0, 9);
+
+                // Dispara a busca automática ao completar os 8 dígitos (9 caracteres com o hífen)
+                if (v.length === 9) buscarCEP(v, e.target.id.split('-')[0]);
+            }
+        });
+
+        async function buscarCEP(cep, prefixo) {
+            const valor = cep.replace(/\D/g, "");
+            if (valor.length !== 8) return;
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${valor}/json/`);
+                const d = await response.json();
+                if (d.erro) return;
+
+                // Preenche os campos textuais automaticamente [cite: 537]
+                document.getElementById(`${prefixo}-rua`).value = d.logradouro;
+                document.getElementById(`${prefixo}-cidade`).value = d.localidade;
+                document.getElementById(`${prefixo}-estado`).value = d.uf;
+
+                // BUSCA PRECISA: Rua + Cidade para o marcador não ficar no "meio do nada" [cite: 538]
+                const buscaEndereco = `${d.logradouro}, ${d.localidade}, SP, Brasil`;
+                const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(buscaEndereco)}&limit=1`);
+                const dataGeo = await geo.json();
+
+                // ... dentro do fetch do buscarCEP ...
+                if (dataGeo.length > 0) {
+                    const { lat, lon, display_name } = dataGeo[0];
+                    // Esta função abaixo é a que move o pingo no mapa
+                    window.selecionarEnd(display_name, lat, lon, prefixo);
+                }
+            } catch (e) { console.error("Erro CEP:", e); }
+        }
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = 'login.html'; return; }
@@ -942,15 +1048,19 @@
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
                 .then(r => r.json()).then(d => {
                     const addr = d.address;
-                    const cidade = addr.city || addr.town || addr.village || addr.municipality || "";
-                    const rua = addr.road || addr.suburb || "";
+                    const rua = addr.road || addr.pedestrian || addr.suburb || "";
+                    const cidade = addr.city || addr.town || addr.village || "";
+                    const estado = addr.state || "";
+                    const cep = addr.postcode || ""; // CAPTURA O CEP DA RUA NO MAPA
 
-                    document.getElementById(p === 'gen' ? 'gen-origem' : (p === 'sol' ? 'sol-rua' : 'edit-rua')).value =
-                        rua ? `${rua}, ${cidade}` : cidade;
+                    if (p !== 'gen') {
+                        document.getElementById(`${p}-rua`).value = rua;
+                        document.getElementById(`${p}-cidade`).value = cidade;
+                        document.getElementById(`${p}-estado`).value = estado;
 
-                    if (p === 'gen') {
-                        const campoFiltro = document.getElementById('gen-cidade-filtro');
-                        if (campoFiltro) campoFiltro.value = cidade;
+                        // PREENCHE O CEP NA EDIÇÃO OU NO NOVO PEDIDO
+                        const campoCep = document.getElementById(`${p}-cep`);
+                        if (campoCep) campoCep.value = cep;
                     }
                 });
         };
@@ -989,6 +1099,8 @@
                 // Endereço (Objeto ou String)
                 const end = l.endereco;
                 if (typeof end === 'object' && end !== null) {
+                    if (document.getElementById('edit-nome')) document.getElementById('edit-nome').value = l.nome || "";
+                    if (document.getElementById('edit-desc')) document.getElementById('edit-desc').value = l.descricao || "";
                     if (document.getElementById('edit-cep')) document.getElementById('edit-cep').value = end.cep || '';
                     if (document.getElementById('edit-rua')) document.getElementById('edit-rua').value = end.rua || '';
                     if (document.getElementById('edit-cidade')) document.getElementById('edit-cidade').value = end.cidade || '';
@@ -1115,11 +1227,17 @@
         }
 
         window.mostrarFormNovaSolicitacao = () => {
+            // ESCONDE TUDO O QUE ESTÁ SOBRANDO NA TELA 
             document.getElementById('area-gestao').classList.add('d-none');
             document.getElementById('area-pendente').classList.add('d-none');
+            document.getElementById('header-multi-negocio').classList.add('d-none'); // ADICIONE ESTA LINHA
+
+            // MOSTRA O FORMULÁRIO DE NOVO PEDIDO [cite: 406]
             document.getElementById('area-solicitacao').classList.remove('d-none');
+
             blobFinalNegocio = null;
-            // CORREÇÃO: Forçar redimensionamento do mapa ao abrir nova solicitação
+
+            // Força o mapa a carregar corretamente os pedaços (tiles) [cite: 406]
             setTimeout(() => { if (mapaSol) mapaSol.invalidateSize(); }, 400);
         };
 
@@ -1181,6 +1299,7 @@
             try {
                 // Monta o objeto com os novos campos de endereço
                 const dadosAtualizados = {
+                    nome: document.getElementById('edit-nome').value.trim(),
                     descricao: document.getElementById('edit-desc').value,
                     endereco: {
                         cep: document.getElementById('edit-cep').value,
@@ -1209,31 +1328,96 @@
 
         // --- AUXILIARES GERAIS PRESERVADOS ---
         window.buscarEndereco = (q, p) => { const list = document.getElementById(`lista-sugestoes-${p}`); if (q.length < 3) return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`).then(r => r.json()).then(d => { list.innerHTML = d.map(i => `<div class="item-sugestao" onclick="window.selecionarEnd('${i.display_name.replace(/'/g, "")}', ${i.lat}, ${i.lon}, '${p}')">${i.display_name}</div>`).join(''); list.style.display = 'block'; }); };
-        window.selecionarEnd = (n, lat, lon, p) => {
-            const inputId = p === 'gen' ? 'gen-origem' : (p === 'sol' ? 'sol-rua' : 'edit-rua');
-            const partes = n.split(',');
+        window.selecionarEnd = (label, lat, lon, p) => {
+            const mapaAlvo = p === 'sol' ? mapaSol : mapaEdicao;
+            let marcadorAlvo = p === 'sol' ? marcadorSol : marcadorEdicao;
 
-            // Nome principal para o usuário ver
-            document.getElementById(inputId).value = partes[0].trim() + (partes[1] ? ", " + partes[1].trim() : "");
-            document.getElementById(`lista-sugestoes-${p}`).style.display = 'none';
+            const coords = [parseFloat(lat), parseFloat(lon)];
+            mapaAlvo.setView(coords, 16);
+
+            if (marcadorAlvo) mapaAlvo.removeLayer(marcadorAlvo);
+            marcadorAlvo = L.marker(coords).addTo(mapaAlvo);
+
+            if (p === 'sol') marcadorSol = marcadorAlvo;
+            else marcadorEdicao = marcadorAlvo;
+
             document.getElementById(`${p}-lat`).value = lat;
             document.getElementById(`${p}-lon`).value = lon;
 
-            if (p === 'gen') {
-                // Pega a cidade da string: geralmente está 3 posições antes do fim (Cidade, Estado, País)
-                const cidadeDetectada = partes.length >= 3 ? partes[partes.length - 3].trim() : partes[0].trim();
-                document.getElementById('gen-cidade-filtro').value = cidadeDetectada;
+            // Limpa as sugestões após selecionar
+            const lista = document.getElementById(`lista-sugestoes-${p}`);
+            if (lista) lista.innerHTML = '';
+        };
+
+        document.getElementById('form-solicitacao-local').onsubmit = async (e) => {
+            e.preventDefault();
+
+            // PEGA OS VALORES E LIMPA ESPAÇOS SOBRANDO
+            const nome = document.getElementById('sol-nome').value.trim();
+            const desc = document.getElementById('sol-desc').value.trim();
+            const lat = document.getElementById('sol-lat').value;
+            const dias = obterDiasMarcados('sol');
+
+            // TRAVA SE ESTIVER VAZIO
+            if (!nome || !desc || !lat || dias.length === 0) {
+                alert("❌ Erro: Preencha o Nome, Descrição, localize no Mapa e marque os Dias de Funcionamento!");
+                return;
             }
 
-            const m = p === 'gen' ? mapaGerador : (p === 'sol' ? mapaSol : mapaEdicao);
-            if (m) {
-                m.setView([lat, lon], 16);
-                if (p === 'gen') {
-                    if (marcadorGerador) m.removeLayer(marcadorGerador);
-                    marcadorGerador = L.marker([lat, lon]).addTo(m);
+            // TRAVA SE NÃO TIVER FOTO
+            if (!blobFinalNegocio) {
+                alert("❌ Erro: Você precisa selecionar e ajustar uma Foto!");
+                return;
+            }
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+
+            try {
+                let url = "https://via.placeholder.com/400x300";
+                if (blobFinalNegocio) {
+                    const refImg = ref(storage, `pendentes/${Date.now()}.jpg`);
+                    await uploadBytes(refImg, blobFinalNegocio);
+                    url = await getDownloadURL(refImg);
                 }
+
+                const h = document.getElementById('sol-check-livre').checked ?
+                    'Livre' : `${document.getElementById('sol-hora-abre').value} ás ${document.getElementById('sol-hora-fecha').value}`;
+
+                const num = document.getElementById('sol-check-sn').checked ? 'S/N' : document.getElementById('sol-num').value;
+
+                const enderecoObj = {
+                    cep: document.getElementById('sol-cep').value,
+                    rua: document.getElementById('sol-rua').value,
+                    cidade: document.getElementById('sol-cidade').value,
+                    estado: document.getElementById('sol-estado').value
+                };
+
+                await addDoc(collection(db, "locais"), {
+                    nome: nome,
+                    categoria: document.getElementById('sol-cat').value,
+                    endereco: enderecoObj,
+                    numero: num,
+                    lat: parseFloat(lat),
+                    lon: parseFloat(document.getElementById('sol-lon').value),
+                    horario: h,
+                    dias_semana: dias,
+                    descricao: desc,
+                    imagem: url,
+                    id_parceiro: emailLogado,
+                    status: "pendente",
+                    tipo_local: "comum",
+                    data_solicitacao: new Date().toLocaleDateString('pt-BR')
+                });
+
+                alert("Pedido enviado com sucesso! Agora é só aguardar a aprovação.");
+                location.reload();
+            } catch (err) {
+                console.error("Erro ao enviar pedido:", err);
+                btn.disabled = false;
             }
         };
+
         window.triggerTrocaFoto = (id, e) => { e.stopPropagation(); window.idRoteiroAtualFoto = id; document.getElementById('input-file-roteiro').click(); };
         document.getElementById('input-file-roteiro').onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => { const img = document.getElementById('img-crop-geral'); img.src = ev.target.result; const modal = new bootstrap.Modal(document.getElementById('modalCropGeral')); modal.show(); if (cropperGeral) cropperGeral.destroy(); cropperGeral = new Cropper(img, { aspectRatio: 4 / 3 }); document.getElementById('btn-confirmar-crop-geral').onclick = async () => { cropperGeral.getCroppedCanvas().toBlob(async blob => { const path = `roteiros/${window.idRoteiroAtualFoto}_${Date.now()}.jpg`; const rI = ref(storage, path); await uploadBytes(rI, blob); const url = await getDownloadURL(rI); await updateDoc(doc(db, "roteiros", window.idRoteiroAtualFoto), { foto_capa: url }); alert("Capa atualizada!"); location.reload(); }, 'image/jpeg'); }; }; r.readAsDataURL(f); };
         window.delItem = async (id, idR) => { if (confirm("Remover?")) { await deleteDoc(doc(db, "roteiro_itens", id)); window.atualizarConteudoRoteiro(idR); } };

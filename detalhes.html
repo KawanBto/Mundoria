@@ -88,14 +88,18 @@
         }
 
         .comentario-texto,
-        #end-local {
+        #end-local,
+        #desc-local {
             word-wrap: break-word;
-            word-break: break-all;
-            /* Força a quebra de strings gigantes */
             overflow-wrap: break-word;
+            word-break: normal;
+            /* Volta ao normal para não bugar o alinhamento */
             white-space: pre-wrap;
+            max-width: 100% !important;
+            display: inline-block;
+            /* Garante que ocupe apenas o espaço necessário */
             color: #555;
-            margin-bottom: 0;
+            line-height: 1.6;
         }
 
         .resposta-dono {
@@ -333,26 +337,59 @@
             renderizarComentarios(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         }
 
+        // [cite: 173-174] - Proteção contra campos nulos ou indefinidos
         function renderizarComentarios(lista) {
             const div = document.getElementById('lista-comentarios');
             div.innerHTML = lista.length === 0 ? '<p class="text-center small mt-3 text-muted">Sem comentários.</p>' : '';
+
             lista.forEach(av => {
+                // Verifica se o comentário existe, se não, coloca uma string vazia
+                const textoComentario = av.comentario || "Sem descrição";
                 const resp = av.resposta_parceiro ? `<div class="resposta-dono"><strong>Proprietário:</strong><br>${av.resposta_parceiro}</div>` : '';
-                div.innerHTML += `<div class="comentario-item"><div class="d-flex align-items-center gap-2 mb-2"><img src="${av.foto_usuario}" style="width:35px;height:35px;border-radius:50%;object-fit:cover;"><strong class="small">@${av.nome_usuario}</strong><span class="text-warning ms-auto">${'★'.repeat(av.nota)}</span></div><p class="comentario-texto mb-0">"${av.comentario}"</p>${resp}</div>`;
+
+                div.innerHTML += `
+            <div class="comentario-item">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <img src="${av.foto_usuario || 'https://via.placeholder.com/35'}" style="width:35px;height:35px;border-radius:50%;object-fit:cover;">
+                    <strong class="small">@${av.nome_usuario || 'Anônimo'}</strong>
+                    <span class="text-warning ms-auto">${'★'.repeat(av.nota || 0)}</span>
+                </div>
+                <p class="comentario-texto mb-0">"${textoComentario}"</p>
+                ${resp}
+            </div>`;
             });
         }
 
-        function contarCaracteres(c) { document.getElementById('contador-chars').innerText = c.value.length + " / 250"; }
+
+        function contarCaracteres(c) {
+            const texto = c.value;
+            const quebras = (texto.match(/\n/g) || []).length;
+            // Cada Enter vale 15 para desencorajar textos muito verticais
+            const totalSimulado = texto.length + (quebras * 15);
+
+            const contador = document.getElementById('contador-chars');
+            contador.innerText = totalSimulado + " / 250";
+
+            if (totalSimulado > 250) {
+                contador.classList.add('text-danger', 'fw-bold');
+            } else {
+                contador.classList.remove('text-danger', 'fw-bold');
+            }
+        }
 
         function setNota(n) { notaSelecionada = n; document.querySelectorAll('.estrela').forEach(s => s.classList.toggle('ativa', Number(s.getAttribute('data-nota')) <= n)); }
 
         async function enviarAvaliacao() {
             const areaTexto = document.getElementById('texto-comentario');
-            // Limpa espaços extras e quebras de linha excessivas
-            const txt = areaTexto.value.trim().replace(/\n{3,}/g, '\n\n');
+            let txt = areaTexto.value.trim().replace(/\n{3,}/g, '\n\n'); // Máximo de 2 enters seguidos
+
+            // Validação de peso no envio também
+            const quebras = (txt.match(/\n/g) || []).length;
+            if ((txt.length + (quebras * 10)) > 250) return alert("Comentário muito longo (diminua as quebras de linha)!");
 
             if (!notaSelecionada) return alert("Dê uma nota!");
             if (txt.length < 2) return alert("Escreva um comentário válido!");
+            // ... restante do código [cite: 180-184]
 
             const u = window.usuarioAtual;
             try {

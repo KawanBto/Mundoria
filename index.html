@@ -412,26 +412,41 @@
         };
 
         window.abrirModalRoteiro = async (idLocal, event) => {
-            if (event) event.stopPropagation();
-            if (!window.isLogado) {
+            // Impede que o clique no botão abra também a página de detalhes do card 
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            if (!window.isLogado || !window.usuarioGlobal) {
                 alert("Faça login para adicionar ao roteiro!");
                 window.location.href = 'login.html';
                 return;
             }
+
+            // Salva o ID do local no campo oculto [cite: 87]
             document.getElementById('id-local-temp').value = idLocal;
+
             const select = document.getElementById('select-roteiros');
             select.innerHTML = '<option value="">Buscando seus roteiros...</option>';
-            const modal = new bootstrap.Modal(document.getElementById('modalAddRoteiro'));
+
+            const modalElement = document.getElementById('modalAddRoteiro');
+            const modal = new bootstrap.Modal(modalElement);
             modal.show();
+
             try {
                 const q = query(collection(dbFirebase, "roteiros"), where("id_usuario", "==", window.usuarioGlobal.id));
                 const snap = await getDocs(q);
+
                 if (snap.empty) {
                     select.innerHTML = '<option value="">Você não tem roteiros. Crie um no Painel!</option>';
                     return;
                 }
+
                 select.innerHTML = '<option value="" selected disabled>Escolha um roteiro...</option>';
-                snap.forEach(doc => { select.innerHTML += `<option value="${doc.id}">${doc.data().nome_roteiro}</option>`; });
+                snap.forEach(doc => {
+                    select.innerHTML += `<option value="${doc.id}">${doc.data().nome_roteiro}</option>`;
+                });
             } catch (e) {
                 console.error(e);
                 select.innerHTML = '<option>Erro ao carregar roteiros.</option>';
@@ -548,6 +563,24 @@
             aplicarFiltros();
         }
     </script>
+    <input type="hidden" id="id-local-temp">
+
+    <div class="modal fade" id="modalAddRoteiro" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Adicionar ao Roteiro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label small text-muted">Selecione um dos seus roteiros:</label>
+                    <select id="select-roteiros" class="form-select mb-3"></select>
+                    <button class="btn btn-primary w-100 fw-bold" onclick="window.confirmarAdicaoRoteiro()">Confirmar
+                        Adição</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

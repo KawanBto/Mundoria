@@ -88,6 +88,21 @@
             border-radius: 5px;
         }
 
+        /* Quando o botão de dia estiver marcado, aplica o laranja do Mundoria */
+        .btn-check:checked+.btn-outline-secondary {
+            background-color: var(--laranja-mundoria) !important;
+            border-color: var(--laranja-mundoria) !important;
+            color: white !important;
+            /* Texto branco para dar contraste */
+            font-weight: bold;
+        }
+
+        /* Efeito ao passar o mouse para dar feedback */
+        .btn-outline-secondary:hover {
+            border-color: var(--laranja-mundoria);
+            color: var(--laranja-mundoria);
+        }
+
         .lista-sugestoes {
             position: absolute;
             top: 100%;
@@ -165,10 +180,32 @@
                                 <span>📍 Pontos Turísticos Ativos</span>
                                 <span class="badge bg-primary" id="cont-pontos">0</span>
                             </div>
+
+                            <div class="p-3 bg-white border-bottom">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <input type="text" id="busca-nome-dash" class="form-control form-control-sm"
+                                            placeholder="🔍 Nome do local...">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" id="busca-cidade-dash" class="form-control form-control-sm"
+                                            placeholder="🏙️ Cidade...">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" id="busca-estado-dash" class="form-control form-control-sm"
+                                            placeholder="Estado...">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary w-100 fw-bold"
+                                            onclick="window.limparBuscaDash()">LIMPAR</button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="table-responsive p-3">
                                 <table class="table table-hover align-middle">
                                     <thead>
-                                        <tr>
+                                        <tr class="table-light">
                                             <th>Foto</th>
                                             <th>Nome</th>
                                             <th>Categoria</th>
@@ -1165,6 +1202,49 @@
             let v = input.value.replace(/\D/g, "");
             if (v.length > 5) v = v.substring(0, 5) + "-" + v.substring(5, 8);
             input.value = v;
+        };
+
+        // Função que faz a busca funcionar de verdade
+        // Função que filtra Nome, Cidade e Estado ao mesmo tempo
+        window.filtrarDashboard = () => {
+            const nomeInput = document.getElementById('busca-nome-dash').value.toLowerCase();
+            const cidadeInput = document.getElementById('busca-cidade-dash').value.toLowerCase();
+            const estadoInput = document.getElementById('busca-estado-dash').value.toLowerCase();
+
+            // Seleciona as linhas da tabela de pontos ativos [cite: 409]
+            const linhas = document.querySelectorAll('#tabela-pontos tr');
+
+            linhas.forEach(linha => {
+                // Coluna 2 é o Nome [cite: 38] | Coluna 4 é o Endereço completo [cite: 196, 313]
+                const textoNome = linha.querySelector('td:nth-child(2)')?.innerText.toLowerCase() || "";
+                const textoEndereco = linha.querySelector('td:nth-child(4)')?.innerText.toLowerCase() || "";
+
+                const bateNome = textoNome.includes(nomeInput);
+                const bateCidade = textoEndereco.includes(cidadeInput);
+                const bateEstado = textoEndereco.includes(estadoInput);
+
+                // Só mostra se passar nos filtros ao mesmo tempo [cite: 409]
+                if (bateNome && bateCidade && bateEstado) {
+                    linha.style.display = "";
+                } else {
+                    linha.style.display = "none";
+                }
+            });
+        };
+        // Mantém o ouvinte para filtrar enquanto você digita
+        document.addEventListener('input', (e) => {
+            const idsFiltros = ['busca-nome-dash', 'busca-cidade-dash', 'busca-estado-dash'];
+            if (idsFiltros.includes(e.target.id)) {
+                window.filtrarDashboard();
+            }
+        });
+
+        // Reseta a busca e mostra todos os locais novamente
+        window.limparBuscaDash = () => {
+            document.getElementById('busca-nome-dash').value = "";
+            document.getElementById('busca-cidade-dash').value = "";
+            document.getElementById('busca-estado-dash').value = "";
+            window.filtrarDashboard();
         };
 
         // --- SINCRONIZAÇÃO: CEP -> ENDEREÇO E MAPA ---

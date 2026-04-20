@@ -28,6 +28,19 @@
             top: 0;
         }
 
+        /* Remove o contorno laranja/azul de foco do campo de arquivo */
+        input[type="file"]:focus {
+            outline: none !important;
+            border-color: #dee2e6 !important;
+            /* Cor padrão do Bootstrap */
+            box-shadow: none !important;
+        }
+
+        /* Remove a borda de validação que está ficando laranja */
+        #p-file {
+            border: 1px solid #ced4da !important;
+        }
+
         .form-box {
             background: white;
             padding: 30px;
@@ -114,6 +127,37 @@
             color: #666;
         }
 
+        /* Máscara visual para os botões de dia em ambos os formulários */
+        .btn-check:checked+.btn-outline-secondary,
+        .btn-check:checked+.btn-outline-primary {
+            background-color: var(--laranja-mundoria) !important;
+            border-color: var(--laranja-mundoria) !important;
+            color: white !important;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(246, 113, 35, 0.3);
+        }
+
+        /* Destaque para campos preenchidos automaticamente */
+        .form-control:read-only {
+            background-color: #fffcf5;
+            border-color: var(--laranja-mundoria);
+        }
+
+        /* Botões de dia laranjas ao selecionar */
+        .btn-check:checked+.btn-outline-secondary {
+            background-color: var(--laranja-mundoria) !important;
+            border-color: var(--laranja-mundoria) !important;
+            color: white !important;
+            font-weight: bold;
+        }
+
+        /* Ajuste do hover para manter a identidade */
+        .btn-outline-secondary:hover,
+        .btn-outline-primary:hover {
+            border-color: var(--laranja-mundoria) !important;
+            color: var(--laranja-mundoria) !important;
+        }
+
         .btn-check-dia:checked+.label-check-dia {
             background: var(--laranja-mundoria);
             color: #fff;
@@ -133,8 +177,18 @@
                     <ul class="nav flex-column gap-2">
                         <li class="nav-item"><a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Ir
                                 para o Site</a></li>
-                        <li class="nav-item"><a href="#" class="nav-link active"><i class="bi bi-patch-check me-2"></i>
-                                Aprovações</a></li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" id="btn-meus-locais"
+                                onclick="window.alternarVisualizacao('meus-locais')">
+                                <i class="bi bi-geo-alt me-2"></i> Meus Locais
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active" id="btn-aprovacoes"
+                                onclick="window.alternarVisualizacao('aprovacoes')">
+                                <i class="bi bi-patch-check me-2"></i> Aprovações
+                            </a>
+                        </li>
                     </ul>
                     <hr>
                     <button class="btn btn-sm btn-outline-danger w-100 mt-4" id="btn-sair-produtor">Sair do
@@ -173,6 +227,50 @@
                         </table>
                     </div>
                 </div>
+
+                <div id="area-meus-locais" class="form-box" style="display: none;">
+                    <h4 class="mb-4 text-success"><i class="bi bi-check-circle"></i> Estabelecimentos Ativos</h4>
+
+                    <div class="p-3 bg-light border rounded mb-3">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <input type="text" id="busca-nome-prod" class="form-control form-control-sm"
+                                    placeholder="🔍 Nome do local...">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" id="busca-cidade-prod" class="form-control form-control-sm"
+                                    placeholder="🏙️ Cidade...">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="text" id="busca-estado-prod" class="form-control form-control-sm"
+                                    placeholder="Estado...">
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-sm btn-outline-secondary w-100 fw-bold"
+                                    onclick="window.limparBuscaProdutor()">LIMPAR</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Foto</th>
+                                    <th>Nome</th>
+                                    <th>Categoria</th>
+                                    <th>Cidade/Estado</th>
+                                    <th class="text-end">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-ativos-produtor">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">Carregando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -188,7 +286,7 @@
                     <form id="form-ponto-produtor">
                         <div class="row mb-3">
                             <div class="col-md-8"><label class="fw-bold">Nome do Local</label><input type="text"
-                                    id="p-nome" class="form-control" required></div>
+                                    id="p-nome" maxlength="50" class="form-control" required></div>
                             <div class="col-md-4"><label class="fw-bold">Categoria</label>
                                 <select id="p-cat" class="form-select">
                                     <option>Parque</option>
@@ -219,7 +317,7 @@
 
                         <div class="row mb-3">
                             <div class="col-md-4"><label class="fw-bold">Número</label><input type="text" id="p-num"
-                                    class="form-control" placeholder="Número"></div>
+                                    class="form-control" maxlength="10" placeholder="Número"></div>
                             <div class="col-md-8 pt-4">
                                 <div class="form-check"><input type="checkbox" id="check-sn" class="form-check-input"
                                         onchange="window.toggleNum(this)"><label class="form-check-label">Sem
@@ -295,6 +393,77 @@
         let mapa, marcador, cropper, blobFoto;
         const modalPontoInstancia = new bootstrap.Modal(document.getElementById('modalPonto'));
         const DIAS_LISTA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+        // Seleciona o campo de CEP do formulário de NOVO local
+        const inputCepNovo = document.getElementById('p-cep'); // Verifique se o ID é p-cep ou edit-cep-sistema
+
+        // Função para aplicar máscara e buscar endereço no formulário de Novo Local
+        const campoCepNovo = document.getElementById('p-cep');
+
+        if (campoCepNovo) {
+            campoCepNovo.addEventListener('input', (e) => {
+                // Máscara 00000-000
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 8) v = v.slice(0, 8);
+                v = v.replace(/^(\d{5})(\d)/, '$1-$2');
+                e.target.value = v;
+
+                // Quando completar o CEP, dispara a busca
+                if (v.replace(/\D/g, '').length === 8) {
+                    buscarEnderecoPeloCepNovo(v.replace(/\D/g, ''));
+                }
+            });
+        }
+
+        async function buscarEnderecoPeloCepNovo(cep) {
+            try {
+                // 1. Busca dados no ViaCEP
+                const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const d = await resp.json();
+
+                if (d.erro) return;
+
+                // 2. Preenche os campos de texto
+                document.getElementById('p-rua').value = d.logradouro || "";
+                document.getElementById('p-cidade').value = d.localidade || "";
+                document.getElementById('p-estado').value = d.uf || "";
+
+                // 3. Busca coordenadas (Lat/Log) para o Mapa via Nominatim
+                const enderecoCompleto = `${d.logradouro}, ${d.localidade}, ${d.uf}, Brasil`;
+                const geoResp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoCompleto)}&limit=1`);
+                const geoData = await geoResp.json();
+
+                if (geoData.length > 0) {
+                    const { lat, lon } = geoData[0];
+                    const coords = [parseFloat(lat), parseFloat(lon)];
+
+                    // 4. Atualiza o Mapa (Variável 'mapa' e 'marcador' do seu painel.html)
+                    mapa.setView(coords, 17);
+
+                    if (marcador) mapa.removeLayer(marcador);
+                    marcador = L.marker(coords).addTo(mapa);
+
+                    // 5. Salva nos campos ocultos para o Firebase
+                    document.getElementById('p-lat').value = lat;
+                    document.getElementById('p-lon').value = lon;
+                }
+
+            } catch (err) {
+                console.error("Erro ao buscar CEP ou Geocodificação:", err);
+            }
+        }
+
+        if (inputCepNovo) {
+            inputCepNovo.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é número
+                if (value.length > 8) value = value.slice(0, 8); // Limita a 8 dígitos
+
+                // Aplica a máscara 00000-000
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+
+                e.target.value = value;
+            });
+        }
 
         // --- AUTH E LOGIN ---
         onAuthStateChanged(auth, async (user) => {
@@ -412,26 +581,148 @@
                 });
         };
 
+        // --- NAVEGAÇÃO ENTRE TELAS ---
+        window.alternarVisualizacao = (tela) => {
+            const areaAprovacoes = document.querySelector('.form-box:not(#area-meus-locais)'); // A caixa original
+            const areaMeusLocais = document.getElementById('area-meus-locais');
+
+            if (tela === 'meus-locais') {
+                areaAprovacoes.style.display = 'none';
+                areaMeusLocais.style.display = 'block';
+                document.getElementById('btn-meus-locais').classList.add('active');
+                document.getElementById('btn-aprovacoes').classList.remove('active');
+                carregarLocaisAtivos();
+            } else {
+                areaMeusLocais.style.display = 'none';
+                areaAprovacoes.style.display = 'block';
+                document.getElementById('btn-aprovacoes').classList.add('active');
+                document.getElementById('btn-meus-locais').classList.remove('active');
+            }
+        };
+
+        // --- CARREGAR LOCAIS ATIVOS ---
+        async function carregarLocaisAtivos() {
+            const table = document.getElementById('tabela-ativos-produtor');
+            try {
+                const q = query(collection(db, "locais"), where("status", "==", "ativo"));
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    table.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Nenhum local ativo encontrado.</td></tr>';
+                    return;
+                }
+
+                table.innerHTML = "";
+                snap.forEach(d => {
+                    const local = d.data();
+                    const cidade = local.endereco?.cidade || "";
+                    const estado = local.endereco?.estado || "";
+
+                    table.innerHTML += `
+                <tr>
+                    <td><img src="${local.imagem}" class="img-pendente"></td>
+                    <td><div class="fw-bold">${local.nome}</div></td>
+                    <td><span class="badge bg-secondary">${local.categoria}</span></td>
+                    <td>${cidade} - ${estado}</td>
+                    <td class="text-end">
+                        <a href="detalhes.html?id=${d.id}" class="btn btn-sm btn-outline-primary fw-bold">
+                            <i class="bi bi-eye"></i> Detalhes
+                        </a>
+                    </td>
+                </tr>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // --- FILTRO DE BUSCA ---
+        window.filtrarAtivosProdutor = () => {
+            const nome = document.getElementById('busca-nome-prod').value.toLowerCase();
+            const cidade = document.getElementById('busca-cidade-prod').value.toLowerCase();
+            const estado = document.getElementById('busca-estado-prod').value.toLowerCase();
+
+            const linhas = document.querySelectorAll('#tabela-ativos-produtor tr');
+
+            linhas.forEach(linha => {
+                const tNome = linha.querySelector('td:nth-child(2)')?.innerText.toLowerCase() || "";
+                const tLocal = linha.querySelector('td:nth-child(4)')?.innerText.toLowerCase() || "";
+
+                if (tNome.includes(nome) && tLocal.includes(cidade) && tLocal.includes(estado)) {
+                    linha.style.display = "";
+                } else {
+                    linha.style.display = "none";
+                }
+            });
+        };
+
+        // Ouvinte para busca em tempo real
+        document.addEventListener('input', (e) => {
+            const ids = ['busca-nome-prod', 'busca-cidade-prod', 'busca-estado-prod'];
+            if (ids.includes(e.target.id)) window.filtrarAtivosProdutor();
+        });
+
+        window.limparBuscaProdutor = () => {
+            document.getElementById('busca-nome-prod').value = "";
+            document.getElementById('busca-cidade-prod').value = "";
+            document.getElementById('busca-estado-prod').value = "";
+            window.filtrarAtivosProdutor();
+        };
+
+        document.getElementById('p-cep').addEventListener('blur', async function () {
+            const cep = this.value.replace(/\D/g, '');
+            if (cep.length === 8) {
+                // Aqui você chama a sua função de buscar endereço que já existe no admin
+                // Ex: window.buscarEnderecoPorCEP(cep);
+            }
+        });
+
         document.getElementById('form-ponto-produtor').onsubmit = async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button'); btn.disabled = true;
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+
             try {
+                // 1. Tratamento e Limpeza da Descrição
+                let descLimpa = document.getElementById('p-desc').value.trim();
+
+                // Transforma 3 ou mais quebras de linha seguidas em apenas duas (\n\n)
+                // Isso mantém o texto organizado mas evita espaços exagerados no banco
+                descLimpa = descLimpa.replace(/\n\s*\n\s*\n/g, '\n\n');
+
+                // Validação final de segurança para o limite simulado (Shift+Enter)
+                const quebras = (descLimpa.match(/\n/g) || []).length;
+                const totalSimulado = descLimpa.length + (quebras * 4);
+
+                if (totalSimulado > 500) {
+                    alert("A descrição excedeu o limite permitido considerando as quebras de linha.");
+                    btn.disabled = false;
+                    return;
+                }
+
+                // 2. Upload da Imagem
                 let url = "https://via.placeholder.com/400x225";
                 if (blobFoto) {
                     const refI = ref(storage, `locais/${Date.now()}.jpg`);
                     await uploadBytes(refI, blobFoto);
                     url = await getDownloadURL(refI);
                 }
+
+                // 3. Organização do Endereço [cite: 178]
                 const enderecoObj = {
                     cep: document.getElementById('p-cep').value,
                     rua: document.getElementById('p-rua').value,
                     cidade: document.getElementById('p-cidade').value,
                     estado: document.getElementById('p-estado').value
                 };
+
+                // 4. Dias e Horários [cite: 169, 175]
                 const diasMarcados = Array.from(document.querySelectorAll('.check-dia-p:checked')).map(el => el.value);
-                const horarioTxt = document.getElementById('check-livre').checked ? 'Livre' : `${document.getElementById('p-hora-abre').value} ás ${document.getElementById('p-hora-fecha').value}`;
+                const horarioTxt = document.getElementById('check-livre').checked
+                    ? 'Livre'
+                    : `${document.getElementById('p-hora-abre').value} ás ${document.getElementById('p-hora-fecha').value}`;
+
+                // 5. Envio para o Firestore [cite: 177, 180]
                 await addDoc(collection(db, "locais"), {
-                    nome: document.getElementById('p-nome').value,
+                    nome: document.getElementById('p-nome').value.trim(),
                     categoria: document.getElementById('p-cat').value,
                     endereco: enderecoObj,
                     numero: document.getElementById('check-sn').checked ? 'S/N' : document.getElementById('p-num').value,
@@ -439,14 +730,18 @@
                     dias_semana: diasMarcados,
                     lat: parseFloat(document.getElementById('p-lat').value),
                     lon: parseFloat(document.getElementById('p-lon').value),
-                    descricao: document.getElementById('p-desc').value,
+                    descricao: descLimpa, // Usa a descrição já limpa e formatada
                     imagem: url,
                     status: "ativo",
                     tipo_local: "comum"
                 });
+
                 alert("Ponto Turístico Publicado!");
                 location.reload();
-            } catch (err) { console.error(err); btn.disabled = false; }
+            } catch (err) {
+                console.error("Erro ao publicar:", err);
+                btn.disabled = false;
+            }
         };
 
         window.abrirCrop = (e) => {

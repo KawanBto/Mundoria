@@ -589,88 +589,83 @@
 
                 <div class="modal-body p-4">
                     <form id="form-gerador">
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-12">
-                                <label class="form-label fw-bold text-secondary small">ONDE VOCÊ QUER
-                                    EXPLORAR?</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-white border-end-0"><i
-                                            class="bi bi-geo-alt text-laranja"></i></span>
-                                    <input type="text" id="gen-origem" class="form-control border-start-0 ps-0"
-                                        oninput="window.buscarEndereco(this.value, 'gen')"
-                                        placeholder="Bairro, Cidade ou Ponto de Referência">
-                                </div>
-                                <div id="lista-sugestoes-gen" class="lista-sugestoes shadow-sm"></div>
-
-                                <input type="hidden" id="gen-cidade-filtro">
-                                <input type="hidden" id="gen-lat"><input type="hidden" id="gen-lon">
+                        <div class="col-12 position-relative mb-3">
+                            <label class="form-label fw-bold text-secondary small">ONDE VOCÊ QUER EXPLORAR?</label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-white border-end-0"><i
+                                        class="bi bi-geo-alt text-laranja"></i></span>
+                                <input type="text" id="gen-origem" class="form-control border-start-0 ps-0"
+                                    oninput="window.buscarEnderecoGen(this.value)"
+                                    placeholder="Digite a cidade (ex: São Caetano do Sul)" autocomplete="off">
+                            </div>
+                            <div id="lista-sugestoes-gen" class="lista-sugestoes shadow-sm"
+                                style="display:none; background:white; position:absolute; width:100%; z-index:9999;">
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-secondary small">DURAÇÃO DA VIAGEM</label>
-                                <select id="gen-dias" class="form-select shadow-sm">
-                                    <option value="1">⏱️ 1 Dia (Bate e Volta)</option>
-                                    <option value="2">⏱️ 2 Dias (Final de Semana)</option>
-                                    <option value="3">⏱️ 3 Dias (Feriado)</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-secondary small">PRIORIZAR POR</label>
-                                <select id="gen-prioridade" class="form-select shadow-sm">
-                                    <option value="nota">⭐ Melhores Avaliados</option>
-                                    <option value="favoritos">❤️ Mais Favoritados</option>
-                                    <option value="roteiros">🗺️ Mais Populares</option>
-                                </select>
-                            </div>
+                            <input type="hidden" id="gen-cidade-filtro">
+                            <input type="hidden" id="gen-lat">
+                            <input type="hidden" id="gen-lon">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary small">DURAÇÃO DA VIAGEM</label>
+                            <select id="gen-dias" class="form-select shadow-sm">
+                                <option value="1">⏱️ 1 Dia (Bate e Volta)</option>
+                                <option value="2">⏱️ 2 Dias (Final de Semana)</option>
+                                <option value="3">⏱️ 3 Dias (Feriado)</option>
+                            </select>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-secondary small d-block mb-3">O QUE NÃO PODE
-                                FALTAR?</label>
-                            <div class="d-flex flex-wrap gap-2">
-                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-parque" value="Parque"
-                                    checked>
-                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
-                                    for="cat-parque">🌳 Parques</label>
-
-                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-museu" value="Museu"
-                                    checked>
-                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
-                                    for="cat-museu">🏛️ Museus</label>
-
-                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-restaurante"
-                                    value="Restaurante" checked>
-                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
-                                    for="cat-restaurante">🍽️ Gastronomia</label>
-
-                                <input type="checkbox" class="btn-check check-gen-cat" id="cat-cultura" value="Cultura"
-                                    checked>
-                                <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
-                                    for="cat-cultura">🎨 Cultura</label>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary small">PRIORIZAR POR</label>
+                            <select id="gen-prioridade" class="form-select shadow-sm">
+                                <option value="nota">⭐ Melhores Avaliados</option>
+                                <option value="favoritos">❤️ Mais Favoritados</option>
+                                <option value="roteiros">🗺️ Mais Populares</option>
+                            </select>
                         </div>
-
-                        <div class="position-relative mb-4">
-                            <div id="mapa-gerador"
-                                style="height: 250px; width: 100%; border-radius: 15px; border: 2px solid #eee;"
-                                class="shadow-sm"></div>
-                            <div class="position-absolute bottom-0 end-0 p-2 bg-white m-2 rounded shadow-sm small fw-bold text-muted"
-                                style="z-index: 1000; opacity: 0.8;">
-                                📍 Clique no mapa para definir o ponto central
-                            </div>
-                        </div>
-
-                        <button type="button" id="btn-executar-gerador"
-                            class="btn btn-warning w-100 py-3 fw-bold shadow mt-2 text-white"
-                            style="background: #f67123; border: none; font-size: 1.1rem; letter-spacing: 1px;">
-                            CRIAR MEU ROTEIRO AGORA ✨
-                        </button>
-                    </form>
                 </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-secondary small d-block mb-3">O QUE NÃO PODE
+                        FALTAR?</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <input type="checkbox" class="btn-check check-gen-cat" id="cat-parque" value="Parque" checked>
+                        <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                            for="cat-parque">🌳 Parques</label>
+
+                        <input type="checkbox" class="btn-check check-gen-cat" id="cat-museu" value="Museu" checked>
+                        <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                            for="cat-museu">🏛️ Museus</label>
+
+                        <input type="checkbox" class="btn-check check-gen-cat" id="cat-restaurante" value="Restaurante"
+                            checked>
+                        <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                            for="cat-restaurante">🍽️ Gastronomia</label>
+
+                        <input type="checkbox" class="btn-check check-gen-cat" id="cat-cultura" value="Cultura" checked>
+                        <label class="btn btn-outline-warning rounded-pill px-3 py-1 btn-sm fw-medium"
+                            for="cat-cultura">🎨 Cultura</label>
+                    </div>
+                </div>
+
+                <div class="position-relative mb-4">
+                    <div id="mapa-gerador"
+                        style="height: 250px; width: 100%; border-radius: 15px; border: 2px solid #eee;"
+                        class="shadow-sm"></div>
+                    <div class="position-absolute bottom-0 end-0 p-2 bg-white m-2 rounded shadow-sm small fw-bold text-muted"
+                        style="z-index: 1000; opacity: 0.8;">
+                        📍 Clique no mapa para definir o ponto central
+                    </div>
+                </div>
+
+                <button type="button" id="btn-executar-gerador" onclick="window.gerarRoteiroInteligente()"
+                    class="btn btn-primary w-100 fw-bold py-3 shadow">
+                    CRIAR MEU ROTEIRO AGORA
+                </button>
+                </form>
             </div>
         </div>
+    </div>
     </div>
 
     <div class="modal fade" id="modalNovoRoteiro" tabindex="-1">
@@ -838,26 +833,6 @@
             reader.readAsDataURL(file);
         };
 
-        // --- GERADOR AUTOMÁTICO ✨ ---
-        document.getElementById('modalGeradorRoteiro').addEventListener('shown.bs.modal', () => {
-            // 1. Limpa o mapa se ele já existir para evitar erro de inicialização duplicada
-            if (mapaGerador) {
-                mapaGerador.remove();
-                mapaGerador = null;
-            }
-
-            // 2. Inicializa o mapa com um pequeno atraso para o modal estar 100% aberto e visível
-            setTimeout(() => {
-                mapaGerador = L.map('mapa-gerador').setView([-23.55, -46.63], 12);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapaGerador);
-
-                // 3. Configura o clique no mapa para capturar as coordenadas
-                mapaGerador.on('click', e => window.handleMapClick(e, 'gen'));
-
-                // 4. ESSENCIAL: Força o Leaflet a renderizar todos os blocos do mapa corretamente
-                mapaGerador.invalidateSize();
-            }, 300);
-        });
 
         document.getElementById('btn-executar-gerador').onclick = async () => {
             const btn = document.getElementById('btn-executar-gerador');
@@ -1326,95 +1301,255 @@
             }
         };
 
-        // --- AUXILIARES GERAIS PRESERVADOS ---
-        window.buscarEndereco = (q, p) => { const list = document.getElementById(`lista-sugestoes-${p}`); if (q.length < 3) return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`).then(r => r.json()).then(d => { list.innerHTML = d.map(i => `<div class="item-sugestao" onclick="window.selecionarEnd('${i.display_name.replace(/'/g, "")}', ${i.lat}, ${i.lon}, '${p}')">${i.display_name}</div>`).join(''); list.style.display = 'block'; }); };
-        window.selecionarEnd = (label, lat, lon, p) => {
-            const mapaAlvo = p === 'sol' ? mapaSol : mapaEdicao;
-            let marcadorAlvo = p === 'sol' ? marcadorSol : marcadorEdicao;
+        // Inicialização segura do Mapa do Gerador
+        document.getElementById('modalGeradorRoteiro').addEventListener('shown.bs.modal', () => {
+            if (window.mapaGerador) {
+                window.mapaGerador.remove();
+                window.mapaGerador = null;
+            }
 
-            const coords = [parseFloat(lat), parseFloat(lon)];
-            mapaAlvo.setView(coords, 16);
+            setTimeout(() => {
+                window.mapaGerador = L.map('mapa-gerador').setView([-23.55, -46.63], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.mapaGerador);
 
-            if (marcadorAlvo) mapaAlvo.removeLayer(marcadorAlvo);
-            marcadorAlvo = L.marker(coords).addTo(mapaAlvo);
+                // Vincula o clique à nova função que extrai a cidade
+                window.mapaGerador.on('click', window.handleMapClickGen);
 
-            if (p === 'sol') marcadorSol = marcadorAlvo;
-            else marcadorEdicao = marcadorAlvo;
+                window.mapaGerador.invalidateSize();
+            }, 400);
+        });
 
-            document.getElementById(`${p}-lat`).value = lat;
-            document.getElementById(`${p}-lon`).value = lon;
+        // Função de Busca: Vinculada ao window para funcionar com oninput
+        // --- FUNÇÕES DE BUSCA E SELEÇÃO (VERSÃO CORRIGIDA PARA NOMES COMPOSTOS) ---
 
-            // Limpa as sugestões após selecionar
-            const lista = document.getElementById(`lista-sugestoes-${p}`);
-            if (lista) lista.innerHTML = '';
+        window.buscarEnderecoGen = (q) => {
+            const list = document.getElementById('lista-sugestoes-gen');
+            if (q.length < 3) {
+                list.style.display = 'none';
+                return;
+            }
+
+            // Pedimos explicitamente os detalhes do endereço (addressdetails=1)
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&addressdetails=1&limit=5`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        list.innerHTML = data.map(i => {
+                            // Extração inteligente da cidade
+                            const cidade = i.address.city || i.address.town || i.address.village || i.address.municipality || i.display_name.split(',')[0];
+                            const estado = i.address.state || "";
+                            const labelCompleta = estado ? `${cidade} - ${estado}` : cidade;
+
+                            return `
+                        <div class="item-sugestao" 
+                             style="padding:12px; cursor:pointer; border-bottom:1px solid #eee; background: white;" 
+                             onclick="window.selecionarEndGen('${cidade.replace(/'/g, "\\'")}', ${i.lat}, ${i.lon})">
+                            <i class="bi bi-geo-alt-fill text-laranja me-2"></i><strong>${labelCompleta}</strong>
+                        </div>`;
+                        }).join('');
+                        list.style.display = 'block';
+                    } else {
+                        list.style.display = 'none';
+                    }
+                });
         };
 
-        document.getElementById('form-solicitacao-local').onsubmit = async (e) => {
-            e.preventDefault();
+        window.handleMapClickGen = async (e) => {
+            const { lat, lng } = e.latlng;
 
-            // PEGA OS VALORES E LIMPA ESPAÇOS SOBRANDO
-            const nome = document.getElementById('sol-nome').value.trim();
-            const desc = document.getElementById('sol-desc').value.trim();
-            const lat = document.getElementById('sol-lat').value;
-            const dias = obterDiasMarcados('sol');
-
-            // TRAVA SE ESTIVER VAZIO
-            if (!nome || !desc || !lat || dias.length === 0) {
-                alert("❌ Erro: Preencha o Nome, Descrição, localize no Mapa e marque os Dias de Funcionamento!");
-                return;
-            }
-
-            // TRAVA SE NÃO TIVER FOTO
-            if (!blobFinalNegocio) {
-                alert("❌ Erro: Você precisa selecionar e ajustar uma Foto!");
-                return;
-            }
-
-            const btn = e.target.querySelector('button');
-            btn.disabled = true;
+            // Feedback visual imediato
+            if (window.marcadorGerador) window.mapaGerador.removeLayer(window.marcadorGerador);
+            window.marcadorGerador = L.marker([lat, lng]).addTo(window.mapaGerador);
 
             try {
-                let url = "https://via.placeholder.com/400x300";
-                if (blobFinalNegocio) {
-                    const refImg = ref(storage, `pendentes/${Date.now()}.jpg`);
-                    await uploadBytes(refImg, blobFinalNegocio);
-                    url = await getDownloadURL(refImg);
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
+                const data = await res.json();
+
+                if (data.address) {
+                    const cidade = data.address.city || data.address.town || data.address.village || data.address.municipality || "Região Selecionada";
+                    window.selecionarEndGen(cidade, lat, lng);
+                }
+            } catch (err) {
+                console.error("Erro ao identificar local:", err);
+            }
+        };
+
+        // Função de Seleção: Garante que os dados do Gerador não vazem para a Gestão de Parceiro
+        window.selecionarEndGen = (cidadeNome, lat, lon) => {
+            console.log("Tentando preencher cidade:", cidadeNome);
+
+            const campoOrigem = document.getElementById('gen-origem');
+            const campoFiltro = document.getElementById('gen-cidade-filtro');
+            const campoLat = document.getElementById('gen-lat');
+            const campoLon = document.getElementById('gen-lon');
+
+            // Verifica se os campos existem antes de atribuir valor (evita o erro de 'null')
+            if (campoOrigem) campoOrigem.value = cidadeNome;
+            if (campoFiltro) campoFiltro.value = cidadeNome;
+            if (campoLat) campoLat.value = lat;
+            if (campoLon) campoLon.value = lon;
+
+            const list = document.getElementById('lista-sugestoes-gen');
+            if (list) {
+                list.style.display = 'none';
+                list.innerHTML = '';
+            }
+
+            if (window.mapaGerador) {
+                window.mapaGerador.setView([lat, lon], 14);
+                if (window.marcadorGerador) window.mapaGerador.removeLayer(window.marcadorGerador);
+                window.marcadorGerador = L.marker([lat, lon]).addTo(window.mapaGerador);
+            }
+        };
+
+        // Fecha a lista de sugestões se clicar fora dela
+        document.addEventListener('click', (e) => {
+            const lista = document.getElementById('lista-sugestoes-gen');
+            const input = document.getElementById('gen-origem');
+
+            if (lista && e.target !== lista && e.target !== input) {
+                lista.style.display = 'none';
+            }
+        });
+
+        // Função de clique no mapa exclusiva para o Gerador (Focada em Região/Cidade)
+        // --- FUNÇÃO DE CLIQUE: PEGA APENAS A CIDADE ---
+        window.handleMapClickGen = async (e) => {
+            const { lat, lng } = e.latlng;
+
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
+                const data = await res.json();
+
+                if (data.address) {
+                    const cidade = data.address.city || data.address.town || data.address.village || data.address.municipality || "Cidade não identificada";
+                    // Chama a função de seleção para padronizar o preenchimento
+                    window.selecionarEndGen(cidade, lat, lng);
+                }
+            } catch (err) {
+                console.error("Erro ao identificar cidade:", err);
+            }
+        };
+
+        // --- FUNÇÃO DE SELEÇÃO DA LISTA: PEGA APENAS A CIDADE ---
+        window.selecionarEndGen = (label, lat, lon) => {
+            // A label vem como "Rua, Bairro, Cidade, Estado". 
+            // Vamos quebrar a string e tentar pegar a parte que representa a cidade.
+            const partes = label.split(',');
+            // Geralmente a cidade é um dos últimos itens antes do estado/país
+            let cidadeIdentificada = partes.length > 2 ? partes[partes.length - 3].trim() : partes[0].trim();
+
+            document.getElementById('gen-origem').value = cidadeIdentificada;
+            document.getElementById('gen-lat').value = lat;
+            document.getElementById('gen-lon').value = lon;
+            document.getElementById('gen-cidade-filtro').value = cidadeIdentificada.toLowerCase();
+
+            document.getElementById('lista-sugestoes-gen').style.display = 'none';
+
+            if (window.mapaGerador) {
+                const coords = [parseFloat(lat), parseFloat(lon)];
+                window.mapaGerador.setView(coords, 14);
+                if (window.marcadorGerador) window.mapaGerador.removeLayer(window.marcadorGerador);
+                window.marcadorGerador = L.marker(coords).addTo(window.mapaGerador);
+            }
+        };
+
+        // --- LÓGICA DO GERADOR DE ROTEIRO (FIREBASE) ---
+
+        // --- LÓGICA DO GERADOR DE ROTEIRO (MUNDORIA) ---
+
+        window.gerarRoteiroInteligente = async () => {
+            // Tenta pegar os elementos
+            const elCidade = document.getElementById('gen-cidade-filtro');
+            const elDias = document.getElementById('gen-dias');
+
+            // Se o elemento não existir, para aqui e avisa
+            if (!elCidade || !elDias) {
+                console.error("Erro: Campos do gerador não encontrados no HTML!");
+                return;
+            }
+
+            const cidade = elCidade.value;
+            const dias = parseInt(elDias.value) || 1;
+
+            if (!cidade) {
+                alert("Selecione uma cidade primeiro!");
+                return;
+            }
+
+            // Feedback de carregamento
+            const textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Gerando Roteiro...`;
+
+            try {
+                // 1. Busca locais da cidade no Firestore que estão ativos
+                // Nota: O campo no seu banco deve ser "cidade"
+                const q = query(
+                    collection(db, "locais"),
+                    where("status", "==", "ativo"),
+                    where("cidade", "==", cidade)
+                );
+
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    alert(`Ainda não temos locais cadastrados em ${cidade}. Tente outra cidade!`);
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    return;
                 }
 
-                const h = document.getElementById('sol-check-livre').checked ?
-                    'Livre' : `${document.getElementById('sol-hora-abre').value} ás ${document.getElementById('sol-hora-fecha').value}`;
-
-                const num = document.getElementById('sol-check-sn').checked ? 'S/N' : document.getElementById('sol-num').value;
-
-                const enderecoObj = {
-                    cep: document.getElementById('sol-cep').value,
-                    rua: document.getElementById('sol-rua').value,
-                    cidade: document.getElementById('sol-cidade').value,
-                    estado: document.getElementById('sol-estado').value
-                };
-
-                await addDoc(collection(db, "locais"), {
-                    nome: nome,
-                    categoria: document.getElementById('sol-cat').value,
-                    endereco: enderecoObj,
-                    numero: num,
-                    lat: parseFloat(lat),
-                    lon: parseFloat(document.getElementById('sol-lon').value),
-                    horario: h,
-                    dias_semana: dias,
-                    descricao: desc,
-                    imagem: url,
-                    id_parceiro: emailLogado,
-                    status: "pendente",
-                    tipo_local: "comum",
-                    data_solicitacao: new Date().toLocaleDateString('pt-BR')
+                let locaisPool = [];
+                snap.forEach(doc => {
+                    locaisPool.push({ id: doc.id, ...doc.data() });
                 });
 
-                alert("Pedido enviado com sucesso! Agora é só aguardar a aprovação.");
+                // 2. Sorteio Aleatório (Embaralha)
+                locaisPool.sort(() => Math.random() - 0.5);
+
+                // 3. Monta o Roteiro
+                const novoRoteiro = {
+                    nome: `Viagem para ${cidade}`,
+                    cidade: cidade,
+                    criadoEm: new Date(),
+                    userId: auth.currentUser.uid,
+                    dias: []
+                };
+
+                for (let i = 0; i < dias; i++) {
+                    const locaisDoDia = locaisPool.splice(0, 3);
+                    if (locaisDoDia.length > 0) {
+                        novoRoteiro.dias.push({
+                            dia: i + 1,
+                            locais: locaisDoDia.map(l => ({
+                                id: l.id,
+                                nome: l.nome,
+                                categoria: l.categoria
+                            }))
+                        });
+                    }
+                }
+
+                // 4. Salva no Firebase
+                await addDoc(collection(db, "roteiros"), novoRoteiro);
+
+                alert("Roteiro gerado com sucesso! Divirta-se!");
+
+                // Fecha o modal e recarrega para mostrar na lista
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalGeradorRoteiro'));
+                if (modal) modal.hide();
+
                 location.reload();
-            } catch (err) {
-                console.error("Erro ao enviar pedido:", err);
-                btn.disabled = false;
+
+            } catch (error) {
+                console.error("Erro técnico:", error);
+                alert("Erro ao conectar com o banco de dados. Verifique se o Firebase está configurado.");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                }
             }
         };
 

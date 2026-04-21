@@ -162,6 +162,13 @@
                 </div>
 
                 <button type="submit" class="btn btn-salvar mt-3" id="btn-submit-perfil">Salvar Alterações</button>
+
+                <div class="mt-4 p-3 border rounded bg-light text-center">
+                    <p class="small text-muted mb-2">Deseja mudar sua senha de acesso?</p>
+                    <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="btn-redefinir-senha">
+                        <i class="bi bi-shield-lock"></i> Enviar E-mail de Troca de Senha
+                    </button>
+                </div>
             </form>
 
             <hr class="mt-5">
@@ -195,8 +202,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <script type="module">
+        // Importações unificadas e corrigidas
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
 
@@ -343,6 +351,21 @@
                     if (error.code === 'auth/requires-recent-login') {
                         alert("Por segurança, saia e faça login novamente para excluir.");
                     } else { alert("Erro ao excluir."); }
+                }
+            }
+        });
+
+        // Lógica para enviar e-mail de redefinição de senha
+        document.getElementById('btn-redefinir-senha').addEventListener('click', async () => {
+            const email = auth.currentUser.email;
+
+            if (confirm("Enviaremos um link para o seu e-mail para você criar uma nova senha. Confirma?")) {
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    alert("Sucesso! Verifique sua caixa de entrada (e o spam) para alterar a senha.");
+                } catch (error) {
+                    alert("Erro ao tentar enviar o e-mail. Tente novamente mais tarde.");
+                    console.error(error);
                 }
             }
         });

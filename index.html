@@ -234,6 +234,17 @@
             </div>
             <button class="search-btn rounded-pill px-4 ms-2">Buscar</button>
         </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-3">
+            <button class="btn btn-light btn-sm rounded-pill shadow-sm text-primary fw-bold"
+                onclick="window.filtrarPorGps()">
+                <i class="bi bi-geo-fill"></i> Locais Próximos (GPS)
+            </button>
+            <button class="btn btn-light btn-sm rounded-pill shadow-sm text-laranja fw-bold"
+                onclick="window.filtrarPorEnderecoPerfil()">
+                <i class="bi bi-house-heart-fill"></i> Perto da Minha Casa
+            </button>
+        </div>
     </div>
 
     <div class="container mb-5">
@@ -562,6 +573,108 @@
             b.classList.add('ativo');
             aplicarFiltros();
         }
+
+        // Variável para controlar qual filtro geográfico está ativo
+        let filtroGeoAtivo = null;
+
+        // Variável global para saber qual filtro está ligado
+        let filtroAtivo = null;
+
+        // --- FUNÇÃO 1: GPS (COM DESATIVAR) ---
+        window.filtrarPorGps = () => {
+            const btn = event.currentTarget;
+
+            // Se já estiver ativo, desliga e mostra tudo
+            if (filtroAtivo === 'gps') {
+                filtroAtivo = null;
+                resetarEstiloBotao(btn, 'text-primary');
+                renderizarLocais(locaisGlobais);
+                return;
+            }
+
+            if (!navigator.geolocation) return alert("Seu navegador não suporta geolocalização.");
+
+            navigator.geolocation.getCurrentPosition((pos) => {
+                // Limpa outros filtros antes
+                resetarTodosBotoes();
+
+                filtroAtivo = 'gps';
+                btn.classList.replace('btn-light', 'btn-primary');
+                btn.classList.replace('text-primary', 'text-white');
+
+                const latUser = pos.coords.latitude;
+                const lonUser = pos.coords.longitude;
+
+                const proximos = locaisGlobais.filter(local => {
+                    const distancia = calcularDistancia(latUser, lonUser, local.lat, local.lon);
+                    return distancia <= 10;
+                });
+
+                if (proximos.length === 0) alert("Não encontramos locais num raio de 10km.");
+                renderizarLocais(proximos);
+            });
+        };
+
+        // --- FUNÇÃO 2: PERFIL (COM DESATIVAR E AVISO DE CIDADE) ---
+        window.filtrarPorEnderecoPerfil = () => {
+            const btn = event.currentTarget;
+
+            // Se já estiver ativo, desliga e mostra tudo
+            if (filtroAtivo === 'perfil') {
+                filtroAtivo = null;
+                resetarEstiloBotao(btn, 'text-laranja');
+                renderizarLocais(locaisGlobais);
+                return;
+            }
+
+            // Puxa os dados do usuário global [cite: 518, 519]
+            if (!window.isLogado || !window.usuarioGlobal) return alert("Faça login primeiro!");
+
+            const cidadePerfil = window.usuarioGlobal.cidade;
+            if (!cidadePerfil) return alert("Cadastre sua cidade no Perfil!");
+
+            // Limpa outros filtros antes
+            resetarTodosBotoes();
+
+            filtroAtivo = 'perfil';
+            btn.classList.replace('btn-light', 'btn-primary');
+            btn.classList.replace('text-laranja', 'text-white');
+
+            const pertoDeCasa = locaisGlobais.filter(local => {
+                const enderecoLocal = typeof local.endereco === 'object' ? local.endereco.cidade : String(local.endereco);
+                return enderecoLocal.toLowerCase().includes(cidadePerfil.toLowerCase());
+            });
+
+            if (pertoDeCasa.length === 0) {
+                alert(`Ainda não temos locais cadastrados em ${cidadePerfil}.`);
+            }
+
+            renderizarLocais(pertoDeCasa);
+        };
+
+        // --- FUNÇÕES DE APOIO ---
+
+        function resetarEstiloBotao(btn, classeCorOriginal) {
+            btn.classList.remove('btn-primary', 'text-white');
+            btn.classList.add('btn-light', classeCorOriginal);
+        }
+
+        function resetarTodosBotoes() {
+            const btnGps = document.querySelector('[onclick*="filtrarPorGps"]');
+            const btnPerfil = document.querySelector('[onclick*="filtrarPorEnderecoPerfil"]');
+            if (btnGps) resetarEstiloBotao(btnGps, 'text-primary');
+            if (btnPerfil) resetarEstiloBotao(btnPerfil, 'text-laranja');
+        }
+
+        // Sua função Haversine que já funciona perfeitamente
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
     </script>
     <input type="hidden" id="id-local-temp">
 

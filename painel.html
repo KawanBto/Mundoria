@@ -164,6 +164,69 @@
             border-color: var(--laranja-mundoria);
             font-weight: bold;
         }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--laranja-mundoria) !important;
+        }
+
+        .img-pendente {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        /* Garante que o texto das abas apareça (Igual ao Admin) */
+        #abasGestao .nav-link {
+            color: #666 !important;
+            /* Cinza para abas inativas */
+        }
+
+        #abasGestao .nav-link.active {
+            background-color: var(--laranja-mundoria) !important;
+            /* Fundo laranja */
+            color: white !important;
+            /* Texto branco no botão ativo */
+        }
+
+        /* Ajuste específico para os cards de estatísticas */
+        .tab-pane strong.h4 {
+            color: #212529 !important;
+            display: block;
+        }
+
+        /* Ajuste das abas para não sumirem */
+        #abasGestao .nav-link {
+            color: #495057 !important;
+            /* Cinza escuro para ler bem */
+            padding: 8px 5px !important;
+            font-size: 0.9rem !important;
+        }
+
+        #abasGestao .nav-link.active {
+            background-color: var(--laranja-mundoria) !important;
+            color: #fff !important;
+        }
+
+        /* Força os cards a serem baixinhos */
+        .bg-light.border.rounded {
+            min-height: 60px;
+            /* Define uma altura mínima pequena */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        #mapa-edit {
+            height: 250px !important;
+            /* Altura fixa para evitar colapso  */
+            width: 100%;
+            min-height: 250px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background-color: #eee;
+            /* Cor de fundo enquanto carrega */
+        }
     </style>
 </head>
 
@@ -180,13 +243,18 @@
                         <li class="nav-item">
                             <a href="#" class="nav-link" id="btn-meus-locais"
                                 onclick="window.alternarVisualizacao('meus-locais')">
-                                <i class="bi bi-geo-alt me-2"></i> Meus Locais
+                                <i class="bi bi-geo-alt me-2"></i> Estabelecimentos Ativos
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link active" id="btn-aprovacoes"
                                 onclick="window.alternarVisualizacao('aprovacoes')">
                                 <i class="bi bi-patch-check me-2"></i> Aprovações
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="window.mostrarLocaisSistema()">
+                                <i class="bi bi-geo-alt-fill me-2"></i> Locais do Sistema
                             </a>
                         </li>
                     </ul>
@@ -399,6 +467,7 @@
 
         // Função para aplicar máscara e buscar endereço no formulário de Novo Local
         const campoCepNovo = document.getElementById('p-cep');
+        const mainOriginalHTML = document.querySelector('main').innerHTML;
 
         if (campoCepNovo) {
             campoCepNovo.addEventListener('input', (e) => {
@@ -516,7 +585,27 @@
         }
 
         window.aprovar = async (id) => { if (confirm("Aprovar este local?")) { await updateDoc(doc(db, "locais", id), { status: "ativo" }); carregarLista(); } };
-        window.rejeitar = async (id) => { if (confirm("Deletar solicitação?")) { await deleteDoc(doc(db, "locais", id)); carregarLista(); } };
+        window.rejeitar = async (id) => {
+            if (confirm("Tem certeza que deseja excluir este estabelecimento permanentemente?")) {
+                try {
+                    await deleteDoc(doc(db, "locais", id));
+                    alert("Excluído com sucesso!"); // Alerta de confirmação
+
+                    // ATUALIZAÇÃO AUTOMÁTICA:
+                    // Se estiver na tela de Ativos, recarrega a lista específica
+                    if (typeof carregarLocaisAtivos === 'function') {
+                        carregarLocaisAtivos();
+                    }
+                    // Se estiver na tela de Aprovações, recarrega as pendências [cite: 499]
+                    if (typeof carregarLista === 'function') {
+                        carregarLista();
+                    }
+                } catch (error) {
+                    console.error("Erro ao excluir:", error);
+                    alert("Erro ao excluir estabelecimento.");
+                }
+            }
+        };
 
         // --- CADASTRO E MAPA ---
         window.toggleNum = (c) => document.getElementById('p-num').disabled = c.checked;
@@ -583,7 +672,14 @@
 
         // --- NAVEGAÇÃO ENTRE TELAS ---
         window.alternarVisualizacao = (tela) => {
-            const areaAprovacoes = document.querySelector('.form-box:not(#area-meus-locais)'); // A caixa original
+            const mainContent = document.querySelector('main');
+
+            // Se o conteúdo atual for o de Locais do Sistema, restaura o original
+            if (mainContent.querySelector('#tabela-locais-sistema-corpo') || mainContent.querySelector('.btn-secondary')) {
+                mainContent.innerHTML = mainOriginalHTML;
+            }
+
+            const areaAprovacoes = document.querySelector('.form-box:not(#area-meus-locais)');
             const areaMeusLocais = document.getElementById('area-meus-locais');
 
             if (tela === 'meus-locais') {
@@ -597,6 +693,7 @@
                 areaAprovacoes.style.display = 'block';
                 document.getElementById('btn-aprovacoes').classList.add('active');
                 document.getElementById('btn-meus-locais').classList.remove('active');
+                carregarLista(); // Garante que a lista de aprovações recarregue
             }
         };
 
@@ -606,30 +703,28 @@
             try {
                 const q = query(collection(db, "locais"), where("status", "==", "ativo"));
                 const snap = await getDocs(q);
-
-                if (snap.empty) {
-                    table.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Nenhum local ativo encontrado.</td></tr>';
-                    return;
-                }
-
                 table.innerHTML = "";
+
                 snap.forEach(d => {
                     const local = d.data();
                     const cidade = local.endereco?.cidade || "";
                     const estado = local.endereco?.estado || "";
 
                     table.innerHTML += `
-                <tr>
-                    <td><img src="${local.imagem}" class="img-pendente"></td>
-                    <td><div class="fw-bold">${local.nome}</div></td>
-                    <td><span class="badge bg-secondary">${local.categoria}</span></td>
-                    <td>${cidade} - ${estado}</td>
-                    <td class="text-end">
-                        <a href="detalhes.html?id=${d.id}" class="btn btn-sm btn-outline-primary fw-bold">
-                            <i class="bi bi-eye"></i> Detalhes
-                        </a>
-                    </td>
-                </tr>`;
+            <tr>
+                <td><img src="${local.imagem}" class="img-pendente shadow-sm"></td>
+                <td><div class="fw-bold">${local.nome}</div></td>
+                <td><span class="badge bg-secondary">${local.categoria}</span></td>
+                <td><span class="text-muted"><i class="bi bi-geo-alt me-1"></i>${cidade} - ${estado}</span></td>
+                <td class="text-end">
+                    <a href="detalhes.html?id=${d.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 fw-bold me-1 shadow-sm">
+                        <i class="bi bi-eye"></i> Ver Site
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger" onclick="window.rejeitar('${d.id}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
                 });
             } catch (e) { console.error(e); }
         }
@@ -766,7 +861,841 @@
         };
 
         document.getElementById('btn-sair-produtor').onclick = () => signOut(auth).then(() => window.location.href = "login.html");
+
+        // Importe o 'updateDoc' se ainda não estiver no topo do seu arquivo
+        // import { ... , updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. Função para Renderizar a Lista de Locais do Sistema
+        // --- FUNCIONALIDADE LOCAIS DO SISTEMA (IDENTICO AO ADMIN) ---
+
+        // --- FUNÇÃO PARA MOSTRAR LISTA DE LOCAIS (ESTILO ADMIN) ---
+        // --- FUNCIONALIDADE LOCAIS DO SISTEMA ---
+
+        window.mostrarLocaisSistema = async () => {
+            const mainContent = document.querySelector('main');
+            const q = query(collection(db, "locais"), where("tipo_local", "==", "sistema"));
+            const snap = await getDocs(q);
+
+            mainContent.innerHTML = `
+        <div class="col-12 mb-4">
+            <button class="btn btn-sm btn-secondary mb-3" onclick="location.reload()">
+                <i class="bi bi-arrow-left"></i> Voltar ao Meu Painel
+            </button>
+            <div class="form-box shadow-sm bg-white p-4 rounded">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="text-primary mb-0 fw-bold"><i class="bi bi-geo-alt-fill me-2"></i>Locais Oficiais</h4>
+                    <div class="input-group input-group-sm w-50">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" id="busca-local-sistema" class="form-control border-start-0" 
+                               placeholder="Pesquisar local oficial..." onkeyup="window.filtrarLocaisSistema()">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Foto</th>
+                                <th>Nome</th>
+                                <th>Cidade</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-locais-sistema-corpo"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+
+            const tbody = document.getElementById('tabela-locais-sistema-corpo');
+            snap.forEach(d => {
+                const l = d.data();
+                tbody.innerHTML += `
+            <tr>
+                <td><img src="${l.imagem}" class="rounded shadow-sm" style="width:50px; height:50px; object-fit:cover;"></td>
+                <td class="fw-bold">${l.nome}</td>
+                <td>${l.endereco?.cidade || '---'}</td>
+                <td class="text-end">
+                    <a href="detalhes.html?id=${d.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 fw-bold me-1 shadow-sm">
+                        <i class="bi bi-eye"></i> Ver Site
+                    </a>
+                    <button class="btn btn-sm btn-primary fw-bold px-3 me-1 shadow-sm" onclick="window.gerenciarLocalSistema('${d.id}')">
+                        <i class="bi bi-gear-fill me-1"></i> Gerenciar
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="window.excluirLocalSistema('${d.id}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+            });
+        };
+
+        // Enviar ou Salvar Alteração de Resposta [cite: 287, 292, 157]
+        window.enviarRespostaSistema = async (idAval) => {
+            const textarea = document.getElementById(`resp-${idAval}`);
+            if (!textarea) return;
+
+            let textoRaw = textarea.value.trim();
+
+            // Tratamento de limpeza (Igual ao da descrição do local)
+            // 1. Remove espaços duplos 
+            textoRaw = textoRaw.replace(/ +/g, ' ');
+            // 2. Transforma 3+ quebras de linha em apenas duas 
+            textoRaw = textoRaw.replace(/\n\s*\n\s*\n/g, '\n\n');
+
+            if (!textoRaw) return alert("Digite uma resposta antes de salvar. [cite: 290]");
+
+            // Validação de limite (Considerando quebras de linha como no admin) [cite: 288-289]
+            const quebras = (textoRaw.match(/\n/g) || []).length;
+            const totalSimulado = textoRaw.length + (quebras * 4);
+
+            if (totalSimulado > 300) {
+                return alert(`Sua resposta excedeu o limite permitido (${totalSimulado}/300). [cite: 289]`);
+            }
+
+            try {
+                const idLocalAtivo = document.getElementById('edit-id-sistema').value;
+                await updateDoc(doc(db, "avaliacoes", idAval), {
+                    resposta_parceiro: textoRaw, // Campo usado no painel para respostas [cite: 218]
+                    data_resposta: new Date().toISOString()
+                });
+
+                alert("Resposta salva com sucesso! [cite: 293]");
+                window.gerenciarLocalSistema(idLocalAtivo); // Recarrega o modal [cite: 294]
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar resposta. [cite: 295]");
+            }
+        };
+
+        // Excluir Resposta [cite: 33, 34]
+        window.excluirRespostaAdmin = async (idAval) => {
+            if (confirm("Deseja apagar sua resposta? A avaliação do cliente continuará visível. [cite: 33]")) {
+                try {
+                    await updateDoc(doc(db, "avaliacoes", idAval), {
+                        resposta_parceiro: "" // Limpa o campo no banco [cite: 34]
+                    });
+                    alert("Resposta removida. [cite: 35]");
+                    window.gerenciarLocalSistema(document.getElementById('edit-id-sistema').value);
+                } catch (e) {
+                    alert("Erro ao excluir. [cite: 36]");
+                }
+            }
+        };
+
+        // Preparar Edição (Troca o texto pelo campo de digitar) [cite: 30, 31]
+        window.prepararEdicaoRespostaAdmin = (idAval, textoAntigo) => {
+            const container = document.getElementById(`container-resposta-final-${idAval}`);
+            container.innerHTML = `
+        <div class="p-2 rounded bg-light border">
+            <textarea class="form-control form-control-sm mb-2" id="resp-${idAval}" rows="2">${textoAntigo}</textarea>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-success fw-bold" onclick="window.enviarRespostaSistema('${idAval}')">
+                    SALVAR ALTERAÇÃO [cite: 31]
+                </button>
+                <button class="btn btn-sm btn-secondary fw-bold" 
+                    onclick="window.gerenciarLocalSistema(document.getElementById('edit-id-sistema').value)">
+                    CANCELAR [cite: 32]
+                </button>
+            </div>
+        </div>`;
+        };
+
+        // Contador de caracteres 
+        window.atualizarContadorResposta = (idAval) => {
+            const text = document.getElementById(`resp-${idAval}`).value;
+            const counter = document.getElementById(`count-${idAval}`);
+            if (counter) counter.innerText = `${text.length} / 300 `;
+        };
+
+        window.excluirLocalSistema = async (id) => {
+            if (confirm("Tem certeza que deseja remover este local oficial do sistema?")) {
+                try {
+                    await deleteDoc(doc(db, "locais", id));
+                    alert("Excluído com sucesso!"); // Alerta de confirmação 
+
+                    // REFRESH AUTOMÁTICO:
+                    // Chama a função que desenha a tabela novamente 
+                    window.mostrarLocaisSistema();
+                } catch (error) {
+                    console.error("Erro ao excluir local do sistema:", error);
+                    alert("Erro ao excluir local.");
+                }
+            }
+        };
+
+        window.gerenciarLocalSistema = async (id) => {
+            try {
+                const docSnap = await getDoc(doc(db, "locais", id));
+                if (!docSnap.exists()) return;
+                const l = docSnap.data();
+
+                // 1. Busca de Estatísticas Reais [cite: 575, 576]
+                const [snapFavs, snapRoteiros, snapRev] = await Promise.all([
+                    getDocs(query(collection(db, "favoritos"), where("id_local", "==", id))),
+                    getDocs(query(collection(db, "roteiro_itens"), where("id_local", "==", id))),
+                    getDocs(query(collection(db, "avaliacoes"), where("id_local", "==", id)))
+                ]);
+
+                document.getElementById('stat-favoritos').innerText = snapFavs.size;
+                document.getElementById('stat-roteiros-count').innerText = snapRoteiros.size;
+                document.getElementById('stat-comentarios-count').innerText = snapRev.size;
+
+                let totalEstrelas = 0;
+                snapRev.forEach(d => totalEstrelas += (d.data().nota || 0));
+                const media = snapRev.size > 0 ? (totalEstrelas / snapRev.size).toFixed(1) : "0.0";
+                document.getElementById('stat-nota').innerText = media + "★";
+
+                // 2. Preenchimento dos Campos Básicos [cite: 579-582]
+                document.getElementById('nome-local-gestao').innerText = l.nome;
+                document.getElementById('edit-id-sistema').value = id;
+                document.getElementById('edit-nome').value = l.nome || "";
+                document.getElementById('edit-desc').value = l.descricao || "";
+                document.getElementById('edit-cat').value = l.categoria || "Restaurante";
+
+                const end = l.endereco || {};
+                document.getElementById('edit-cep-sistema').value = end.cep || "";
+                document.getElementById('edit-rua-sistema').value = end.rua || "";
+                document.getElementById('edit-cidade-sistema').value = end.cidade || "";
+                document.getElementById('edit-estado-sistema').value = end.estado || "";
+                document.getElementById('edit-lat-sistema').value = l.lat || "";
+                document.getElementById('edit-lon-sistema').value = l.lon || "";
+
+                // 3. Dias e Horários com Bloqueio Automático [cite: 583-585]
+                const partes = l.horario ? l.horario.split(' • ') : ["", ""];
+                const diasSalvos = partes[0] ? partes[0].split(', ') : [];
+                const horasSalvas = partes[1] || "";
+
+                document.querySelectorAll('.edit-dia').forEach(chk => {
+                    chk.checked = diasSalvos.includes(chk.value);
+                });
+
+                const checkLivre = document.getElementById('edit-check-livre');
+                const inAbre = document.getElementById('edit-abre');
+                const inFecha = document.getElementById('edit-fecha');
+
+                if (horasSalvas === "Aberto 24h" || l.horario === "Livre") {
+                    checkLivre.checked = true;
+                    inAbre.disabled = inFecha.disabled = true;
+                    inAbre.value = inFecha.value = "";
+                } else {
+                    checkLivre.checked = false;
+                    inAbre.disabled = inFecha.disabled = false;
+                    const h = horasSalvas.split(' às ');
+                    inAbre.value = h[0] || "";
+                    inFecha.value = h[1] || "";
+                }
+
+                checkLivre.onchange = () => {
+                    inAbre.disabled = inFecha.disabled = checkLivre.checked;
+                    if (checkLivre.checked) inAbre.value = inFecha.value = "";
+                };
+
+                // 4. Listagem de Avaliações (Sincronizado com Admin) [cite: 218-228]
+                const container = document.getElementById('lista-avaliacoes-sistema');
+                if (container) {
+                    container.innerHTML = snapRev.empty ?
+                        '<p class="text-center py-4 text-muted">Sem avaliações.</p>' : "";
+
+                    snapRev.forEach(d => {
+                        const aval = d.data();
+                        const temResposta = aval.resposta_parceiro && aval.resposta_parceiro.trim() !== "";
+
+                        const areaResposta = temResposta ? `
+                    <div class="bg-light p-2 rounded mt-2 border-start border-primary border-3">
+                        <strong>Sua Resposta:</strong><br>
+                        <small>${aval.resposta_parceiro}</small>
+                        <div class="mt-2 d-flex gap-2">
+                            <button class="btn btn-xs btn-outline-primary p-1" style="font-size: 10px;" 
+                                onclick="window.prepararEdicaoRespostaAdmin('${d.id}', '${aval.resposta_parceiro.replace(/\n/g, '\\n').replace(/'/g, "\\'")}')">
+                                EDITAR
+                            </button>
+                            <button class="btn btn-xs btn-outline-danger p-1" style="font-size: 10px;" 
+                                onclick="window.excluirRespostaAdmin('${d.id}')">
+                                EXCLUIR
+                            </button>
+                        </div>
+                    </div>` : `
+                    <div class="p-2 rounded bg-light border">
+                        <textarea class="form-control form-control-sm mb-1" id="resp-${d.id}" rows="2" 
+                            maxlength="300" placeholder="Responder (máx 300)..."
+                            oninput="window.atualizarContadorResposta('${d.id}')"></textarea>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" id="count-${d.id}">0 / 300</small>
+                            <button class="btn btn-sm btn-primary" onclick="window.enviarRespostaSistema('${d.id}')">
+                                SALVAR RESPOSTA
+                            </button>
+                        </div>
+                    </div>`;
+
+                        container.innerHTML += `
+                    <div class="list-group-item border-0 border-bottom py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong>${aval.nome_usuario || 'Anônimo'}</strong>
+                            <span class="text-warning">${"★".repeat(aval.nota || 0)}</span>
+                        </div>
+                        <p class="small text-muted mb-2">${aval.comentario || ''}</p>
+                        <div id="container-resposta-final-${d.id}">${areaResposta}</div>
+                    </div>`;
+                    });
+                }
+
+                // 5. Configuração do Botão de Status [cite: 593-595]
+                const btnStatus = document.getElementById('btn-status-sistema');
+                const statusAtual = l.status || "ativo";
+                if (statusAtual === "ativo") {
+                    btnStatus.innerText = "DESATIVAR ESTABELECIMENTO";
+                    btnStatus.className = "btn btn-outline-danger w-100 fw-bold";
+                } else {
+                    btnStatus.innerText = "REATIVAR ESTABELECIMENTO";
+                    btnStatus.className = "btn btn-outline-success w-100 fw-bold";
+                }
+                btnStatus.onclick = () => window.alternarStatusLocal(id, statusAtual);
+
+                // 6. Modal e Mapa [cite: 597-601]
+                const modalEl = document.getElementById('modalGerenciarSistema');
+                const modalInst = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+                modalEl.addEventListener('shown.bs.modal', function handler() {
+                    const lat = parseFloat(l.lat) || -23.5505;
+                    const lon = parseFloat(l.lon) || -46.6333;
+
+                    if (!window.mapaEdit) {
+                        window.mapaEdit = L.map('mapa-edit').setView([lat, lon], 16);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.mapaEdit);
+
+                        window.mapaEdit.on('click', (e) => {
+                            window.updatePosicaoEdit(e.latlng.lat, e.latlng.lng);
+                        });
+                    } else {
+                        window.mapaEdit.setView([lat, lon], 16);
+                    }
+
+                    if (window.marcadorEdit) window.mapaEdit.removeLayer(window.marcadorEdit);
+                    window.marcadorEdit = L.marker([lat, lon]).addTo(window.mapaEdit);
+
+                    setTimeout(() => {
+                        window.mapaEdit.invalidateSize();
+                    }, 300);
+
+                    modalEl.removeEventListener('shown.bs.modal', handler);
+                }, { once: true });
+
+                modalInst.show();
+
+            } catch (error) {
+                console.error("Erro:", error);
+            }
+        };
+
+        window.updatePosicaoEdit = async (lat, lng) => {
+            // 1. Atualiza o marcador no mapa [cite: 340]
+            if (window.marcadorEdit) window.mapaEdit.removeLayer(window.marcadorEdit);
+            window.marcadorEdit = L.marker([lat, lng]).addTo(window.mapaEdit);
+
+            // 2. Salva latitude e longitude nos inputs ocultos [cite: 340, 341]
+            document.getElementById('edit-lat-sistema').value = lat;
+            document.getElementById('edit-lon-sistema').value = lng;
+
+            try {
+                // 3. Busca o endereço DETALHADO (Nominatim) [cite: 341]
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
+                const d = await res.json();
+                const addr = d.address;
+
+                if (addr) {
+                    // 4. Preenche Rua, Cidade e Estado [cite: 342-346]
+                    document.getElementById('edit-rua-sistema').value = addr.road || addr.pedestrian || addr.path || "";
+                    document.getElementById('edit-cidade-sistema').value = addr.city || addr.town || addr.village || addr.municipality || "";
+                    document.getElementById('edit-estado-sistema').value = addr.state || addr.state_code || "";
+
+                    // 5. Preenche e aplica máscara no CEP [cite: 346, 347]
+                    if (addr.postcode) {
+                        let cep = addr.postcode.replace(/\D/g, "").substring(0, 8);
+                        if (cep.length === 8) {
+                            document.getElementById('edit-cep-sistema').value = cep.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Erro na geocodificação reversa:", err);
+            }
+        };
+
+        window.filtrarLocaisSistema = () => {
+            const termo = document.getElementById('busca-local-sistema').value.toLowerCase();
+            const linhas = document.querySelectorAll('#tabela-locais-sistema-corpo tr');
+            linhas.forEach(linha => {
+                linha.style.display = linha.innerText.toLowerCase().includes(termo) ? "" : "none";
+            });
+        };
+
+        let mapaEdit = null;
+        let marcadorEdit = null;
+
+        // Função para inicializar ou atualizar o mapa no modal
+        window.initMapaEdit = (lat, lon) => {
+            if (!window.mapaEdit) {
+                window.mapaEdit = L.map('mapa-edit').setView([lat, lon], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.mapaEdit);
+
+                // ATIVA O CLIQUE NO MAPA 
+                window.mapaEdit.on('click', (e) => {
+                    window.updatePosicaoEdit(e.latlng.lat, e.latlng.lng);
+                });
+            } else {
+                window.mapaEdit.setView([lat, lon], 16);
+            }
+
+            // Coloca o marcador inicial
+            window.updatePosicaoEdit(lat, lon);
+
+            setTimeout(() => {
+                window.mapaEdit.invalidateSize();
+            }, 200);
+        };
+
+        // --- SALVAR ALTERAÇÕES DO ESTABELECIMENTO ---
+        document.getElementById('form-edit-sistema').onsubmit = async (e) => {
+            e.preventDefault();
+            const idLocal = document.getElementById('edit-id-sistema').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+
+            // --- TRATAMENTO E LIMPEZA DE TEXTO (NOVO) ---
+            // 1. Limpeza do Nome: Remove espaços extras e limita a 50 caracteres
+            let nomeLimpo = document.getElementById('edit-nome').value.trim().replace(/\s+/g, ' ');
+
+            // 2. Limpeza da Descrição: Remove espaços duplos e quebras de linha excessivas
+            let descLimpa = document.getElementById('edit-desc').value.trim();
+
+            // Transforma múltiplos espaços em apenas um
+            descLimpa = descLimpa.replace(/ +/g, ' ');
+
+            // Transforma 3 ou mais quebras de linha em apenas duas (\n\n)
+            descLimpa = descLimpa.replace(/\n\s*\n\s*\n/g, '\n\n');
+
+            // Remove espaços vazios no final de cada linha
+            descLimpa = descLimpa.replace(/[ \t]+$/gm, '');
+
+            // --- VALIDAÇÃO DE LIMITES ---
+            if (nomeLimpo.length > 50) {
+                alert("O nome excedeu o limite de 50 caracteres.");
+                return;
+            }
+            if (descLimpa.length > 500) {
+                alert("A descrição excedeu o limite de 500 caracteres.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
+
+            try {
+                // 1. Captura Dias e Horários (Mantido original)
+                const diasMarcados = [];
+                document.querySelectorAll('.edit-dia:checked').forEach(check => {
+                    diasMarcados.push(check.value);
+                });
+                const diasTexto = diasMarcados.length > 0 ? diasMarcados.join(', ') : "Dias não informados";
+
+                const isLivre = document.getElementById('edit-check-livre').checked;
+                const horaAbre = document.getElementById('edit-abre').value || "00:00";
+                const horaFecha = document.getElementById('edit-fecha').value || "00:00";
+
+                const horarioFinal = isLivre ?
+                    `${diasTexto} • Aberto 24h` :
+                    `${diasTexto} • ${horaAbre} às ${horaFecha}`;
+
+                // 2. Monta o objeto de dados com os textos já limpos
+                const dados = {
+                    nome: nomeLimpo, // Texto tratado
+                    descricao: descLimpa, // Texto tratado
+                    categoria: document.getElementById('edit-cat').value,
+                    horario: horarioFinal,
+                    endereco: {
+                        cep: document.getElementById('edit-cep-sistema').value.trim(),
+                        rua: document.getElementById('edit-rua-sistema').value.trim(),
+                        cidade: document.getElementById('edit-cidade-sistema').value.trim(),
+                        estado: document.getElementById('edit-estado-sistema').value.trim()
+                    },
+                    lat: parseFloat(document.getElementById('edit-lat-sistema').value) || 0,
+                    lon: parseFloat(document.getElementById('edit-lon-sistema').value) || 0
+                };
+
+                // 3. Atualiza no Firestore
+                await updateDoc(doc(db, "locais", idLocal), dados);
+
+                alert("Alterações salvas com sucesso!");
+
+                // Fecha o modal
+                const modalEl = document.getElementById('modalGerenciarSistema');
+                bootstrap.Modal.getInstance(modalEl).hide();
+
+                // Recarrega lista de locais
+                if (typeof carregarLocaisAtivos === 'function') carregarLocaisAtivos();
+
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao atualizar dados.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'SALVAR ALTERAÇÕES';
+            }
+        };
+
+        // Salvar ou Editar Resposta [cite: 287-295]
+        window.enviarRespostaSistema = async (idAval) => {
+            const textarea = document.getElementById(`resp-${idAval}`);
+            const textoRaw = textarea.value.trim();
+
+            // Tratamento de limpeza (Igual ao que fizemos na descrição)
+            const textoLimpo = textoRaw.replace(/ +/g, ' ').replace(/\n\s*\n\s*\n/g, '\n\n');
+
+            if (!textoLimpo) return alert("Digite uma resposta antes de salvar.");
+            if (textoLimpo.length > 300) return alert("Limite de 300 caracteres excedido.");
+
+            try {
+                await updateDoc(doc(db, "avaliacoes", idAval), {
+                    resposta_parceiro: textoLimpo,
+                    data_resposta: new Date().toISOString()
+                });
+                alert("Resposta salva!");
+                // Recarrega o modal para atualizar a visualização [cite: 293-294]
+                window.gerenciarLocalSistema(document.getElementById('edit-id-sistema').value);
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar resposta.");
+            }
+        };
+
+        // Excluir Resposta 
+        window.excluirRespostaAdmin = async (idAval) => {
+            if (confirm("Deseja apagar sua resposta permanentemente?")) {
+                try {
+                    await updateDoc(doc(db, "avaliacoes", idAval), {
+                        resposta_parceiro: "" // Limpa o campo no banco [cite: 33-34]
+                    });
+                    alert("Resposta removida.");
+                    window.gerenciarLocalSistema(document.getElementById('edit-id-sistema').value);
+                } catch (e) {
+                    alert("Erro ao excluir.");
+                }
+            }
+        };
+
+        // Preparar Edição (Transforma o texto em textarea novamente) [cite: 30-32]
+        window.prepararEdicaoRespostaAdmin = (idAval, textoAntigo) => {
+            const container = document.getElementById(`container-resposta-final-${idAval}`);
+            container.innerHTML = `
+        <div class="p-2 rounded bg-light border">
+            <textarea class="form-control form-control-sm mb-2" id="resp-${idAval}" rows="2">${textoAntigo}</textarea>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-success fw-bold" onclick="window.enviarRespostaSistema('${idAval}')">SALVAR ALTERAÇÃO</button>
+                <button class="btn btn-sm btn-secondary fw-bold" onclick="window.gerenciarLocalSistema(document.getElementById('edit-id-sistema').value)">CANCELAR</button>
+            </div>
+        </div>`;
+        };
+
+        window.atualizarContadorResposta = (idAval) => {
+            const text = document.getElementById(`resp-${idAval}`).value;
+            const counter = document.getElementById(`count-${idAval}`);
+            if (counter) counter.innerText = `${text.length} / 300`;
+        };
+
+        window.atualizarPosicaoMapa = async (lat, lng) => {
+            if (window.marcadorEdit) window.mapaEdit.removeLayer(window.marcadorEdit);
+            window.marcadorEdit = L.marker([lat, lng]).addTo(window.mapaEdit);
+
+            document.getElementById('edit-lat-sistema').value = lat;
+            document.getElementById('edit-lon-sistema').value = lng;
+
+            // Busca endereço pelo clique (Nominatim) [cite: 655, 656]
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
+                const d = await res.json();
+                if (d.address) {
+                    const a = d.address;
+                    document.getElementById('edit-rua-sistema').value = a.road || a.pedestrian || "";
+                    document.getElementById('edit-cidade-sistema').value = a.city || a.town || "";
+                    document.getElementById('edit-estado-sistema').value = a.state || "";
+                }
+            } catch (err) { console.error(err); }
+        };
+
+        // Atualiza a posição do marcador e dos inputs escondidos
+        async function updateMarcadorEdit(lat, lng) {
+            if (window.marcadorEdit) {
+                window.marcadorEdit.setLatLng([lat, lng]);
+            } else {
+                window.marcadorEdit = L.marker([lat, lng], { draggable: true }).addTo(window.mapaEdit);
+                window.marcadorEdit.on('dragend', (e) => {
+                    const pos = e.target.getLatLng();
+                    updateMarcadorEdit(pos.lat, pos.lng);
+                });
+            }
+
+            document.getElementById('edit-lat-sistema').value = lat;
+            document.getElementById('edit-lon-sistema').value = lng;
+
+            try {
+                // Busca o endereço detalhado [cite: 340]
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1`);
+                const data = await res.json();
+
+                if (data.address) {
+                    const a = data.address;
+
+                    // Preenchimento dos campos [cite: 341, 342, 343, 344]
+                    document.getElementById('edit-rua-sistema').value = a.road || a.pedestrian || "";
+                    document.getElementById('edit-cidade-sistema').value = a.city || a.town || a.village || "";
+                    document.getElementById('edit-estado-sistema').value = a.state || "";
+
+                    // BUSCA DO CEP NO MAPA [cite: 345, 346]
+                    if (a.postcode) {
+                        let cepLimpo = a.postcode.replace(/\D/g, "").substring(0, 8);
+                        if (cepLimpo.length === 8) {
+                            // Aplica a máscara 00000-000 [cite: 297]
+                            document.getElementById('edit-cep-sistema').value = cepLimpo.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+                        } else {
+                            document.getElementById('edit-cep-sistema').value = a.postcode;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Erro no geocoding:", err);
+            }
+        }
+
+
+        window.aplicarMascaraCEP = (input) => {
+            let v = input.value.replace(/\D/g, "");
+            if (v.length > 8) v = v.substring(0, 8);
+            if (v.length > 5) {
+                v = v.replace(/^(\d{5})(\d)/, "$1-$2");
+            }
+            input.value = v;
+        };
+
+        window.buscarCEPEdicao = async (cep) => {
+            const valor = cep.replace(/\D/g, "");
+            if (valor.length !== 8) return;
+
+            try {
+                const resp = await fetch(`https://viacep.com.br/ws/${valor}/json/`);
+                const d = await resp.json();
+                if (d.erro) return;
+
+                document.getElementById('edit-rua-sistema').value = d.logradouro;
+                document.getElementById('edit-cidade-sistema').value = d.localidade;
+                document.getElementById('edit-estado-sistema').value = d.uf;
+
+                // Busca coordenadas para o mapa [cite: 408, 409]
+                const busca = `${d.logradouro}, ${d.localidade}, ${d.uf}, Brasil`;
+                const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(busca)}&limit=1`);
+                const dataGeo = await geo.json();
+
+                if (dataGeo.length > 0) {
+                    window.initMapaEdit(parseFloat(dataGeo[0].lat), parseFloat(dataGeo[0].lon));
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        // --- CORREÇÃO DEFINITIVA DO MAPA (IGUAL AO ADMIN) ---
+        document.addEventListener('shown.bs.tab', function (event) {
+            // Verifica se a aba que foi clicada é a de "Editar"
+            if (event.target.getAttribute('data-bs-target') === '#tab-editar') {
+                if (window.mapaEdit) {
+                    // Pequeno delay para a animação do Bootstrap terminar
+                    setTimeout(() => {
+                        window.mapaEdit.invalidateSize(); // Mata o cinza na hora
+
+                        // Recentraliza no marcador que já está nos inputs ocultos
+                        const lat = document.getElementById('edit-lat-sistema').value;
+                        const lon = document.getElementById('edit-lon-sistema').value;
+
+                        if (lat && lon) {
+                            window.mapaEdit.setView([lat, lon], 16);
+                        }
+                    }, 200);
+                }
+            }
+        });
     </script>
+
+    <div class="modal fade" id="modalGerenciarSistema" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius: 15px;">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">⚙️ Gestão: <span id="nome-local-gestao" class="text-warning">---</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <ul class="nav nav-pills nav-fill bg-light p-2" id="abasGestao" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#tab-stats"
+                                type="button">📈 Estatísticas</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-editar"
+                                type="button">✏️ Editar</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-avaliacoes"
+                                type="button">💬 Avaliações</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-4">
+                        <div class="tab-pane fade show active" id="tab-stats" role="tabpanel">
+                            <div class="row g-2 text-center">
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 border rounded bg-light"><small class="text-muted d-block fw-bold"
+                                            style="font-size: 0.65rem;">FAVORITOS</small><span class="fw-bold h5 mb-0"
+                                            id="stat-favoritos" style="color: #212529;">0</span></div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 border rounded bg-light"><small class="text-muted d-block fw-bold"
+                                            style="font-size: 0.65rem;">ROTEIROS</small><span class="fw-bold h5 mb-0"
+                                            id="stat-roteiros-count" style="color: #212529;">0</span></div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 border rounded bg-light"><small class="text-muted d-block fw-bold"
+                                            style="font-size: 0.65rem;">NOTA</small><span class="fw-bold h5 mb-0"
+                                            id="stat-nota" style="color: #212529;">0.0★</span></div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 border rounded bg-light"><small class="text-muted d-block fw-bold"
+                                            style="font-size: 0.65rem;">COMENTÁRIOS</small><span class="fw-bold h5 mb-0"
+                                            id="stat-comentarios-count" style="color: #212529;">0</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="tab-editar" role="tabpanel">
+                            <form id="form-edit-sistema"> <input type="hidden" id="edit-id-sistema">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold text-primary">CEP (Busca
+                                            Automática)</label>
+                                        <input type="text" id="edit-cep-sistema" class="form-control border-primary"
+                                            placeholder="00000-000" oninput="window.aplicarMascaraCEP(this)"
+                                            onblur="window.buscarCEPEdicao(this.value)">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label small fw-bold">Nome do Local</label>
+                                        <input type="text" id="edit-nome" class="form-control" maxlength="50" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-bold">Rua / Logradouro</label>
+                                        <input type="text" id="edit-rua-sistema" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-bold">Cidade</label>
+                                        <input type="text" id="edit-cidade-sistema" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold">Estado (UF)</label>
+                                        <input type="text" id="edit-estado-sistema" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Categoria</label>
+                                        <select id="edit-cat" class="form-select">
+                                            <option value="Restaurante">Restaurante</option>
+                                            <option value="Bar">Bar</option>
+                                            <option value="Café">Café</option>
+                                            <option value="Loja">Loja</option>
+                                            <option value="Parque">Parque</option>
+                                            <option value="Museu">Museu</option>
+                                            <option value="Cultura">Cultura</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="fw-bold small mb-1">Ajustar Localização no Mapa (Clique para
+                                            mudar)</label>
+                                        <div id="mapa-edit"
+                                            style="height: 320px; border-radius: 10px; border: 1px solid #ddd; z-index: 1;">
+                                        </div>
+                                        <input type="hidden" id="edit-lat-sistema">
+                                        <input type="hidden" id="edit-lon-sistema">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="fw-bold small d-block mb-2">Dias de Funcionamento</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <input type="checkbox" class="btn-check edit-dia" id="e-dom"
+                                                value="Dom"><label
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                for="e-dom">Dom</label>
+                                            <input type="checkbox" class="btn-check edit-dia" id="e-seg"
+                                                value="Seg"><label
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                for="e-seg">Seg</label>
+                                            <input type="checkbox" class="btn-check edit-dia" id="e-ter"
+                                                value="Ter"><label
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                for="e-ter">Ter</label>
+                                            <input type="checkbox" class="btn-check edit-dia" id="e-qua"
+                                                value="Qua"><label
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                for="e-qua">Qua</label>
+                                            <input type="checkbox" class="btn-check edit-dia" id="e-qui"
+                                                value="Qui"><label
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                for="e-qui">Qui</label>
+                                            <input type="checkbox" class="btn-check edit-dia" id="e-sex"
+                                                value="Sex"><label
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                for="e-sex">Sex</label>
+                                            <input type="checkbox" class="btn-check edit-dia" id="e-sab"
+                                                value="Sáb"><label
+                                                class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                for="e-sab">Sáb</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small fw-bold">Abre</label>
+                                        <input type="time" id="edit-abre" class="form-control">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small fw-bold">Fecha</label>
+                                        <input type="time" id="edit-fecha" class="form-control">
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <div class="form-check mb-2">
+                                            <input type="checkbox" id="edit-check-livre" class="form-check-input">
+                                            <label class="form-check-label small">Horário Livre / 24h</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-bold">Descrição</label>
+                                        <textarea id="edit-desc" class="form-control" rows="3"
+                                            maxlength="500"></textarea>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <button type="submit" class="btn btn-success w-100 fw-bold py-2">SALVAR
+                                            ALTERAÇÕES</button>
+                                    </div>
+                                    <div class="col-12 mt-3 pt-3 border-top">
+                                        <label class="form-label small fw-bold text-danger mb-1 d-block">Status do
+                                            Local</label>
+                                        <button type="button" id="btn-status-sistema"
+                                            class="btn btn-outline-danger w-100 fw-bold">DESATIVAR
+                                            ESTABELECIMENTO</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="tab-avaliacoes" role="tabpanel">
+                            <div id="lista-avaliacoes-sistema" class="list-group list-group-flush overflow-auto"
+                                style="max-height: 300px;">
+                                <p class="text-center py-4 text-muted">Carregando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

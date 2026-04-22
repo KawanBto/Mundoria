@@ -299,24 +299,33 @@
                 <div id="area-meus-locais" class="form-box" style="display: none;">
                     <h4 class="mb-4 text-success"><i class="bi bi-check-circle"></i> Estabelecimentos Ativos</h4>
 
-                    <div class="p-3 bg-light border rounded mb-3">
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <input type="text" id="busca-nome-prod" class="form-control form-control-sm"
-                                    placeholder="🔍 Nome do local...">
-                            </div>
-                            <div class="col-md-3">
-                                <input type="text" id="busca-cidade-prod" class="form-control form-control-sm"
-                                    placeholder="🏙️ Cidade...">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="text" id="busca-estado-prod" class="form-control form-control-sm"
-                                    placeholder="Estado...">
-                            </div>
-                            <div class="col-md-3">
-                                <button class="btn btn-sm btn-outline-secondary w-100 fw-bold"
-                                    onclick="window.limparBuscaProdutor()">LIMPAR</button>
-                            </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-3">
+                            <input type="text" id="busca-nome-prod" class="form-control form-control-sm"
+                                placeholder="🔍 Nome...">
+                        </div>
+                        <div class="col-md-2">
+                            <select id="filtro-ordem" class="form-select form-select-sm"
+                                onchange="window.renderizarTabelaAtivosPaginada()">
+                                <option value="nome">Nome</option>
+                                <option value="fav">Favoritos</option>
+                                <option value="rot">Roteiros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select id="filtro-direcao" class="form-select form-select-sm"
+                                onchange="window.renderizarTabelaAtivosPaginada()">
+                                <option value="asc">Crescente</option>
+                                <option value="desc">Decrescente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" id="busca-cidade-prod" class="form-control form-control-sm"
+                                placeholder="🏙️ Cidade...">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-sm btn-outline-secondary w-100 fw-bold"
+                                onclick="window.limparBuscaProdutor()">LIMPAR</button>
                         </div>
                     </div>
 
@@ -327,8 +336,8 @@
                                     <th>Foto</th>
                                     <th>Nome</th>
                                     <th>Categoria</th>
-                                    <th>Cidade/Estado</th>
-                                    <th class="text-end">Ação</th>
+                                    <th class="text-center">⭐ / 📍</th>
+                                    <th class="text-end">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="tabela-ativos-produtor">
@@ -338,6 +347,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="paginacao-ativos-container" class="d-flex justify-content-center gap-1 mt-3"></div>
                 </div>
             </main>
         </div>
@@ -468,6 +478,14 @@
         // Função para aplicar máscara e buscar endereço no formulário de Novo Local
         const campoCepNovo = document.getElementById('p-cep');
         const mainOriginalHTML = document.querySelector('main').innerHTML;
+
+        let listaLocaisAtivosMemoria = [];
+        let paginaAtivaAtual = 1;
+        const itensPorPaginaAtivos = 20;
+
+        let listaSistemaMemoria = []; // Armazena os locais carregados para filtro rápido
+        let paginaSistemaAtual = 1; // Controla a página atual
+        const itensPorPaginaSistema = 20; // Limite fixo por página
 
         if (campoCepNovo) {
             campoCepNovo.addEventListener('input', (e) => {
@@ -674,60 +692,93 @@
         window.alternarVisualizacao = (tela) => {
             const mainContent = document.querySelector('main');
 
-            // Se o conteúdo atual for o de Locais do Sistema, restaura o original
+            // 1. IMPORTANTE: Salva o e-mail que já está na tela para não perdê-lo
+            // Buscamos o texto que está no badge antes de qualquer mudança
+            const emailUsuario = document.getElementById('badge-user')?.innerText || "Verificando...";
+
+            // 2. Se estiver saindo da tela de "Locais do Sistema", restaura o layout original
             if (mainContent.querySelector('#tabela-locais-sistema-corpo') || mainContent.querySelector('.btn-secondary')) {
                 mainContent.innerHTML = mainOriginalHTML;
+
+                // 3. Devolve o e-mail para o badge IMEDIATAMENTE após restaurar o HTML
+                const novoBadge = document.getElementById('badge-user');
+                if (novoBadge) novoBadge.innerText = emailUsuario;
             }
 
             const areaAprovacoes = document.querySelector('.form-box:not(#area-meus-locais)');
             const areaMeusLocais = document.getElementById('area-meus-locais');
 
+            // 4. Limpa a cor 'active' de todos os links da Sidebar para evitar bugs visuais
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
             if (tela === 'meus-locais') {
-                areaAprovacoes.style.display = 'none';
-                areaMeusLocais.style.display = 'block';
+                if (areaAprovacoes) areaAprovacoes.style.display = 'none';
+                if (areaMeusLocais) areaMeusLocais.style.display = 'block';
+
+                // Ativa o botão laranja de Ativos
                 document.getElementById('btn-meus-locais').classList.add('active');
-                document.getElementById('btn-aprovacoes').classList.remove('active');
-                carregarLocaisAtivos();
+
+                window.carregarLocaisAtivos();
             } else {
-                areaMeusLocais.style.display = 'none';
-                areaAprovacoes.style.display = 'block';
+                if (areaMeusLocais) areaMeusLocais.style.display = 'none';
+                if (areaAprovacoes) areaAprovacoes.style.display = 'block';
+
+                // Ativa o botão laranja de Aprovações
                 document.getElementById('btn-aprovacoes').classList.add('active');
-                document.getElementById('btn-meus-locais').classList.remove('active');
-                carregarLista(); // Garante que a lista de aprovações recarregue
+
+                carregarLista();
             }
         };
 
         // --- CARREGAR LOCAIS ATIVOS ---
-        async function carregarLocaisAtivos() {
+        window.carregarLocaisAtivos = async () => {
             const table = document.getElementById('tabela-ativos-produtor');
+            if (!table) return; // Segurança contra o erro de 'null' [cite: 167]
+
+            table.innerHTML = '<tr><td colspan="5" class="text-center py-5">Sincronizando estabelecimentos...</td></tr>';
+
             try {
+                // 1. Busca todos os locais ativos [cite: 168]
                 const q = query(collection(db, "locais"), where("status", "==", "ativo"));
-                const snap = await getDocs(q);
-                table.innerHTML = "";
 
-                snap.forEach(d => {
-                    const local = d.data();
-                    const cidade = local.endereco?.cidade || "";
-                    const estado = local.endereco?.estado || "";
+                // 2. Busca contagens de favoritos e roteiros em paralelo [cite: 169]
+                const [snapLocais, snapFavs, snapRots] = await Promise.all([
+                    getDocs(q),
+                    getDocs(collection(db, "favoritos")),
+                    getDocs(collection(db, "roteiro_itens"))
+                ]);
 
-                    table.innerHTML += `
-            <tr>
-                <td><img src="${local.imagem}" class="img-pendente shadow-sm"></td>
-                <td><div class="fw-bold">${local.nome}</div></td>
-                <td><span class="badge bg-secondary">${local.categoria}</span></td>
-                <td><span class="text-muted"><i class="bi bi-geo-alt me-1"></i>${cidade} - ${estado}</span></td>
-                <td class="text-end">
-                    <a href="detalhes.html?id=${d.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 fw-bold me-1 shadow-sm">
-                        <i class="bi bi-eye"></i> Ver Site
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger" onclick="window.rejeitar('${d.id}')">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>`;
+                // Mapeamento de contagens para exibição rápida [cite: 171, 172]
+                const favCounts = {};
+                const rotCounts = {};
+                snapFavs.forEach(doc => { const id = doc.data().id_local; favCounts[id] = (favCounts[id] || 0) + 1; });
+                snapRots.forEach(doc => { const id = doc.data().id_local; rotCounts[id] = (rotCounts[id] || 0) + 1; });
+
+                // 3. Alimenta a lista global em memória [cite: 173]
+                listaLocaisAtivosMemoria = [];
+                snapLocais.forEach(d => {
+                    const data = d.data();
+                    listaLocaisAtivosMemoria.push({
+                        id: d.id,
+                        ...data,
+                        qtd_fav: favCounts[d.id] || 0,
+                        qtd_rot: rotCounts[d.id] || 0,
+                        cidade: data.endereco?.cidade || "",
+                        estado: data.endereco?.estado || ""
+                    });
                 });
-            } catch (e) { console.error(e); }
-        }
+
+                // 4. Reseta para a primeira página e renderiza a tabela 
+                window.paginaAtivaAtual = 1;
+                window.renderizarTabelaAtivosPaginada();
+
+            } catch (e) {
+                console.error("Erro ao carregar locais ativos:", e);
+                table.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-5">Erro ao carregar dados do Firestore.</td></tr>';
+            }
+        };
 
         // --- FILTRO DE BUSCA ---
         window.filtrarAtivosProdutor = () => {
@@ -873,9 +924,34 @@
 
         window.mostrarLocaisSistema = async () => {
             const mainContent = document.querySelector('main');
-            const q = query(collection(db, "locais"), where("tipo_local", "==", "sistema"));
-            const snap = await getDocs(q);
 
+            // Busca dados e popularidade em paralelo [cite: 212, 213]
+            const q = query(collection(db, "locais"), where("tipo_local", "in", ["sistema", "api"]));
+            const [snap, snapFavs, snapRots] = await Promise.all([
+                getDocs(q),
+                getDocs(collection(db, "favoritos")),
+                getDocs(collection(db, "roteiro_itens"))
+            ]);
+
+            // Mapeamento de contagens para exibição [cite: 214, 215, 216]
+            const favCounts = {};
+            const rotCounts = {};
+            snapFavs.forEach(d => { const id = d.data().id_local; favCounts[id] = (favCounts[id] || 0) + 1; });
+            snapRots.forEach(d => { const id = d.data().id_local; rotCounts[id] = (rotCounts[id] || 0) + 1; });
+
+            // Salva na memória global para permitir paginação [cite: 217, 218]
+            listaSistemaMemoria = [];
+            snap.forEach(d => {
+                const data = d.data();
+                listaSistemaMemoria.push({
+                    id: d.id,
+                    ...data,
+                    qtd_fav: favCounts[d.id] || 0,
+                    qtd_rot: rotCounts[d.id] || 0
+                });
+            });
+
+            // Renderiza o HTML com reset de página na busca [cite: 220, 222]
             mainContent.innerHTML = `
         <div class="col-12 mb-4">
             <button class="btn btn-sm btn-secondary mb-3" onclick="location.reload()">
@@ -883,11 +959,21 @@
             </button>
             <div class="form-box shadow-sm bg-white p-4 rounded">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="text-primary mb-0 fw-bold"><i class="bi bi-geo-alt-fill me-2"></i>Locais Oficiais</h4>
-                    <div class="input-group input-group-sm w-50">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" id="busca-local-sistema" class="form-control border-start-0" 
-                               placeholder="Pesquisar local oficial..." onkeyup="window.filtrarLocaisSistema()">
+                    <h4 class="text-primary mb-0 fw-bold"><i class="bi bi-geo-alt-fill me-2"></i>Locais Oficiais e API</h4>
+                    <div class="d-flex gap-2 w-75">
+                        <input type="text" id="busca-local-sistema" class="form-control form-control-sm" 
+                               placeholder="🔍 Nome ou Cidade..." onkeyup="window.paginaSistemaAtual = 1; window.renderizarTabelaSistema()">
+                        
+                        <select id="ordem-sistema" class="form-select form-select-sm" style="width:150px;" onchange="window.renderizarTabelaSistema()">
+                            <option value="nome">Nome</option>
+                            <option value="fav">⭐ Favoritos</option>
+                            <option value="rot">📍 Roteiros</option>
+                        </select>
+
+                        <select id="direcao-sistema" class="form-select form-select-sm" style="width:130px;" onchange="window.renderizarTabelaSistema()">
+                            <option value="asc">Crescente</option>
+                            <option value="desc">Decrescente</option>
+                        </select>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -895,7 +981,8 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Foto</th>
-                                <th>Nome</th>
+                                <th>Nome / Tipo</th>
+                                <th class="text-center">⭐ / 📍</th>
                                 <th>Cidade</th>
                                 <th class="text-end">Ações</th>
                             </tr>
@@ -903,31 +990,92 @@
                         <tbody id="tabela-locais-sistema-corpo"></tbody>
                     </table>
                 </div>
+                <div id="paginacao-sistema" class="d-flex justify-content-center gap-1 mt-3"></div>
             </div>
         </div>`;
 
+            window.paginaSistemaAtual = 1; // Define explicitamente no objeto window
+            window.renderizarTabelaSistema();
+        };
+
+        window.renderizarTabelaSistema = () => {
             const tbody = document.getElementById('tabela-locais-sistema-corpo');
-            snap.forEach(d => {
-                const l = d.data();
+            const busca = document.getElementById('busca-local-sistema')?.value.toLowerCase() || "";
+            const ordem = document.getElementById('ordem-sistema')?.value || "nome";
+            const direcao = document.getElementById('direcao-sistema')?.value || "asc";
+
+            // 1. Filtragem [cite: 386]
+            let filtrados = listaSistemaMemoria.filter(l =>
+                l.nome.toLowerCase().includes(busca) ||
+                (l.endereco?.cidade || "").toLowerCase().includes(busca)
+            );
+
+            // 2. Ordenação Dinâmica [cite: 387, 388]
+            filtrados.sort((a, b) => {
+                let valA = ordem === 'nome' ? a.nome : (ordem === 'fav' ? a.qtd_fav : a.qtd_rot);
+                let valB = ordem === 'nome' ? b.nome : (ordem === 'fav' ? b.qtd_fav : b.qtd_rot);
+                if (direcao === 'asc') return valA > valB ? 1 : -1;
+                return valA < valB ? 1 : -1;
+            });
+
+            // 3. Cálculo da Paginação [cite: 389]
+            const totalPaginas = Math.ceil(filtrados.length / itensPorPaginaSistema);
+
+            if (window.paginaSistemaAtual > totalPaginas) window.paginaSistemaAtual = 1;
+
+            const inicio = (window.paginaSistemaAtual - 1) * itensPorPaginaSistema;
+            const exibicao = filtrados.slice(inicio, inicio + itensPorPaginaSistema);
+
+            tbody.innerHTML = "";
+            if (exibicao.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Nenhum local encontrado.</td></tr>';
+            }
+
+            // 4. Desenha as linhas com o botão Ver Site reintegrado [cite: 390, 392]
+            exibicao.forEach(l => {
+                const badgeCor = l.tipo_local === 'sistema' ? 'bg-primary' : 'bg-warning text-dark';
                 tbody.innerHTML += `
             <tr>
-                <td><img src="${l.imagem}" class="rounded shadow-sm" style="width:50px; height:50px; object-fit:cover;"></td>
-                <td class="fw-bold">${l.nome}</td>
-                <td>${l.endereco?.cidade || '---'}</td>
+                <td><img src="${l.imagem}" class="rounded shadow-sm" style="width:45px; height:45px; object-fit:cover;"></td>
+                <td>
+                    <div class="fw-bold">${l.nome}</div>
+                    <span class="badge ${badgeCor}" style="font-size:0.6rem;">${l.tipo_local.toUpperCase()}</span>
+                </td>
+                <td class="text-center">
+                    <div class="small text-primary">${l.qtd_fav} <span class="text-warning">⭐</span></div>
+                    <div class="small text-primary">${l.qtd_rot} <span class="text-danger">📍</span></div>
+                </td>
+                <td class="small text-muted">${l.endereco?.cidade || '---'}</td>
                 <td class="text-end">
-                    <a href="detalhes.html?id=${d.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 fw-bold me-1 shadow-sm">
-                        <i class="bi bi-eye"></i> Ver Site
+                    <a href="detalhes.html?id=${l.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-2 me-1 shadow-sm">
+                        <i class="bi bi-eye"></i>
                     </a>
-                    <button class="btn btn-sm btn-primary fw-bold px-3 me-1 shadow-sm" onclick="window.gerenciarLocalSistema('${d.id}')">
+                    <button class="btn btn-sm btn-primary px-3 shadow-sm" onclick="window.gerenciarLocalSistema('${l.id}')">
                         <i class="bi bi-gear-fill me-1"></i> Gerenciar
                     </button>
-                    <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="window.excluirLocalSistema('${d.id}')">
+                    <button class="btn btn-sm btn-outline-danger shadow-sm ms-1" onclick="window.excluirLocalSistema('${l.id}')">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
             </tr>`;
             });
+
+            // 5. Botões de Paginação com referência global [cite: 396]
+            const pagCont = document.getElementById('paginacao-sistema');
+            if (pagCont) {
+                pagCont.innerHTML = "";
+                if (totalPaginas > 1) {
+                    for (let i = 1; i <= totalPaginas; i++) {
+                        pagCont.innerHTML += `
+                    <button class="btn btn-sm ${i === window.paginaSistemaAtual ? 'btn-primary' : 'btn-outline-primary'} fw-bold mx-1 shadow-sm" 
+                            onclick="window.paginaSistemaAtual = ${i}; window.renderizarTabelaSistema(); window.scrollTo(0,0);">
+                        ${i}
+                    </button>`;
+                    }
+                }
+            }
         };
+
 
         // Enviar ou Salvar Alteração de Resposta [cite: 287, 292, 157]
         window.enviarRespostaSistema = async (idAval) => {
@@ -1260,55 +1408,31 @@
             const idLocal = document.getElementById('edit-id-sistema').value;
             const btn = e.target.querySelector('button[type="submit"]');
 
-            // --- TRATAMENTO E LIMPEZA DE TEXTO (NOVO) ---
-            // 1. Limpeza do Nome: Remove espaços extras e limita a 50 caracteres
+            // --- TRATAMENTO E LIMPEZA DE TEXTO (MANTIDO) ---
             let nomeLimpo = document.getElementById('edit-nome').value.trim().replace(/\s+/g, ' ');
-
-            // 2. Limpeza da Descrição: Remove espaços duplos e quebras de linha excessivas
             let descLimpa = document.getElementById('edit-desc').value.trim();
-
-            // Transforma múltiplos espaços em apenas um
-            descLimpa = descLimpa.replace(/ +/g, ' ');
-
-            // Transforma 3 ou mais quebras de linha em apenas duas (\n\n)
-            descLimpa = descLimpa.replace(/\n\s*\n\s*\n/g, '\n\n');
-
-            // Remove espaços vazios no final de cada linha
-            descLimpa = descLimpa.replace(/[ \t]+$/gm, '');
+            descLimpa = descLimpa.replace(/ +/g, ' ').replace(/\n\s*\n\s*\n/g, '\n\n').replace(/[ \t]+$/gm, '');
 
             // --- VALIDAÇÃO DE LIMITES ---
-            if (nomeLimpo.length > 50) {
-                alert("O nome excedeu o limite de 50 caracteres.");
-                return;
-            }
-            if (descLimpa.length > 500) {
-                alert("A descrição excedeu o limite de 500 caracteres.");
-                return;
-            }
+            if (nomeLimpo.length > 50) return alert("O nome excedeu o limite de 50 caracteres.");
+            if (descLimpa.length > 500) return alert("A descrição excedeu o limite de 500 caracteres.");
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
 
             try {
-                // 1. Captura Dias e Horários (Mantido original)
-                const diasMarcados = [];
-                document.querySelectorAll('.edit-dia:checked').forEach(check => {
-                    diasMarcados.push(check.value);
-                });
+                // 1. Captura Dias e Horários [cite: 320, 321, 323]
+                const diasMarcados = Array.from(document.querySelectorAll('.edit-dia:checked')).map(el => el.value);
                 const diasTexto = diasMarcados.length > 0 ? diasMarcados.join(', ') : "Dias não informados";
-
                 const isLivre = document.getElementById('edit-check-livre').checked;
                 const horaAbre = document.getElementById('edit-abre').value || "00:00";
                 const horaFecha = document.getElementById('edit-fecha').value || "00:00";
+                const horarioFinal = isLivre ? `${diasTexto} • Aberto 24h` : `${diasTexto} • ${horaAbre} às ${horaFecha}`;
 
-                const horarioFinal = isLivre ?
-                    `${diasTexto} • Aberto 24h` :
-                    `${diasTexto} • ${horaAbre} às ${horaFecha}`;
-
-                // 2. Monta o objeto de dados com os textos já limpos
+                // 2. Monta o objeto de dados [cite: 324-328]
                 const dados = {
-                    nome: nomeLimpo, // Texto tratado
-                    descricao: descLimpa, // Texto tratado
+                    nome: nomeLimpo,
+                    descricao: descLimpa,
                     categoria: document.getElementById('edit-cat').value,
                     horario: horarioFinal,
                     endereco: {
@@ -1321,17 +1445,35 @@
                     lon: parseFloat(document.getElementById('edit-lon-sistema').value) || 0
                 };
 
-                // 3. Atualiza no Firestore
+                // 3. Atualiza no Firestore 
                 await updateDoc(doc(db, "locais", idLocal), dados);
+
+                // --- ATUALIZAÇÃO EM TEMPO REAL NA MEMÓRIA (SEM F5) ---
+
+                // Atualiza na lista de "Locais do Sistema" se ela existir
+                const idxSistema = listaSistemaMemoria.findIndex(l => l.id === idLocal);
+                if (idxSistema !== -1) {
+                    listaSistemaMemoria[idxSistema] = { ...listaSistemaMemoria[idxSistema], ...dados };
+                }
+
+                // Atualiza na lista de "Meus Locais / Ativos" se ela existir
+                const idxAtivos = listaLocaisAtivosMemoria.findIndex(l => l.id === idLocal);
+                if (idxAtivos !== -1) {
+                    listaLocaisAtivosMemoria[idxAtivos] = { ...listaLocaisAtivosMemoria[idxAtivos], ...dados };
+                }
 
                 alert("Alterações salvas com sucesso!");
 
-                // Fecha o modal
+                // 4. Fecha o modal [cite: 331]
                 const modalEl = document.getElementById('modalGerenciarSistema');
                 bootstrap.Modal.getInstance(modalEl).hide();
 
-                // Recarrega lista de locais
-                if (typeof carregarLocaisAtivos === 'function') carregarLocaisAtivos();
+                // 5. Renderiza a tabela que estiver visível no momento 
+                if (document.getElementById('tabela-locais-sistema-corpo')) {
+                    window.renderizarTabelaSistema(); // Atualiza a tela de Locais do Sistema
+                } else {
+                    window.renderizarTabelaAtivosPaginada(); // Atualiza a tela de Ativos
+                }
 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
@@ -1517,6 +1659,102 @@
                         }
                     }, 200);
                 }
+            }
+        });
+
+        window.renderizarTabelaAtivosPaginada = () => {
+            const table = document.getElementById('tabela-ativos-produtor');
+            if (!table) return;
+
+            // 1. Captura de filtros e ordenação [cite: 384, 385]
+            const nome = document.getElementById('busca-nome-prod')?.value.toLowerCase() || "";
+            const cidade = document.getElementById('busca-cidade-prod')?.value.toLowerCase() || "";
+            const ordem = document.getElementById('filtro-ordem')?.value || 'nome';
+            const direcao = document.getElementById('filtro-direcao')?.value || 'asc';
+
+            // 2. Lógica de Filtragem e Ordenação [cite: 386, 387]
+            let filtrados = listaLocaisAtivosMemoria.filter(l =>
+                l.nome.toLowerCase().includes(nome) && l.cidade.toLowerCase().includes(cidade)
+            );
+
+            filtrados.sort((a, b) => {
+                let valA = ordem === 'nome' ? a.nome : (ordem === 'fav' ? a.qtd_fav : a.qtd_rot);
+                let valB = ordem === 'nome' ? b.nome : (ordem === 'fav' ? b.qtd_fav : b.qtd_rot);
+                if (direcao === 'asc') return valA > valB ? 1 : -1;
+                return valA < valB ? 1 : -1;
+            });
+
+            // 3. Cálculo da Paginação (20 itens por página) [cite: 389]
+            const totalPaginas = Math.ceil(filtrados.length / itensPorPaginaAtivos);
+
+            // Proteção: Garante que a página atual seja válida após filtrar
+            if (window.paginaAtivaAtual > totalPaginas) window.paginaAtivaAtual = 1;
+
+            const inicio = (window.paginaAtivaAtual - 1) * itensPorPaginaAtivos;
+            const listaExibicao = filtrados.slice(inicio, inicio + itensPorPaginaAtivos);
+
+            // 4. Renderização das linhas da tabela [cite: 390, 391]
+            table.innerHTML = "";
+            if (listaExibicao.length === 0) {
+                table.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Nenhum local ativo encontrado.</td></tr>';
+            }
+
+            listaExibicao.forEach(local => {
+                table.innerHTML += `
+            <tr>
+                <td><img src="${local.imagem}" class="rounded shadow-sm" style="width:50px; height:50px; object-fit:cover;"></td>
+                <td class="fw-bold">${local.nome}</td>
+                <td><span class="badge bg-secondary">${local.categoria}</span></td>
+                <td class="text-center">
+                    <div class="small text-primary">${local.qtd_fav} <span class="text-warning">⭐</span></div>
+                    <div class="small text-primary">${local.qtd_rot} <span class="text-danger">📍</span></div>
+                </td>
+                <td class="text-end">
+                    <a href="detalhes.html?id=${local.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-2 me-1 shadow-sm">
+                        <i class="bi bi-eye"></i> Ver Site
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger" onclick="window.rejeitar('${local.id}')">Excluir</button>
+                </td>
+            </tr>`;
+            });
+
+            // 5. Renderização dos Botões de Paginação [cite: 394, 396]
+            const container = document.getElementById('paginacao-ativos-container');
+            if (container) {
+                container.innerHTML = "";
+                if (totalPaginas > 1) {
+                    for (let i = 1; i <= totalPaginas; i++) {
+                        container.innerHTML += `
+                    <button class="btn btn-sm ${i === window.paginaAtivaAtual ? 'btn-primary' : 'btn-outline-primary'} fw-bold mx-1 shadow-sm" 
+                            onclick="window.paginaAtivaAtual = ${i}; window.renderizarTabelaAtivosPaginada(); window.scrollTo(0,0);">
+                        ${i}
+                    </button>`;
+                    }
+                }
+            }
+        };
+
+        function renderizarControlesPaginacao(total) {
+            const container = document.getElementById('paginacao-ativos-container');
+            if (!container) return;
+
+            container.innerHTML = "";
+            if (total <= 1) return;
+
+            for (let i = 1; i <= total; i++) {
+                container.innerHTML += `
+            <button class="btn btn-sm ${i === paginaAtivaAtual ? 'btn-primary' : 'btn-outline-primary'} mx-1" 
+                    onclick="paginaAtivaAtual = ${i}; window.renderizarTabelaAtivosPaginada()">
+                ${i}
+            </button>`;
+            }
+        }
+
+        document.addEventListener('input', (e) => {
+            const idsFiltro = ['busca-nome-prod', 'busca-cidade-prod', 'busca-estado-prod'];
+            if (idsFiltro.includes(e.target.id)) {
+                paginaAtivaAtual = 1; // Sempre volta para a página 1 ao filtrar
+                window.renderizarTabelaAtivosPaginada();
             }
         });
     </script>

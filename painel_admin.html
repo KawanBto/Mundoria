@@ -809,33 +809,101 @@
 
         // --- FUNÇÕES DE CARREGAMENTO ---
         async function carregarPontos() {
-            const snap = await getDocs(query(collection(db, "locais"), where("status", "==", "ativo")));
-            const tbody = document.getElementById('tabela-pontos'); tbody.innerHTML = "";
-            document.getElementById('cont-pontos').innerText = snap.size;
-            snap.forEach(d => {
-                const l = d.data();
+            const tbody = document.getElementById('tabela-pontos');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Carregando locais ativos...</td></tr>';
 
-                // TRATAMENTO DO ENDEREÇO
-                let enderecoExibicao = "";
-                if (typeof l.endereco === 'object' && l.endereco !== null) {
-                    // Se for o novo formato (objeto), mostra Rua e Cidade
-                    enderecoExibicao = `${l.endereco.rua || ''}, ${l.endereco.cidade || ''}`;
-                } else {
-                    // Se for o formato antigo (string), mostra direto
-                    enderecoExibicao = l.endereco || "Sem endereço";
+            // Reset da paginação do Dashboard sempre que recarregar 
+            window.paginaAtualDash = 1;
+
+            try {
+                // 1. Busca apenas locais com status 'ativo' [cite: 201]
+                const q = query(collection(db, "locais"), where("status", "==", "ativo"));
+                const snap = await getDocs(q);
+
+                // Criamos uma lista em memória para permitir a ordenação instantânea 
+                window.listaDashMemoria = [];
+
+                // 2. Coleta dados e busca contagens de favoritos/roteiros 
+                for (const d of snap.docs) {
+                    const dados = d.data();
+
+                    // Busca contagens em tempo real para permitir a ordenação correta 
+                    const qFav = query(collection(db, "favoritos"), where("id_local", "==", d.id));
+                    const qRot = query(collection(db, "roteiro_itens"), where("id_local", "==", d.id));
+
+                    const [snapFav, snapRot] = await Promise.all([getDocs(qFav), getDocs(qRot)]);
+
+                    window.listaDashMemoria.push({
+                        id: d.id,
+                        ...dados,
+                        favCount: snapFav.size,
+                        rotCount: snapRot.size
+                    });
                 }
 
-                tbody.innerHTML += `
-    <tr>
-        <td><img src="${l.imagem}" class="img-tabela"></td>
-        <td><strong>${l.nome}</strong></td>
-        <td><span class="badge bg-secondary">${l.categoria}</span></td>
-        <td><small>${enderecoExibicao}</small></td>
-        <td class="text-end">
-            <button class="btn btn-sm btn-outline-danger" onclick="window.excluirLocal('${d.id}')">Excluir</button>
-        </td>
-    </tr>`;
-            });
+                // 3. Atualiza o layout dos filtros no Dashboard [cite: 36, 42]
+                const containerFiltros = document.querySelector('.card-admin .p-3.bg-white.border-bottom');
+                containerFiltros.innerHTML = `
+            <div class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <input type="text" id="busca-nome-dash" class="form-control form-control-sm" 
+                           placeholder="🔍 Nome..." onkeyup="window.paginaAtualDash=1; window.renderizarTabelaDash()">
+                </div>
+                <div class="col-md-2">
+                    <select id="sort-dash-tipo" class="form-select form-select-sm" onchange="window.paginaAtualDash=1; window.renderizarTabelaDash()">
+                        <option value="nome">Nome</option>
+                        <option value="favCount">Favoritos</option>
+                        <option value="rotCount">Roteiros</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="sort-dash-ordem" class="form-select form-select-sm" onchange="window.paginaAtualDash=1; window.renderizarTabelaDash()">
+                        <option value="desc">Desc</option>
+                        <option value="asc">Asc</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="busca-cidade-dash" class="form-control form-control-sm" 
+                           placeholder="🏙️ Cidade..." onkeyup="window.paginaAtualDash=1; window.renderizarTabelaDash()">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100 fw-bold" 
+                            onclick="window.limparBuscaDash()">LIMPAR</button>
+                </div>
+            </div>`;
+
+                // 4. Ajusta o cabeçalho da tabela [cite: 44, 47]
+                const tableHead = document.querySelector('#tabela-pontos').closest('table').querySelector('thead');
+                tableHead.innerHTML = `
+            <tr class="table-light">
+                <th>Foto</th>
+                <th>Nome</th>
+                <th>Categoria</th>
+                <th class="text-center">⭐ / 📍</th>
+                <th class="text-end">Ações</th>
+            </tr>`;
+
+                // 5. Garante a existência do rodapé de paginação no Card 
+                const cardDash = document.querySelector('#tabela-pontos').closest('.card-admin');
+                if (!document.getElementById('info-paginacao-dash')) {
+                    const footer = document.createElement('div');
+                    footer.className = "card-footer bg-white d-flex justify-content-between align-items-center border-top py-3";
+                    footer.innerHTML = `
+                <small class="text-muted" id="info-paginacao-dash"></small>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary fw-bold" id="btn-prev-dash" onclick="window.mudarPaginaDash(-1)">Anterior</button>
+                    <button class="btn btn-sm btn-outline-primary fw-bold" id="btn-next-dash" onclick="window.mudarPaginaDash(1)">Próximo</button>
+                </div>`;
+                    cardDash.appendChild(footer);
+                }
+
+                // Chama a renderização inicial 
+                window.renderizarTabelaDash();
+
+            } catch (error) {
+                console.error("Erro ao carregar locais do dashboard:", error);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Erro ao carregar dados.</td></tr>';
+            }
         }
 
         async function carregarPendentes() {
@@ -1122,11 +1190,31 @@
 
         window.mostrarLocaisSistema = async () => {
             const mainContent = document.querySelector('main .row');
-            // Busca apenas locais oficiais marcados como 'sistema' [cite: 899]
-            const q = query(collection(db, "locais"), where("tipo_local", "==", "sistema"));
+
+            // Resetamos a página atual sempre que abrir a tela
+            window.paginaAtualSistema = 1;
+            const itensPorPagina = 20;
+
+            const q = query(collection(db, "locais"), where("tipo_local", "in", ["sistema", "api"]));
             const snap = await getDocs(q);
 
-            // Inserindo o layout da tabela e a barra de pesquisa na tela de listagem [cite: 901]
+            window.listaMemoriaGerenciamento = [];
+
+            for (const d of snap.docs) {
+                const dados = d.data();
+                const qFav = query(collection(db, "favoritos"), where("id_local", "==", d.id));
+                const qRot = query(collection(db, "roteiro_itens"), where("id_local", "==", d.id));
+
+                const [snapFav, snapRot] = await Promise.all([getDocs(qFav), getDocs(qRot)]);
+
+                window.listaMemoriaGerenciamento.push({
+                    id: d.id,
+                    ...dados,
+                    favCount: snapFav.size,
+                    rotCount: snapRot.size
+                });
+            }
+
             mainContent.innerHTML = `
         <div class="col-12 mb-4">
             <button class="btn btn-sm btn-secondary mb-3" onclick="location.reload()">
@@ -1134,58 +1222,139 @@
             </button>
             
             <div class="card-admin shadow-sm">
-                <div class="card-header-custom bg-primary d-flex justify-content-between align-items-center">
-                    <span class="fw-bold"><i class="bi bi-geo-alt-fill me-2"></i>Locais Oficiais (Administração)</span>
-                    <div class="input-group input-group-sm w-50">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" id="busca-local-sistema" class="form-control border-start-0" 
-                               placeholder="Pesquisar por nome do estabelecimento..." onkeyup="window.filtrarLocaisSistema()"> 
+                <div class="card-header-custom bg-primary d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span class="fw-bold"><i class="bi bi-geo-alt-fill me-2"></i>Gerenciamento Global</span>
+                    
+                    <div class="d-flex gap-2 align-items-center flex-grow-1 justify-content-end">
+                        <select id="sort-tipo" class="form-select form-select-sm w-auto" onchange="window.paginaAtualSistema=1; window.renderizarTabelaGerenciamento()">
+                            <option value="nome">Nome</option>
+                            <option value="favCount">Mais Favoritados</option>
+                            <option value="rotCount">Mais em Roteiros</option>
+                        </select>
+                        
+                        <select id="sort-ordem" class="form-select form-select-sm w-auto" onchange="window.paginaAtualSistema=1; window.renderizarTabelaGerenciamento()">
+                            <option value="desc">Decrescente</option>
+                            <option value="asc">Crescente</option>
+                        </select>
+
+                        <div class="input-group input-group-sm w-25">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" id="busca-local-gerencia" class="form-control border-start-0" 
+                                   placeholder="Filtrar..." onkeyup="window.paginaAtualSistema=1; window.renderizarTabelaGerenciamento()"> 
+                        </div>
                     </div>
                 </div>
-                <div class="table-responsive p-3 bg-white" style="border-radius: 0 0 12px 12px;">
+                <div class="table-responsive p-3 bg-white">
                     <table class="table table-hover align-middle mb-0">
                         <thead> 
                             <tr class="table-light">
                                 <th>Foto</th>
-                                <th>Nome</th>
+                                <th>Nome / Tipo</th>
                                 <th>Cidade</th>
+                                <th class="text-center">⭐</th>
+                                <th class="text-center">📍</th>
                                 <th class="text-end">Ações</th>
                             </tr> 
                         </thead>
                         <tbody id="tabela-locais-sistema-corpo"></tbody>
                     </table>
                 </div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center border-top py-3" style="border-radius: 0 0 12px 12px;">
+                    <small class="text-muted" id="info-paginacao">Mostrando 0 de 0 locais</small>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary fw-bold" id="btn-prev" onclick="window.mudarPaginaSistema(-1)">Anterior</button>
+                        <button class="btn btn-sm btn-outline-primary fw-bold" id="btn-next" onclick="window.mudarPaginaSistema(1)">Próximo</button>
+                    </div>
+                </div>
             </div>
         </div>`;
 
-            const tbody = document.getElementById('tabela-locais-sistema-corpo');
+            window.renderizarTabelaGerenciamento();
+        };
 
-            if (snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">Nenhum local do sistema encontrado.</td></tr>';
+        window.renderizarTabelaGerenciamento = () => {
+            const tbody = document.getElementById('tabela-locais-sistema-corpo');
+            const campoSort = document.getElementById('sort-tipo').value;
+            const ordem = document.getElementById('sort-ordem').value;
+            const termoBusca = document.getElementById('busca-local-gerencia').value.toLowerCase();
+
+            const itensPorPagina = 20;
+
+            // 1. Filtra a lista total pelo nome
+            let listaFiltrada = window.listaMemoriaGerenciamento.filter(item =>
+                item.nome.toLowerCase().includes(termoBusca)
+            );
+
+            // 2. Ordena a lista filtrada (Texto ou Número)
+            listaFiltrada.sort((a, b) => {
+                let valA = a[campoSort];
+                let valB = b[campoSort];
+                if (typeof valA === 'string') {
+                    return ordem === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return ordem === 'asc' ? valA - valB : valB - valA;
+            });
+
+            // 3. Lógica de Paginação (Fatiamento de 20 em 20)
+            const totalItens = listaFiltrada.length;
+            const totalPaginas = Math.ceil(totalItens / itensPorPagina) || 1;
+
+            // Garante que a página atual não ultrapasse o limite após um filtro
+            if (window.paginaAtualSistema > totalPaginas) window.paginaAtualSistema = totalPaginas;
+
+            const inicio = (window.paginaAtualSistema - 1) * itensPorPagina;
+            const fim = inicio + itensPorPagina;
+            const listaExibicao = listaFiltrada.slice(inicio, fim);
+
+            // 4. Atualiza informações visuais de página no rodapé
+            document.getElementById('info-paginacao').innerText = `Página ${window.paginaAtualSistema} de ${totalPaginas} (${totalItens} locais)`;
+            document.getElementById('btn-prev').disabled = window.paginaAtualSistema === 1;
+            document.getElementById('btn-next').disabled = window.paginaAtualSistema === totalPaginas;
+
+            // 5. Renderiza a tabela
+            tbody.innerHTML = "";
+            if (listaExibicao.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Nenhum local encontrado.</td></tr>';
                 return;
             }
 
-            // Preenche a tabela com os locais encontrados no Firebase [cite: 908]
-            snap.forEach(d => {
-                const l = d.data();
+            listaExibicao.forEach(l => {
+                // Badge azul para 'sistema' e ciano para 'api'
+                const badgeTipo = l.tipo_local === 'sistema' ? 'bg-primary' : 'bg-info text-dark';
+
                 tbody.innerHTML += `
             <tr>
-                <td><img src="${l.imagem}" class="img-tabela shadow-sm" style="width:50px; height:50px; object-fit:cover; border-radius:8px;"></td> 
-                <td><strong>${l.nome}</strong></td> 
-                <td><span class="text-muted"><i class="bi bi-geo-alt me-1"></i>${l.endereco?.cidade || "Não definida"}</span></td> 
+                <td><img src="${l.imagem}" class="img-tabela shadow-sm" style="width:45px; height:45px; object-fit:cover; border-radius:8px;"></td> 
+                <td>
+                    <strong>${l.nome}</strong><br>
+                    <span class="badge ${badgeTipo}" style="font-size: 10px;">${l.tipo_local.toUpperCase()}</span>
+                </td> 
+                <td><small class="text-muted"><i class="bi bi-geo-alt me-1"></i>${l.endereco?.cidade || "---"}</small></td> 
+                <td class="text-center fw-bold text-primary">${l.favCount}</td>
+                <td class="text-center fw-bold text-success">${l.rotCount}</td>
                 <td class="text-end">
-                    <a href="detalhes.html?id=${d.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 fw-bold me-1 shadow-sm">
-                        <i class="bi bi-eye"></i> Ver Site
+                    <a href="detalhes.html?id=${l.id}" target="_blank" class="btn btn-xs btn-outline-secondary p-1 shadow-sm" title="Ver no Site">
+                        <i class="bi bi-eye"></i>
                     </a>
-                    <button class="btn btn-sm btn-primary px-3 fw-bold me-1 shadow-sm" onclick="window.gerenciarLocalSistema('${d.id}')">
-                        <i class="bi bi-gear-fill me-1"></i> Gerenciar
+
+                    <button class="btn btn-xs btn-primary p-1 shadow-sm" onclick="window.gerenciarLocalSistema('${l.id}')" title="Gerenciar">
+                        <i class="bi bi-gear-fill"></i>
                     </button> 
-                    <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="window.excluirLocal('${d.id}')">
+
+                    <button class="btn btn-xs btn-outline-danger p-1 shadow-sm" onclick="window.excluirLocal('${l.id}')" title="Excluir">
                         <i class="bi bi-trash"></i>
                     </button> 
                 </td>
             </tr>`;
             });
+        };
+
+        // Função para navegar entre as páginas
+        window.mudarPaginaSistema = (direcao) => {
+            window.paginaAtualSistema += direcao;
+            window.renderizarTabelaGerenciamento();
+            // Scroll suave para o topo da tabela ao mudar de página
+            document.querySelector('.card-admin').scrollIntoView({ behavior: 'smooth' });
         };
 
         // Função auxiliar para exclusão dentro dessa tela
@@ -1807,7 +1976,93 @@
             }
         };
 
+        window.renderizarTabelaDash = () => {
+            const tbody = document.getElementById('tabela-pontos');
+            const campoSort = document.getElementById('sort-dash-tipo').value;
+            const ordemSort = document.getElementById('sort-dash-ordem').value;
+            const buscaNome = document.getElementById('busca-nome-dash').value.toLowerCase();
+            const buscaCidade = document.getElementById('busca-cidade-dash').value.toLowerCase();
 
+            // DEFINE O LIMITE POR PÁGINA
+            const itensPorPagina = 20;
+
+            // 1. Filtra a lista baseada no que você digitou nos inputs
+            let listaFiltrada = window.listaDashMemoria.filter(l => {
+                const cidade = (l.endereco?.cidade || "").toLowerCase();
+                return l.nome.toLowerCase().includes(buscaNome) && cidade.includes(buscaCidade);
+            });
+
+            // 2. Ordena a lista (Texto ou Números de Favoritos/Roteiros)
+            listaFiltrada.sort((a, b) => {
+                let vA = a[campoSort];
+                let vB = b[campoSort];
+                if (typeof vA === 'string') {
+                    return ordemSort === 'asc' ? vA.localeCompare(vB) : vB.localeCompare(vA);
+                }
+                return ordemSort === 'asc' ? vA - vB : vB - vA;
+            });
+
+            // 3. CÁLCULO DA PAGINAÇÃO (O CORTE DOS 20)
+            const totalItens = listaFiltrada.length;
+            const totalPaginas = Math.ceil(totalItens / itensPorPagina) || 1;
+
+            // Garante que não estamos em uma página inexistente após filtrar
+            if (window.paginaAtualDash > totalPaginas) window.paginaAtualDash = totalPaginas;
+
+            const inicio = (window.paginaAtualDash - 1) * itensPorPagina;
+            const listaExibicao = listaFiltrada.slice(inicio, inicio + itensPorPagina);
+
+            // 4. Atualiza os textos do rodapé de paginação
+            const infoPag = document.getElementById('info-paginacao-dash');
+            const btnPrev = document.getElementById('btn-prev-dash');
+            const btnNext = document.getElementById('btn-next-dash');
+
+            if (infoPag) infoPag.innerText = `Página ${window.paginaAtualDash} de ${totalPaginas} (${totalItens} locais)`;
+            if (btnPrev) btnPrev.disabled = window.paginaAtualDash === 1;
+            if (btnNext) btnNext.disabled = window.paginaAtualDash === totalPaginas;
+
+            // Atualiza o contador de badge no topo do painel
+            document.getElementById('cont-pontos').innerText = totalItens;
+
+            // 5. Renderiza apenas as 20 linhas no HTML
+            tbody.innerHTML = "";
+            if (listaExibicao.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Nenhum local encontrado.</td></tr>';
+                return;
+            }
+
+            listaExibicao.forEach(l => {
+                // TRATAMENTO DO ENDEREÇO (Igual ao que você já tinha)
+                let endExib = (typeof l.endereco === 'object' && l.endereco !== null)
+                    ? `${l.endereco.rua || ''}, ${l.endereco.cidade || ''}`
+                    : (l.endereco || "Sem endereço");
+
+                tbody.innerHTML += `
+            <tr>
+                <td><img src="${l.imagem}" class="img-tabela"></td>
+                <td><strong>${l.nome}</strong></td>
+                <td><span class="badge bg-secondary">${l.categoria}</span></td>
+                <td class="text-center">
+                    <small class="fw-bold text-primary">${l.favCount}⭐</small><br>
+                    <small class="fw-bold text-success">${l.rotCount}📍</small>
+                </td>
+                <td class="text-end">
+                    <a href="detalhes.html?id=${l.id}" target="_blank" class="btn btn-sm btn-outline-secondary px-2 fw-bold me-1">
+                        <i class="bi bi-eye"></i> Ver Site
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger" onclick="window.excluirLocal('${l.id}')">Excluir</button>
+                </td>
+            </tr>`;
+            });
+        };
+
+        // FUNÇÃO PARA MUDAR DE PÁGINA
+        window.mudarPaginaDash = (direcao) => {
+            window.paginaAtualDash += direcao;
+            window.renderizarTabelaDash();
+            // Scroll para o topo da tabela para facilitar a leitura
+            document.querySelector('.card-admin').scrollIntoView({ behavior: 'smooth' });
+        };
 
         window.removerAcesso = async (id) => { if (confirm("Voltar para Turista?")) { await updateDoc(doc(db, "users", id), { tipo: "turista" }); carregarEquipe(); } };
         window.buscarEndereco = (q) => { if (q.length < 3) return; fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=5`).then(r => r.json()).then(d => { const l = document.getElementById('lista-sugestoes'); l.innerHTML = d.map(i => `<div class="item-sugestao" onclick="window.selectEnd('${i.display_name.replace(/'/g, "")}', ${i.lat}, ${i.lon})">${i.display_name}</div>`).join(''); l.style.display = 'block'; }); };

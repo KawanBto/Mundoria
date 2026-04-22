@@ -235,15 +235,40 @@
             <button class="search-btn rounded-pill px-4 ms-2">Buscar</button>
         </div>
 
-        <div class="d-flex justify-content-center gap-2 mt-3">
-            <button class="btn btn-light btn-sm rounded-pill shadow-sm text-primary fw-bold"
-                onclick="window.filtrarPorGps()">
-                <i class="bi bi-geo-fill"></i> Locais Próximos (GPS)
-            </button>
-            <button class="btn btn-light btn-sm rounded-pill shadow-sm text-laranja fw-bold"
-                onclick="window.filtrarPorEnderecoPerfil()">
-                <i class="bi bi-house-heart-fill"></i> Perto da Minha Casa
-            </button>
+        <div class="d-flex flex-column align-items-center mt-3">
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
+                <div class="input-group input-group-sm shadow-sm" style="width: auto;">
+                    <span class="input-group-text bg-white border-0 text-primary">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </span>
+                    <select id="qtd-populacao" class="form-select border-0 fw-bold text-muted" style="width: 70px;">
+                        <option value="4">4</option>
+                        <option value="8" selected>8</option>
+                        <option value="16">16</option>
+                        <option value="32">32</option>
+                    </select>
+                </div>
+
+                <button id="btn-gps-popular" class="btn btn-primary btn-sm rounded-pill shadow-sm fw-bold px-3"
+                    onclick="window.filtrarPorGpsPopular()">
+                    <i class="bi bi-geo-fill"></i> Explorar Nova Área
+                </button>
+
+                <button id="btn-radar" class="btn btn-light btn-sm rounded-pill shadow-sm text-primary fw-bold px-3"
+                    onclick="window.radarLocaisExistentes()">
+                    <i class="bi bi-radar"></i> Radar Mundoria
+                </button>
+
+                <button class="btn btn-light btn-sm rounded-pill shadow-sm text-laranja fw-bold px-3"
+                    onclick="window.filtrarPorEnderecoPerfil()">
+                    <i class="bi bi-house-heart-fill"></i> Perto de Casa
+                </button>
+            </div>
+            <div class="mt-2 text-white fw-medium shadow-sm"
+                style="font-size: 0.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                <i class="bi bi-info-circle-fill text-warning me-1"></i>
+                Use o "Explorar" para descobrir novos locais. O "Radar" mostra o que já conhecemos.
+            </div>
         </div>
     </div>
 
@@ -274,8 +299,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, query, where, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, query, where, addDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDGDvRBfJlztDRpQS1MHkYlDQst7ZtfHCo",
@@ -285,9 +310,21 @@
             messagingSenderId: "86901345396",
             appId: "1:86901345396:web:969fa3637292d0333e1521"
         };
+        // 3. INICIALIZAÇÃO
         const appFirebase = initializeApp(firebaseConfig);
         const dbFirebase = getFirestore(appFirebase);
         const authFirebase = getAuth(appFirebase);
+
+        // 4. O PULO DO GATO (Tornar as funções e o banco globais para as APIs abaixo)
+        window.dbFirebase = dbFirebase;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.updateDoc = updateDoc;
+        window.collectionFirebase = collection;
+        window.getDocsFirebase = getDocs;
+        window.queryFirebase = query;
+        window.whereFirebase = where;
 
         window.dbFirebase = dbFirebase;
         window.collectionFirebase = collection;
@@ -584,7 +621,6 @@
         window.filtrarPorGps = () => {
             const btn = event.currentTarget;
 
-            // Se já estiver ativo, desliga e mostra tudo
             if (filtroAtivo === 'gps') {
                 filtroAtivo = null;
                 resetarEstiloBotao(btn, 'text-primary');
@@ -594,24 +630,49 @@
 
             if (!navigator.geolocation) return alert("Seu navegador não suporta geolocalização.");
 
-            navigator.geolocation.getCurrentPosition((pos) => {
-                // Limpa outros filtros antes
-                resetarTodosBotoes();
+            // Pega a quantidade escolhida no seletor (ex: 4)
+            const qtdLimite = parseInt(document.getElementById('qtd-populacao').value) || 4;
+            const textoOriginal = btn.innerHTML;
 
-                filtroAtivo = 'gps';
-                btn.classList.replace('btn-light', 'btn-primary');
-                btn.classList.replace('text-primary', 'text-white');
+            // Feedback visual para o usuário
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Populando ${qtdLimite} locais...`;
 
-                const latUser = pos.coords.latitude;
-                const lonUser = pos.coords.longitude;
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                try {
+                    const latUser = pos.coords.latitude;
+                    const lonUser = pos.coords.longitude;
 
-                const proximos = locaisGlobais.filter(local => {
-                    const distancia = calcularDistancia(latUser, lonUser, local.lat, local.lon);
-                    return distancia <= 10;
-                });
+                    // 1. O ROBÔ POPULA O BANCO: Busca e salva exatamente a quantidade escolhida
+                    console.log(`🚀 Iniciando carga de ${qtdLimite} locais via GPS...`);
+                    await window.popularAreaPorDemanda(latUser, lonUser, qtdLimite);
 
-                if (proximos.length === 0) alert("Não encontramos locais num raio de 10km.");
-                renderizarLocais(proximos);
+                    // 2. RECARREGA A LISTA: Puxa tudo do Firebase de novo, incluindo os novos 4 locais
+                    await carregarLocais();
+
+                    // 3. ATUALIZA A INTERFACE
+                    resetarTodosBotoes();
+                    filtroAtivo = 'gps';
+                    btn.classList.replace('btn-light', 'btn-primary');
+                    btn.classList.replace('text-primary', 'text-white');
+                    btn.innerHTML = textoOriginal;
+
+                    // 4. MOSTRA O RESULTADO: Filtra apenas os que estão num raio de 10km
+                    const proximos = locaisGlobais.filter(local => {
+                        const distancia = calcularDistancia(latUser, lonUser, local.lat, local.lon);
+                        return distancia <= 10;
+                    });
+
+                    renderizarLocais(proximos);
+                    console.log("✅ População e filtragem concluídas!");
+
+                } catch (erro) {
+                    console.error("Erro ao popular via GPS:", erro);
+                    btn.innerHTML = textoOriginal;
+                    alert("Erro ao processar novos locais.");
+                }
+            }, (erro) => {
+                btn.innerHTML = textoOriginal;
+                alert("Ative seu GPS para popular a área.");
             });
         };
 
@@ -674,6 +735,276 @@
             const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
+
+        // APIs
+
+        // Filtro rigoroso: Só aceita o que é público e gratuito
+        const mapearCategoriaPublica = (tags) => {
+            if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.leisure === 'nature_reserve') return "Natureza";
+            if (tags.leisure === 'playground' || tags.leisure === 'recreation_ground') return "Lazer";
+            if (tags.tourism === 'museum') return "Museu";
+            if (tags.tourism === 'artwork' || tags.amenity === 'arts_centre' || tags.historic) return "Cultura";
+            if (tags.amenity === 'marketplace') return "Feiras";
+            return null; // Bloqueia Restaurantes, Bares, Cafés e Lojas (Privados)
+        };
+
+        // Função Principal de Varredura por Demanda
+        // 1. BUSCA FILTRADA (APENAS PÚBLICO)
+        // 1. BUSCA APENAS LOCAIS PÚBLICOS
+
+        async function buscarFotoReal(lat, lng, idDoc) {
+            const SEU_TOKEN = "MLY|34930973006550074|59365998c1f90bd131a333110c4e2dbc"; // Seu novo token oficial
+            try {
+                // Busca imagens reais próximas às coordenadas usando seu token oficial
+                const res = await fetch(`https://graph.mapillary.com/images?access_token=${SEU_TOKEN}&fields=id,thumb_1024_url&is_pano=false&closeto=${lng},${lat}&radius=100&limit=1`);
+                const data = await res.json();
+
+                if (data.data && data.data.length > 0) {
+                    const fotoUrl = data.data[0].thumb_1024_url;
+                    await window.updateDoc(window.doc(window.dbFirebase, "locais", idDoc), {
+                        imagem: fotoUrl,
+                        imagem_real: true
+                    });
+                    console.log("📸 FOTO REAL ENCONTRADA NO MAPILLARY!");
+                } else {
+                    console.warn("Sem foto no ponto exato, mantendo imagem padrão.");
+                }
+            } catch (e) {
+                console.error("Erro ao buscar foto real:", e);
+            }
+        }
+
+        async function buscarDadosReais(nome, lat, lng) {
+            // Trim remove espaços acidentais que causam Erro 400
+            const CLIENT_ID = '3RYQGHFPNARIBFXKNIEKWZEXFR2FRL1CQ4YTQ31NBQQQBEZF'.trim();
+            const CLIENT_SECRET = 'JHTYSWKHYWQMITSROYIISUEBNQOBOB4GZY1DOVBPJ1DJE0K'.trim();
+            const VERSAO = '20231010';
+
+            try {
+                // Garantimos que o nome não está vazio antes de chamar
+                if (!nome) return null;
+
+                const params = new URLSearchParams({
+                    client_id: CLIENT_ID,
+                    client_secret: CLIENT_SECRET,
+                    v: VERSAO,
+                    ll: `${lat},${lng}`,
+                    query: nome,
+                    limit: 1
+                });
+
+                const res = await fetch(`https://api.foursquare.com/v2/venues/search?${params.toString()}`);
+
+                if (!res.ok) {
+                    const erroTxt = await res.text();
+                    console.error(`❌ Erro 400 no Foursquare. Resposta: ${erroTxt}`);
+                    return null;
+                }
+
+                const data = await res.json();
+
+                if (data.response && data.response.venues && data.response.venues.length > 0) {
+                    const venue = data.response.venues[0];
+
+                    // Busca a foto
+                    const photoParams = new URLSearchParams({
+                        client_id: CLIENT_ID,
+                        client_secret: CLIENT_SECRET,
+                        v: VERSAO,
+                        limit: 1
+                    });
+
+                    const photoRes = await fetch(`https://api.foursquare.com/v2/venues/${venue.id}/photos?${photoParams.toString()}`);
+                    const photoData = await photoRes.json();
+
+                    let fotoUrl = "img/padrao/lazer.jpg";
+                    if (photoData.response && photoData.response.photos.items.length > 0) {
+                        const p = photoData.response.photos.items[0];
+                        fotoUrl = `${p.prefix}original${p.suffix}`;
+                    }
+
+                    return {
+                        endereco: venue.location.address || "Endereço não disponível",
+                        foto: fotoUrl,
+                        descricao: venue.categories && venue.categories[0]
+                            ? `Um excelente ${venue.categories[0].name} em Ubatuba.`
+                            : `Local popular em Ubatuba.`
+                    };
+                }
+            } catch (e) {
+                console.error("Erro na busca:", e);
+            }
+            return null;
+        }
+
+        // 1. FUNÇÃO DE VARREDURA (DELAY AJUSTADO PARA EVITAR BLOQUEIO)
+        window.popularAreaPorDemanda = async function (lat, lng, limite, callbackProgresso) {
+            const url = "https://overpass.openstreetmap.fr/api/interpreter";
+            const query = `[out:json][timeout:90];(nwr["leisure"~"park|garden|playground|nature_reserve|beach_resort"](around:2000,${lat},${lng});nwr["tourism"~"viewpoint|museum|attraction|artwork"](around:2000,${lat},${lng});nwr["historic"](around:2000,${lat},${lng}););out center ${limite};`;
+
+            try {
+                const response = await fetch(url, { method: 'POST', body: `data=${encodeURIComponent(query)}` });
+                const data = await response.json();
+
+                if (data.elements) {
+                    let processados = 0;
+                    for (const el of data.elements.slice(0, limite)) {
+                        processados++;
+                        // Chama a função que atualiza o texto do botão
+                        if (callbackProgresso) callbackProgresso(processados, limite);
+
+                        if (el.tags && el.tags.name) {
+                            await new Promise(r => setTimeout(r, 1500));
+                            // Lógica de categoria e salvamento que você já tem...
+                            let cat = el.tags.tourism === 'museum' ? 'Cultura' : 'Lazer';
+                            await window.salvarLocalAPI({ ...el, lat: el.lat || el.center.lat, lon: el.lon || el.center.lon }, cat);
+                        }
+                    }
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        // 2. FUNÇÃO DE SALVAMENTO (COM PROTEÇÃO CONTRA ERRO 429 E CORS)
+        window.salvarLocalAPI = async function (el, cat) {
+            const idUnico = `api_${el.id}`;
+            const refDoc = window.doc(window.dbFirebase, "locais", idUnico);
+
+            try {
+                const snap = await window.getDoc(refDoc);
+                if (snap.exists()) return;
+
+                // 1. Busca endereço real dinâmico
+                let enderecoFormatado = "Endereço não disponível";
+                let cidadeReal = "Cidade não identificada";
+                let estadoReal = "SP";
+                let cepReal = "";
+
+                try {
+                    const resEnd = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${el.lat}&lon=${el.lon}`);
+                    if (resEnd.ok) {
+                        const dataEnd = await resEnd.json();
+                        enderecoFormatado = dataEnd.display_name.split(',').slice(0, 3).join(',');
+                        cidadeReal = dataEnd.address.city || dataEnd.address.town || dataEnd.address.village || "Cidade não identificada";
+                        estadoReal = dataEnd.address.state || "SP";
+                        cepReal = dataEnd.address.postcode || "";
+                    }
+                } catch (err) { console.warn("Erro ao buscar endereço real."); }
+
+                // 2. Lógica de Imagens com Validação de Link
+                const imagensIlustrativas = {
+                    "Natureza": "img/ilustrativa_natureza.jpg",
+                    "Cultura": "img/ilustrativa_cultura.jpg",
+                    "Lazer": "img/ilustrativa_lazer.jpg",
+                    "Feiras": "img/ilustrativa_feiras.jpg",
+                    "Museu": "img/ilustrativa_museu.jpg"
+                };
+                let fotoFinal = imagensIlustrativas[cat] || "img/ilustrativa_geral.jpg";
+
+                // Função para garantir que o link é um endereço de internet válido (http/https)
+                const ehLinkValido = (url) => url && url.startsWith('http');
+
+                if (ehLinkValido(el.tags.image)) {
+                    fotoFinal = el.tags.image;
+                } else if (el.tags.wikipedia) {
+                    try {
+                        const wikiTermo = el.tags.wikipedia.split(':')[1];
+                        const wikiRes = await fetch(`https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTermo)}`);
+                        const wikiData = await wikiRes.json();
+                        // Só aceita a foto da Wikipédia se o link for válido para a web
+                        if (wikiData.thumbnail && ehLinkValido(wikiData.thumbnail.source)) {
+                            fotoFinal = wikiData.thumbnail.source;
+                        }
+                    } catch (e) { }
+                }
+
+                // 3. Montagem do Objeto
+                const dados = {
+                    nome: el.tags.name,
+                    categoria: cat,
+                    descricao: `${el.tags.name} é um local público de ${cat.toLowerCase()} localizado em ${cidadeReal}.`,
+                    tipo_local: "api",
+                    status: "ativo",
+                    imagem: fotoFinal,
+                    lat: el.lat,
+                    lon: el.lon,
+                    endereco: {
+                        rua: enderecoFormatado,
+                        cidade: cidadeReal,
+                        estado: estadoReal,
+                        cep: cepReal
+                    }
+                };
+
+                if (el.tags.opening_hours) dados.horario = el.tags.opening_hours;
+                if (el.tags.phone || el.tags["contact:phone"]) dados.telefone = el.tags.phone || el.tags["contact:phone"];
+
+                await window.setDoc(refDoc, dados);
+                console.log(`✅ SALVO EM ${cidadeReal.toUpperCase()}: ${el.tags.name}`);
+
+            } catch (e) { console.error("Erro ao processar:", e); }
+        };
+
+        window.radarLocaisExistentes = async () => {
+            const btn = document.getElementById('btn-radar');
+
+            // Feedback visual de carregamento
+            if (!navigator.geolocation) return alert("Ative o GPS.");
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                // Garante que os locais mais recentes do banco foram carregados
+                await carregarLocais();
+
+                const latUser = pos.coords.latitude;
+                const lonUser = pos.coords.longitude;
+
+                // Limpa estados de outros botões
+                resetarTodosBotoes();
+                filtroAtivo = 'radar';
+                btn.classList.replace('btn-light', 'btn-primary');
+                btn.classList.replace('text-primary', 'text-white');
+
+                // Filtra locais em um raio de 10km que já existem no banco
+                const proximos = locaisGlobais.filter(local => {
+                    const distancia = calcularDistancia(latUser, lonUser, local.lat, local.lon);
+                    return distancia <= 10;
+                });
+
+                if (proximos.length === 0) {
+                    alert("Nenhum local cadastrado por aqui ainda. Use o botão 'Explorar Nova Área'!");
+                }
+
+                renderizarLocais(proximos);
+            });
+        };
+
+        window.filtrarPorGpsPopular = async () => {
+            const btn = document.getElementById('btn-gps-popular');
+            const qtdLimite = parseInt(document.getElementById('qtd-populacao').value) || 8;
+            const textoOriginal = btn.innerHTML;
+
+            if (!navigator.geolocation) return alert("Ative o GPS.");
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                try {
+                    const latUser = pos.coords.latitude;
+                    const lonUser = pos.coords.longitude;
+
+                    // Criamos um sistema de atualização de progresso para o botão
+                    // Passamos uma função de callback para o popularAreaPorDemanda
+                    await window.popularAreaPorDemanda(latUser, lonUser, qtdLimite, (atual, total) => {
+                        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Lendo ${atual}/${total}...`;
+                    });
+
+                    await carregarLocais();
+                    btn.innerHTML = textoOriginal;
+                    window.radarLocaisExistentes(); // Filtra automaticamente após popular
+
+                } catch (erro) {
+                    btn.innerHTML = textoOriginal;
+                    console.error(erro);
+                }
+            });
+        };
 
     </script>
     <input type="hidden" id="id-local-temp">

@@ -225,7 +225,7 @@
             <div class="d-flex align-items-center flex-grow-1 px-3 border-end">
                 <i class="bi bi-search text-muted me-2"></i>
                 <input type="text" id="input-busca" class="border-0 w-100 search-input" style="outline: none;"
-                    placeholder="O que você procura?" on up="aplicarFiltros()">
+                    placeholder="O que você procura?" onkeyup="aplicarFiltros()">
             </div>
             <div class="d-flex align-items-center flex-grow-1 px-3">
                 <i class="bi bi-geo-alt text-laranja me-2"></i>
@@ -276,10 +276,10 @@
         // 1. Importa as configurações do arquivo oculto
         import { firebaseConfig } from './config.js';
 
-        // 2. Imports do Firebase (ADICIONADOS: orderBy, limit, startAfter)
+        // 2. Imports do Firebase (ADICIONADOS: setDoc para a carga funcionar)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import {
-            getFirestore, collection, getDocs, doc, getDoc, query, where, updateDoc,
+            getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, updateDoc,
             orderBy, limit, startAfter
         } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
@@ -289,12 +289,18 @@
         const dbFirebase = getFirestore(appFirebase);
         const authFirebase = getAuth(appFirebase);
 
-        // 4. Pontes para o sistema (ADICIONADAS as novas funções para paginação)
+        // 4. Pontes para o sistema (ADICIONADAS as funções de escrita e leitura individual)
         window.dbFirebase = dbFirebase;
         window.collectionFirebase = collection;
         window.getDocsFirebase = getDocs;
         window.queryFirebase = query;
         window.whereFirebase = where;
+
+        // Pontes essenciais para a carga e manipulação de documentos
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.setDoc = setDoc;
+        window.updateDoc = updateDoc;
 
         // Novas pontes para filtros e paginação
         window.orderByFirebase = orderBy;
@@ -538,11 +544,14 @@
         }
 
         function aplicarFiltros() {
+            // 1. Captura os termos de busca e limpa espaços extras
             const termo = document.getElementById('input-busca').value.toLowerCase().trim();
             const localidade = document.getElementById('input-localidade').value.toLowerCase().trim();
 
+            // 2. Filtra a lista global baseada nos critérios ativos
             const filtrados = locaisGlobais.filter(item => {
-                // 1. Filtro por Categoria (Nicho)
+
+                // Filtro A: Categoria (Nicho) - Verifica se o item pertence ao grupo selecionado
                 let bateNicho = false;
                 if (filtroAtual === 'todos') {
                     bateNicho = true;
@@ -553,23 +562,26 @@
                     );
                 }
 
-                // 2. Filtro por Texto (Nome ou Descrição)
-                const bateTexto = item.nome.toLowerCase().includes(termo) ||
+                // Filtro B: Texto - Busca no Nome ou na Descrição (Tempo Real)
+                // Se o campo estiver vazio, retorna true para não filtrar nada por texto
+                const bateTexto = termo === "" ||
+                    item.nome.toLowerCase().includes(termo) ||
                     item.descricao.toLowerCase().includes(termo);
 
-                // 3. Filtro por Localidade (Cidade, Rua ou Estado)
+                // Filtro C: Localidade - Busca na Rua, Cidade ou Estado
                 let enderecoCompleto = "";
                 if (typeof item.endereco === 'object' && item.endereco !== null) {
-                    // Concatena todos os campos para uma busca abrangente
-                    enderecoCompleto = `${item.endereco.rua} ${item.endereco.cidade} ${item.endereco.estado}`.toLowerCase();
+                    enderecoCompleto = `${item.endereco.rua || ""} ${item.endereco.cidade || ""} ${item.endereco.estado || ""}`.toLowerCase();
                 } else {
                     enderecoCompleto = String(item.endereco || "").toLowerCase();
                 }
+                const bateLocal = localidade === "" || enderecoCompleto.includes(localidade);
 
-                const bateLocal = enderecoCompleto.includes(localidade);
-
+                // O item só aparece se passar nos três filtros simultaneamente
                 return bateNicho && bateTexto && bateLocal;
             });
+
+            // 3. Atualiza a tela com os resultados filtrados
             renderizarLocais(filtrados);
         }
 
@@ -625,7 +637,7 @@
         window.filtrarPorEnderecoPerfil = () => {
             const btn = event.currentTarget;
 
-            // Se já estiver ativo, desliga e mostra tudo
+            // Se já estiver ativo, desliga e mostra tudo [cite: 140]
             if (filtroAtivo === 'perfil') {
                 filtroAtivo = null;
                 resetarEstiloBotao(btn, 'text-laranja');
@@ -633,22 +645,29 @@
                 return;
             }
 
-            // Puxa os dados do usuário global [cite: 518, 519]
+            // Verifica se o usuário está logado [cite: 141]
             if (!window.isLogado || !window.usuarioGlobal) return alert("Faça login primeiro!");
 
-            const cidadePerfil = window.usuarioGlobal.cidade;
+            // CORREÇÃO: Acessa a cidade dentro do objeto 'endereco' [cite: 125, 142]
+            const cidadePerfil = window.usuarioGlobal.endereco ? window.usuarioGlobal.endereco.cidade : null;
+
             if (!cidadePerfil) return alert("Cadastre sua cidade no Perfil!");
 
-            // Limpa outros filtros antes
+            // Limpa outros filtros visuais [cite: 143]
             resetarTodosBotoes();
 
             filtroAtivo = 'perfil';
             btn.classList.replace('btn-light', 'btn-primary');
             btn.classList.replace('text-laranja', 'text-white');
 
+            // Filtra comparando a cidade do perfil com a cidade do local 
             const pertoDeCasa = locaisGlobais.filter(local => {
-                const enderecoLocal = typeof local.endereco === 'object' ? local.endereco.cidade : String(local.endereco);
-                return enderecoLocal.toLowerCase().includes(cidadePerfil.toLowerCase());
+                // Trata o endereço do local de forma segura, seja ele objeto ou string 
+                const cidadeLocal = (typeof local.endereco === 'object' && local.endereco !== null)
+                    ? local.endereco.cidade
+                    : String(local.endereco || "");
+
+                return cidadeLocal.toLowerCase().includes(cidadePerfil.toLowerCase());
             });
 
             if (pertoDeCasa.length === 0) {

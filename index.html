@@ -276,11 +276,11 @@
         // 1. Importa as configurações do arquivo oculto
         import { firebaseConfig } from './config.js';
 
-        // 2. Imports do Firebase (ADICIONADOS: setDoc para a carga funcionar)
+        // 2. Imports do Firebase (ADICIONADOS: setDoc e addDoc para o funcionamento completo)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
         import {
             getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, updateDoc,
-            orderBy, limit, startAfter
+            orderBy, limit, startAfter, addDoc
         } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
@@ -301,6 +301,7 @@
         window.getDoc = getDoc;
         window.setDoc = setDoc;
         window.updateDoc = updateDoc;
+        window.addDoc = addDoc;
 
         // Novas pontes para filtros e paginação
         window.orderByFirebase = orderBy;
@@ -434,8 +435,8 @@
             }
         };
 
+        // 5. Funções do Roteiro (Vinculadas ao window para funcionar com onclick no HTML)
         window.abrirModalRoteiro = async (idLocal, event) => {
-            // Impede que o clique no botão abra também a página de detalhes do card 
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -447,9 +448,8 @@
                 return;
             }
 
-            // Salva o ID do local no campo oculto [cite: 87]
+            // Armazena o ID do local no campo oculto do HTML [cite: 433]
             document.getElementById('id-local-temp').value = idLocal;
-
             const select = document.getElementById('select-roteiros');
             select.innerHTML = '<option value="">Buscando seus roteiros...</option>';
 
@@ -458,8 +458,12 @@
             modal.show();
 
             try {
-                const q = query(collection(dbFirebase, "roteiros"), where("id_usuario", "==", window.usuarioGlobal.id));
-                const snap = await getDocs(q);
+                // Busca os roteiros do usuário logado [cite: 435]
+                const q = window.queryFirebase(
+                    window.collectionFirebase(window.dbFirebase, "roteiros"),
+                    window.whereFirebase("id_usuario", "==", window.usuarioGlobal.id)
+                );
+                const snap = await window.getDocsFirebase(q);
 
                 if (snap.empty) {
                     select.innerHTML = '<option value="">Você não tem roteiros. Crie um no Painel!</option>';
@@ -471,7 +475,7 @@
                     select.innerHTML += `<option value="${doc.id}">${doc.data().nome_roteiro}</option>`;
                 });
             } catch (e) {
-                console.error(e);
+                console.error("Erro ao carregar roteiros:", e);
                 select.innerHTML = '<option>Erro ao carregar roteiros.</option>';
             }
         };
@@ -479,13 +483,21 @@
         window.confirmarAdicaoRoteiro = async () => {
             const idRoteiro = document.getElementById('select-roteiros').value;
             const idLocal = document.getElementById('id-local-temp').value;
+
             if (!idRoteiro) return alert("Selecione um roteiro da lista!");
+
             try {
-                await addDoc(collection(dbFirebase, "roteiro_itens"), { id_roteiro: idRoteiro, id_local: idLocal, horario: "" });
+                // Grava o item no roteiro usando a ponte addDoc criada anteriormente [cite: 443]
+                await window.addDoc(window.collectionFirebase(window.dbFirebase, "roteiro_itens"), {
+                    id_roteiro: idRoteiro,
+                    id_local: idLocal,
+                    horario: ""
+                });
+
                 alert("Local adicionado com sucesso ao seu roteiro!");
                 bootstrap.Modal.getInstance(document.getElementById('modalAddRoteiro')).hide();
             } catch (e) {
-                console.error(e);
+                console.error("Erro ao salvar local no roteiro:", e);
                 alert("Erro ao salvar local no roteiro.");
             }
         };

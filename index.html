@@ -268,79 +268,85 @@
         <div id="grade-conteudo" class="row">
             <p class="text-center">Carregando experiências...</p>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <div class="d-flex justify-content-center mt-4 mb-5" id="container-paginacao" style="display: none;">
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination id" id="lista-numeros-pagina">
+                </ul>
+            </nav>
+        </div>
 
-    <script type="module">
-        // 1. Importa as configurações do arquivo oculto
-        import { firebaseConfig } from './config.js';
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        // 2. Imports do Firebase (ADICIONADOS: setDoc e addDoc para o funcionamento completo)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import {
-            getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, updateDoc,
-            orderBy, limit, startAfter, addDoc
-        } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        <script type="module">
+            // 1. Importa as configurações do arquivo oculto
+            import { firebaseConfig } from './config.js';
 
-        // 3. Inicialização
-        const appFirebase = initializeApp(firebaseConfig);
-        const dbFirebase = getFirestore(appFirebase);
-        const authFirebase = getAuth(appFirebase);
+            // 2. Imports do Firebase (ADICIONADOS: setDoc e addDoc para o funcionamento completo)
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+            import {
+                getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, updateDoc,
+                orderBy, limit, startAfter, addDoc
+            } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+            import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
-        // 4. Pontes para o sistema (ADICIONADAS as funções de escrita e leitura individual)
-        window.dbFirebase = dbFirebase;
-        window.collectionFirebase = collection;
-        window.getDocsFirebase = getDocs;
-        window.queryFirebase = query;
-        window.whereFirebase = where;
+            // 3. Inicialização
+            const appFirebase = initializeApp(firebaseConfig);
+            const dbFirebase = getFirestore(appFirebase);
+            const authFirebase = getAuth(appFirebase);
 
-        // Pontes essenciais para a carga e manipulação de documentos
-        window.doc = doc;
-        window.getDoc = getDoc;
-        window.setDoc = setDoc;
-        window.updateDoc = updateDoc;
-        window.addDoc = addDoc;
+            // 4. Pontes para o sistema (ADICIONADAS as funções de escrita e leitura individual)
+            window.dbFirebase = dbFirebase;
+            window.collectionFirebase = collection;
+            window.getDocsFirebase = getDocs;
+            window.queryFirebase = query;
+            window.whereFirebase = where;
 
-        // Novas pontes para filtros e paginação
-        window.orderByFirebase = orderBy;
-        window.limitFirebase = limit;
-        window.startAfterFirebase = startAfter;
+            // Pontes essenciais para a carga e manipulação de documentos
+            window.doc = doc;
+            window.getDoc = getDoc;
+            window.setDoc = setDoc;
+            window.updateDoc = updateDoc;
+            window.addDoc = addDoc;
 
-        const menu = document.getElementById('menu-usuario');
-        onAuthStateChanged(authFirebase, async (user) => {
-            if (user) {
-                window.isLogado = true;
-                const emailId = user.email.toLowerCase();
-                const userSnap = await getDoc(doc(dbFirebase, "users", emailId));
+            // Novas pontes para filtros e paginação
+            window.orderByFirebase = orderBy;
+            window.limitFirebase = limit;
+            window.startAfterFirebase = startAfter;
 
-                const data = userSnap.exists() ? userSnap.data() : {
-                    nome: "Usuário",
-                    foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-                    tipo: "turista"
-                };
+            const menu = document.getElementById('menu-usuario');
+            onAuthStateChanged(authFirebase, async (user) => {
+                if (user) {
+                    window.isLogado = true;
+                    const emailId = user.email.toLowerCase();
+                    const userSnap = await getDoc(doc(dbFirebase, "users", emailId));
 
-                window.usuarioGlobal = { id: emailId, ...data };
+                    const data = userSnap.exists() ? userSnap.data() : {
+                        nome: "Usuário",
+                        foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                        tipo: "turista"
+                    };
 
-                if (data.tipo === 'admin' || data.tipo === 'produtor' || data.tipo === 'analista') {
-                    let linkPainel = '';
-                    let textoBotao = 'Painel de Gestão';
-                    let classeBotao = 'btn-admin-link';
-                    let icone = 'bi-gear-fill';
+                    window.usuarioGlobal = { id: emailId, ...data };
 
-                    if (data.tipo === 'admin') {
-                        linkPainel = 'painel_admin.html';
-                    } else if (data.tipo === 'produtor') {
-                        linkPainel = 'painel.html';
-                    } else if (data.tipo === 'analista') {
-                        linkPainel = 'painel_analista.html';
-                        textoBotao = 'Relatórios BI';
-                        classeBotao = 'btn-analista-link';
-                        icone = 'bi-bar-chart-line-fill';
-                    }
+                    if (data.tipo === 'admin' || data.tipo === 'produtor' || data.tipo === 'analista') {
+                        let linkPainel = '';
+                        let textoBotao = 'Painel de Gestão';
+                        let classeBotao = 'btn-admin-link';
+                        let icone = 'bi-gear-fill';
 
-                    menu.innerHTML = `
+                        if (data.tipo === 'admin') {
+                            linkPainel = 'painel_admin.html';
+                        } else if (data.tipo === 'produtor') {
+                            linkPainel = 'painel.html';
+                        } else if (data.tipo === 'analista') {
+                            linkPainel = 'painel_analista.html';
+                            textoBotao = 'Relatórios BI';
+                            classeBotao = 'btn-analista-link';
+                            icone = 'bi-bar-chart-line-fill';
+                        }
+
+                        menu.innerHTML = `
                     <a href="${linkPainel}" class="${classeBotao}"><i class="bi ${icone}"></i> ${textoBotao}</a>
                     <a href="perfil.html" class="text-decoration-none d-flex align-items-center gap-2 text-dark">
                         <img src="${data.foto}" class="user-avatar-mini">
@@ -348,19 +354,19 @@
                     </a>
                     <button class="btn btn-outline-danger btn-sm ms-2" id="btn-sair">Sair</button>
                 `;
-                } else {
-                    let badgeTipo = '';
-                    if (data.tipo === 'parceiro') {
-                        badgeTipo = `
+                    } else {
+                        let badgeTipo = '';
+                        if (data.tipo === 'parceiro') {
+                            badgeTipo = `
                         <li><hr class="dropdown-divider"></li>
                         <li><span class="dropdown-item-text text-primary fw-bold"><i class="bi bi-shop"></i> Você é Parceiro</span></li>
                         <li><button class="dropdown-item text-secondary small" onclick="window.cancelarAssinatura()"><i class="bi bi-x-circle me-2"></i> Cancelar Assinatura</button></li>
                     `;
-                    } else {
-                        badgeTipo = `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item fw-bold text-warning" href="planos.html">⭐ Seja Parceiro</a></li>`;
-                    }
+                        } else {
+                            badgeTipo = `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item fw-bold text-warning" href="planos.html">⭐ Seja Parceiro</a></li>`;
+                        }
 
-                    menu.innerHTML = `
+                        menu.innerHTML = `
                     <a href="perfil.html" class="text-decoration-none d-flex align-items-center gap-2 text-dark">
                         <img src="${data.foto}" class="user-avatar-mini">
                         <span class="fw-bold d-none d-md-block">${data.nome}</span>
@@ -375,362 +381,442 @@
                             <li><button class="dropdown-item text-danger" id="btn-sair">Sair</button></li>
                         </ul>
                     </div>`;
-                }
-
-                document.getElementById('btn-sair').addEventListener('click', () => {
-                    if (confirm('Deseja realmente sair?')) {
-                        signOut(authFirebase).then(() => location.reload());
                     }
-                });
-            } else {
-                window.isLogado = false;
-                window.usuarioGlobal = null;
-                menu.innerHTML = `
+
+                    document.getElementById('btn-sair').addEventListener('click', () => {
+                        if (confirm('Deseja realmente sair?')) {
+                            signOut(authFirebase).then(() => location.reload());
+                        }
+                    });
+                } else {
+                    window.isLogado = false;
+                    window.usuarioGlobal = null;
+                    menu.innerHTML = `
                 <a href="login.html" class="btn btn-outline-secondary btn-sm me-2">Login</a>
                 <a href="cadastro.html" class="btn btn-primary btn-sm" style="background:#f67123; border:none;">Cadastre-se</a>
             `;
-            }
-            carregarLocais();
-        });
-
-        // Função para cancelar assinatura (Voltar a ser Turista)
-        // Função para cancelar assinatura (Voltar a ser Turista e Desativar Locais)
-        // Função ATUALIZADA: Cancela assinatura e DESATIVA os locais usando o campo correto 'id_parceiro'
-        window.cancelarAssinatura = async () => {
-            if (confirm("Tem certeza que deseja cancelar sua assinatura? Seus estabelecimentos cadastrados serão DESATIVADOS e você voltará a ser um Turista comum.")) {
-                try {
-                    const userEmail = window.usuarioGlobal.id;
-                    const userRef = doc(dbFirebase, "users", userEmail);
-
-                    // 1. Volta o usuário para o tipo Turista
-                    await updateDoc(userRef, { tipo: "turista" });
-
-                    // 2. Busca todos os locais onde o 'id_parceiro' é o e-mail do usuário
-                    // Conforme imagem do banco de dados, o campo correto é id_parceiro
-                    const locaisRef = collection(dbFirebase, "locais");
-                    const qLocais = query(locaisRef, where("id_parceiro", "==", userEmail));
-                    const snapLocais = await getDocs(qLocais);
-
-                    if (!snapLocais.empty) {
-                        const batchPromessas = [];
-                        snapLocais.forEach((docLocal) => {
-                            const refLocal = doc(dbFirebase, "locais", docLocal.id);
-                            // 3. Muda o status para 'desativado' para que suma do index.html
-                            batchPromessas.push(updateDoc(refLocal, { status: "desativado" }));
-                        });
-
-                        // Aguarda a atualização de todos os estabelecimentos
-                        await Promise.all(batchPromessas);
-                        alert("Assinatura cancelada! Seus estabelecimentos foram retirados do ar.");
-                    } else {
-                        alert("Assinatura cancelada com sucesso!");
-                    }
-
-                    // 4. Recarrega para atualizar a interface
-                    location.reload();
-                } catch (e) {
-                    console.error("Erro ao cancelar:", e);
-                    alert("Erro ao processar o cancelamento da assinatura.");
                 }
-            }
-        };
+                carregarLocais();
+            });
 
-        // 5. Funções do Roteiro (Vinculadas ao window para funcionar com onclick no HTML)
-        window.abrirModalRoteiro = async (idLocal, event) => {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+            // Função para cancelar assinatura (Voltar a ser Turista)
+            // Função para cancelar assinatura (Voltar a ser Turista e Desativar Locais)
+            // Função ATUALIZADA: Cancela assinatura e DESATIVA os locais usando o campo correto 'id_parceiro'
+            window.cancelarAssinatura = async () => {
+                if (confirm("Tem certeza que deseja cancelar sua assinatura? Seus estabelecimentos cadastrados serão DESATIVADOS e você voltará a ser um Turista comum.")) {
+                    try {
+                        const userEmail = window.usuarioGlobal.id;
+                        const userRef = doc(dbFirebase, "users", userEmail);
 
-            if (!window.isLogado || !window.usuarioGlobal) {
-                alert("Faça login para adicionar ao roteiro!");
-                window.location.href = 'login.html';
-                return;
-            }
+                        // 1. Volta o usuário para o tipo Turista
+                        await updateDoc(userRef, { tipo: "turista" });
 
-            // Armazena o ID do local no campo oculto do HTML [cite: 433]
-            document.getElementById('id-local-temp').value = idLocal;
-            const select = document.getElementById('select-roteiros');
-            select.innerHTML = '<option value="">Buscando seus roteiros...</option>';
+                        // 2. Busca todos os locais onde o 'id_parceiro' é o e-mail do usuário
+                        // Conforme imagem do banco de dados, o campo correto é id_parceiro
+                        const locaisRef = collection(dbFirebase, "locais");
+                        const qLocais = query(locaisRef, where("id_parceiro", "==", userEmail));
+                        const snapLocais = await getDocs(qLocais);
 
-            const modalElement = document.getElementById('modalAddRoteiro');
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
+                        if (!snapLocais.empty) {
+                            const batchPromessas = [];
+                            snapLocais.forEach((docLocal) => {
+                                const refLocal = doc(dbFirebase, "locais", docLocal.id);
+                                // 3. Muda o status para 'desativado' para que suma do index.html
+                                batchPromessas.push(updateDoc(refLocal, { status: "desativado" }));
+                            });
 
-            try {
-                // Busca os roteiros do usuário logado [cite: 435]
-                const q = window.queryFirebase(
-                    window.collectionFirebase(window.dbFirebase, "roteiros"),
-                    window.whereFirebase("id_usuario", "==", window.usuarioGlobal.id)
-                );
-                const snap = await window.getDocsFirebase(q);
+                            // Aguarda a atualização de todos os estabelecimentos
+                            await Promise.all(batchPromessas);
+                            alert("Assinatura cancelada! Seus estabelecimentos foram retirados do ar.");
+                        } else {
+                            alert("Assinatura cancelada com sucesso!");
+                        }
 
-                if (snap.empty) {
-                    select.innerHTML = '<option value="">Você não tem roteiros. Crie um no Painel!</option>';
+                        // 4. Recarrega para atualizar a interface
+                        location.reload();
+                    } catch (e) {
+                        console.error("Erro ao cancelar:", e);
+                        alert("Erro ao processar o cancelamento da assinatura.");
+                    }
+                }
+            };
+
+            // 5. Funções do Roteiro (Vinculadas ao window para funcionar com onclick no HTML)
+            window.abrirModalRoteiro = async (idLocal, event) => {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                if (!window.isLogado || !window.usuarioGlobal) {
+                    alert("Faça login para adicionar ao roteiro!");
+                    window.location.href = 'login.html';
                     return;
                 }
 
-                select.innerHTML = '<option value="" selected disabled>Escolha um roteiro...</option>';
-                snap.forEach(doc => {
-                    select.innerHTML += `<option value="${doc.id}">${doc.data().nome_roteiro}</option>`;
-                });
-            } catch (e) {
-                console.error("Erro ao carregar roteiros:", e);
-                select.innerHTML = '<option>Erro ao carregar roteiros.</option>';
-            }
-        };
+                // Armazena o ID do local no campo oculto do HTML [cite: 433]
+                document.getElementById('id-local-temp').value = idLocal;
+                const select = document.getElementById('select-roteiros');
+                select.innerHTML = '<option value="">Buscando seus roteiros...</option>';
 
-        window.confirmarAdicaoRoteiro = async () => {
-            const idRoteiro = document.getElementById('select-roteiros').value;
-            const idLocal = document.getElementById('id-local-temp').value;
+                const modalElement = document.getElementById('modalAddRoteiro');
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
 
-            if (!idRoteiro) return alert("Selecione um roteiro da lista!");
-
-            try {
-                // Grava o item no roteiro usando a ponte addDoc criada anteriormente [cite: 443]
-                await window.addDoc(window.collectionFirebase(window.dbFirebase, "roteiro_itens"), {
-                    id_roteiro: idRoteiro,
-                    id_local: idLocal,
-                    horario: ""
-                });
-
-                alert("Local adicionado com sucesso ao seu roteiro!");
-                bootstrap.Modal.getInstance(document.getElementById('modalAddRoteiro')).hide();
-            } catch (e) {
-                console.error("Erro ao salvar local no roteiro:", e);
-                alert("Erro ao salvar local no roteiro.");
-            }
-        };
-    </script>
-
-    <script>
-        let locaisGlobais = [];
-        let filtroAtual = 'todos';
-
-        // ATUALIZAÇÃO: Tabela de mapeamento para filtros consistentes
-        const mapaCategorias = {
-            'Restaurante': ['Restaurante', 'Bar', 'Café', 'Cafeteria', 'Lanchonete', 'Padaria', 'Gastronomia'],
-            'Parque': ['Parque', 'Trilha', 'Mirante', 'Natureza', 'Praia'],
-            'Museu': ['Museu', 'Cultura', 'Teatro', 'Igreja', 'Monumento'],
-            'Feira': ['Feira', 'Mercado', 'Artesanato'],
-            'Lazer': ['Bar', 'Show', 'Balada', 'Cinema', 'Lazer', 'Entretenimento']
-        };
-
-        async function carregarLocais() {
-            try {
-                const locaisRef = window.collectionFirebase(window.dbFirebase, "locais");
-                const q = window.queryFirebase(locaisRef, window.whereFirebase("status", "==", "ativo"));
-                const snap = await window.getDocsFirebase(q);
-                locaisGlobais = [];
-                snap.forEach((doc) => { locaisGlobais.push({ id: doc.id, ...doc.data() }); });
-                renderizarLocais(locaisGlobais);
-            } catch (erro) { console.error("Erro ao carregar locais:", erro); }
-        }
-
-        function renderizarLocais(lista) {
-            const div = document.getElementById('grade-conteudo');
-            div.innerHTML = lista.length === 0 ? '<div class="col-12 text-center text-muted py-5"><h4>Nenhum local encontrado nesta categoria.</h4></div>' : '';
-            lista.forEach(item => {
-                let etiqueta = item.tipo_local === 'evento' ? `📅 ${item.data_evento}` : `📍 ${item.categoria}`;
-
-                let botoesAcao = (window.usuarioGlobal && (window.usuarioGlobal.tipo === 'admin' || window.usuarioGlobal.tipo === 'produtor' || window.usuarioGlobal.tipo === 'analista'))
-                    ? `<a href="detalhes.html?id=${item.id}" class="btn btn-primary w-100 btn-sm fw-bold">Ver Detalhes (Gestão)</a>`
-                    : `<button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="window.abrirModalRoteiro('${item.id}', event)">+ Roteiro</button>
-                   <a href="detalhes.html?id=${item.id}" class="btn btn-primary w-50 btn-sm fw-bold">Detalhes</a>`;
-
-                div.innerHTML += `
-                <div class="col-md-4 mb-4">
-                    <div class="card card-evento h-100 shadow-sm" onclick="window.location.href='detalhes.html?id=${item.id}'">
-                        <img src="${item.imagem}" class="card-img-top" onerror="this.src='img/ilustrativa_${item.categoria.toLowerCase()}.jpg'">
-                        <div class="card-body d-flex flex-column">
-                            <div>
-                                <span class="badge-categoria mb-2 d-inline-block">${etiqueta}</span>
-                                <h5 class="card-title fw-bold mt-2">${item.nome}</h5>
-                                <p class="card-text text-secondary small">${item.descricao.substring(0, 80)}...</p>
-                            </div>
-                            <div class="mt-auto pt-3 d-flex gap-2">${botoesAcao}</div>
-                        </div>
-                    </div>
-                </div>`;
-            });
-        }
-
-        function aplicarFiltros() {
-            // 1. Captura os termos de busca e limpa espaços extras
-            const termo = document.getElementById('input-busca').value.toLowerCase().trim();
-            const localidade = document.getElementById('input-localidade').value.toLowerCase().trim();
-
-            // 2. Filtra a lista global baseada nos critérios ativos
-            const filtrados = locaisGlobais.filter(item => {
-
-                // Filtro A: Categoria (Nicho) - Verifica se o item pertence ao grupo selecionado
-                let bateNicho = false;
-                if (filtroAtual === 'todos') {
-                    bateNicho = true;
-                } else {
-                    const categoriasPermitidas = mapaCategorias[filtroAtual] || [filtroAtual];
-                    bateNicho = categoriasPermitidas.some(cat =>
-                        item.categoria.toLowerCase() === cat.toLowerCase()
+                try {
+                    // Busca os roteiros do usuário logado [cite: 435]
+                    const q = window.queryFirebase(
+                        window.collectionFirebase(window.dbFirebase, "roteiros"),
+                        window.whereFirebase("id_usuario", "==", window.usuarioGlobal.id)
                     );
+                    const snap = await window.getDocsFirebase(q);
+
+                    if (snap.empty) {
+                        select.innerHTML = '<option value="">Você não tem roteiros. Crie um no Painel!</option>';
+                        return;
+                    }
+
+                    select.innerHTML = '<option value="" selected disabled>Escolha um roteiro...</option>';
+                    snap.forEach(doc => {
+                        select.innerHTML += `<option value="${doc.id}">${doc.data().nome_roteiro}</option>`;
+                    });
+                } catch (e) {
+                    console.error("Erro ao carregar roteiros:", e);
+                    select.innerHTML = '<option>Erro ao carregar roteiros.</option>';
                 }
+            };
 
-                // Filtro B: Texto - Busca no Nome ou na Descrição (Tempo Real)
-                // Se o campo estiver vazio, retorna true para não filtrar nada por texto
-                const bateTexto = termo === "" ||
-                    item.nome.toLowerCase().includes(termo) ||
-                    item.descricao.toLowerCase().includes(termo);
+            window.confirmarAdicaoRoteiro = async () => {
+                const idRoteiro = document.getElementById('select-roteiros').value;
+                const idLocal = document.getElementById('id-local-temp').value;
 
-                // Filtro C: Localidade - Busca na Rua, Cidade ou Estado
-                let enderecoCompleto = "";
-                if (typeof item.endereco === 'object' && item.endereco !== null) {
-                    enderecoCompleto = `${item.endereco.rua || ""} ${item.endereco.cidade || ""} ${item.endereco.estado || ""}`.toLowerCase();
-                } else {
-                    enderecoCompleto = String(item.endereco || "").toLowerCase();
+                if (!idRoteiro) return alert("Selecione um roteiro da lista!");
+
+                try {
+                    // Grava o item no roteiro usando a ponte addDoc criada anteriormente [cite: 443]
+                    await window.addDoc(window.collectionFirebase(window.dbFirebase, "roteiro_itens"), {
+                        id_roteiro: idRoteiro,
+                        id_local: idLocal,
+                        horario: ""
+                    });
+
+                    alert("Local adicionado com sucesso ao seu roteiro!");
+                    bootstrap.Modal.getInstance(document.getElementById('modalAddRoteiro')).hide();
+                } catch (e) {
+                    console.error("Erro ao salvar local no roteiro:", e);
+                    alert("Erro ao salvar local no roteiro.");
                 }
-                const bateLocal = localidade === "" || enderecoCompleto.includes(localidade);
+            };
+        </script>
 
-                // O item só aparece se passar nos três filtros simultaneamente
-                return bateNicho && bateTexto && bateLocal;
-            });
+        <script>
+            let locaisGlobais = [];
+            let locaisFiltrados = []; // Mantém os locais que passaram pelos filtros para calcular a paginação
+            let filtroAtual = 'todos';
+            let limitePorPagina = 20; // Define o limite de 20 por página
+            let paginaAtual = 1;     // Rastreia qual página numérica está ativa no momento
 
-            // 3. Atualiza a tela com os resultados filtrados
-            renderizarLocais(filtrados);
-        }
+            // ATUALIZAÇÃO: Tabela de mapeamento para filtros consistentes
+            const mapaCategorias = {
+                'Restaurante': ['Restaurante', 'Bar', 'Café', 'Cafeteria', 'Lanchonete', 'Padaria', 'Gastronomia'],
+                'Parque': ['Parque', 'Trilha', 'Mirante', 'Natureza', 'Praia'],
+                'Museu': ['Museu', 'Cultura', 'Teatro', 'Igreja', 'Monumento'],
+                'Feira': ['Feira', 'Mercado', 'Artesanato'],
+                'Lazer': ['Bar', 'Show', 'Balada', 'Cinema', 'Lazer', 'Entretenimento']
+            };
 
-        function filtrarNicho(c, b) {
-            filtroAtual = c;
-            document.querySelectorAll('.btn-nicho').forEach(btn => btn.classList.remove('ativo'));
-            b.classList.add('ativo');
-            aplicarFiltros();
-        }
+            async function carregarLocais() {
+                try {
+                    const locaisRef = window.collectionFirebase(window.dbFirebase, "locais");
+                    const q = window.queryFirebase(locaisRef, window.whereFirebase("status", "==", "ativo"));
+                    const snap = await window.getDocsFirebase(q);
+                    locaisGlobais = [];
+                    snap.forEach((doc) => { locaisGlobais.push({ id: doc.id, ...doc.data() }); });
 
-        // Variável para controlar qual filtro geográfico está ativo
-        let filtroGeoAtivo = null;
-
-        // Variável global para saber qual filtro está ligado
-        let filtroAtivo = null;
-
-        // --- FUNÇÃO 1: GPS (COM DESATIVAR) ---
-        window.filtrarPorGps = () => {
-            const btn = event.currentTarget;
-
-            // Se já estiver ativo, desliga e mostra tudo
-            if (filtroAtivo === 'gps') {
-                filtroAtivo = null;
-                resetarEstiloBotao(btn, 'text-primary');
-                renderizarLocais(locaisGlobais);
-                return;
+                    // Alterado: chama aplicarFiltros() para inicializar a primeira página com os cortes corretos
+                    aplicarFiltros();
+                } catch (erro) { console.error("Erro ao carregar locais:", erro); }
             }
 
-            if (!navigator.geolocation) return alert("Seu navegador não suporta geolocalização.");
+            // ATUALIZADA: Limpa a tela e renderiza estritamente os 20 itens correspondentes à página atual
+            function renderizarLocais(lista) {
+                const div = document.getElementById('grade-conteudo');
 
-            navigator.geolocation.getCurrentPosition((pos) => {
-                // Limpa outros filtros antes
-                resetarTodosBotoes();
+                // Em sistemas numéricos (1, 2, 3), sempre limpamos a tela para exibir apenas o bloco atual
+                div.innerHTML = lista.length === 0 ? '<div class="col-12 text-center text-muted py-5"><h4>Nenhum local encontrado nesta categoria.</h4></div>' : '';
 
-                filtroAtivo = 'gps';
-                btn.classList.replace('btn-light', 'btn-primary');
-                btn.classList.replace('text-primary', 'text-white');
+                // Realiza o fatiamento (slice) matemático exato baseado na página numérica atual
+                const inicio = (paginaAtual - 1) * limitePorPagina;
+                const fim = inicio + limitePorPagina;
+                const itensParaExibir = lista.slice(inicio, fim);
 
-                const latUser = pos.coords.latitude;
-                const lonUser = pos.coords.longitude;
+                itensParaExibir.forEach(item => {
+                    let etiqueta = item.tipo_local === 'evento' ? `📅 ${item.data_evento}` : `📍 ${item.categoria}`;
 
-                const proximos = locaisGlobais.filter(local => {
-                    const distancia = calcularDistancia(latUser, lonUser, local.lat, local.lon);
-                    return distancia <= 10;
+                    // ATUALIZADO: Agora todos os usuários visualizam os mesmos botões normais do site
+                    let botoesAcao = `
+            <button class="btn btn-outline-success w-50 btn-sm fw-bold" onclick="window.abrirModalRoteiro('${item.id}', event)">+ Roteiro</button>
+            <a href="detalhes.html?id=${item.id}" class="btn btn-primary w-50 btn-sm fw-bold">Detalhes</a>
+        `;
+
+                    div.innerHTML += `
+<div class="col-md-4 mb-4">
+    <div class="card card-evento h-100 shadow-sm" onclick="window.location.href='detalhes.html?id=${item.id}'">
+        <img src="${item.imagem}" class="card-img-top" onerror="this.src='img/ilustrativa_${item.categoria.toLowerCase()}.jpg'">
+        <div class="card-body d-flex flex-column">
+            <div>
+                <span class="badge-categoria mb-2 d-inline-block">${etiqueta}</span>
+                <h5 class="card-title fw-bold mt-2">${item.nome}</h5>
+                <p class="card-text text-secondary small">${item.descricao.substring(0, 80)}...</p>
+            </div>
+            <div class="mt-auto pt-3 d-flex gap-2">${botoesAcao}</div>
+        </div>
+    </div>
+</div>`;
                 });
 
-                if (proximos.length === 0) alert("Não encontramos locais num raio de 10km.");
-                renderizarLocais(proximos);
-            });
-        };
-
-        // --- FUNÇÃO 2: PERFIL (COM DESATIVAR E AVISO DE CIDADE) ---
-        window.filtrarPorEnderecoPerfil = () => {
-            const btn = event.currentTarget;
-
-            // Se já estiver ativo, desliga e mostra tudo [cite: 140]
-            if (filtroAtivo === 'perfil') {
-                filtroAtivo = null;
-                resetarEstiloBotao(btn, 'text-laranja');
-                renderizarLocais(locaisGlobais);
-                return;
+                // Chama a função para desenhar a paginação de botões 1, 2, 3
+                configurarNumerosPagina(lista.length);
             }
 
-            // Verifica se o usuário está logado [cite: 141]
-            if (!window.isLogado || !window.usuarioGlobal) return alert("Faça login primeiro!");
+            // NOVA FUNÇÃO: Gera dinamicamente os botões da lista e marca o atual como ativo
+            function configurarNumerosPagina(totalItens) {
+                const btnContainer = document.getElementById('container-paginacao');
+                const listaNumeros = document.getElementById('lista-numeros-pagina');
 
-            // CORREÇÃO: Acessa a cidade dentro do objeto 'endereco' [cite: 125, 142]
-            const cidadePerfil = window.usuarioGlobal.endereco ? window.usuarioGlobal.endereco.cidade : null;
+                // Calcula a quantidade total de páginas necessárias
+                const totalPaginas = Math.ceil(totalItens / limitePorPagina);
 
-            if (!cidadePerfil) return alert("Cadastre sua cidade no Perfil!");
+                // Se o resultado renderizar apenas 1 página ou nenhuma, esconde a barra
+                if (totalPaginas <= 1) {
+                    btnContainer.style.display = "none";
+                    return;
+                }
 
-            // Limpa outros filtros visuais [cite: 143]
-            resetarTodosBotoes();
+                btnContainer.style.display = "flex";
+                listaNumeros.innerHTML = "";
 
-            filtroAtivo = 'perfil';
-            btn.classList.replace('btn-light', 'btn-primary');
-            btn.classList.replace('text-laranja', 'text-white');
-
-            // Filtra comparando a cidade do perfil com a cidade do local 
-            const pertoDeCasa = locaisGlobais.filter(local => {
-                // Trata o endereço do local de forma segura, seja ele objeto ou string 
-                const cidadeLocal = (typeof local.endereco === 'object' && local.endereco !== null)
-                    ? local.endereco.cidade
-                    : String(local.endereco || "");
-
-                return cidadeLocal.toLowerCase().includes(cidadePerfil.toLowerCase());
-            });
-
-            if (pertoDeCasa.length === 0) {
-                alert(`Ainda não temos locais cadastrados em ${cidadePerfil}.`);
+                // Monta os botões na tela adicionando a classe active no botão correspondente
+                for (let i = 1; i <= totalPaginas; i++) {
+                    const classeAtiva = (i === paginaAtual) ? 'active' : '';
+                    listaNumeros.innerHTML += `
+                <li class="page-item ${classeAtiva}">
+                    <button class="page-link fw-bold" onclick="window.mudarParaPagina(${i})">${i}</button>
+                </li>
+            `;
+                }
             }
 
-            renderizarLocais(pertoDeCasa);
-        };
+            // NOVA FUNÇÃO: Acionada ao clicar em qualquer número da listagem
+            window.mudarParaPagina = (numero) => {
+                paginaAtual = numero;
+                renderizarLocais(locaisFiltrados);
 
-        // --- FUNÇÕES DE APOIO ---
+                // Faz a tela subir de volta suavemente para o início da lista de cards
+                document.getElementById('grade-conteudo').scrollIntoView({ behavior: 'smooth' });
+            };
 
-        function resetarEstiloBotao(btn, classeCorOriginal) {
-            btn.classList.remove('btn-primary', 'text-white');
-            btn.classList.add('btn-light', classeCorOriginal);
-        }
+            // ATUALIZADA: Agora armazena os dados na variável global 'locaisFiltrados' e reseta a página para 1
+            function aplicarFiltros() {
+                // 1. Captura os termos de busca e limpa espaços extras
+                const termo = document.getElementById('input-busca').value.toLowerCase().trim();
+                const localidade = document.getElementById('input-localidade').value.toLowerCase().trim();
 
-        function resetarTodosBotoes() {
-            const btnGps = document.querySelector('[onclick*="filtrarPorGps"]');
-            const btnPerfil = document.querySelector('[onclick*="filtrarPorEnderecoPerfil"]');
-            if (btnGps) resetarEstiloBotao(btnGps, 'text-primary');
-            if (btnPerfil) resetarEstiloBotao(btnPerfil, 'text-laranja');
-        }
+                // Sempre que o usuário interagir com filtros, reinicia para a página 1 obrigatoriamente
+                paginaAtual = 1;
 
-        // Sua função Haversine que já funciona perfeitamente
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
+                // 2. Filtra a lista global baseada nos critérios ativos e joga no array global locaisFiltrados
+                locaisFiltrados = locaisGlobais.filter(item => {
 
-    </script>
-    <input type="hidden" id="id-local-temp">
+                    // Filtro A: Categoria (Nicho) - Verifica se o item pertence ao grupo selecionado
+                    let bateNicho = false;
+                    if (filtroAtual === 'todos') {
+                        bateNicho = true;
+                    } else {
+                        const categoriesPermitidas = mapaCategorias[filtroAtual] || [filtroAtual];
+                        bateNicho = categoriesPermitidas.some(cat =>
+                            item.categoria.toLowerCase() === cat.toLowerCase()
+                        );
+                    }
 
-    <div class="modal fade" id="modalAddRoteiro" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold">Adicionar ao Roteiro</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label small text-muted">Selecione um dos seus roteiros:</label>
-                    <select id="select-roteiros" class="form-select mb-3"></select>
-                    <button class="btn btn-primary w-100 fw-bold" onclick="window.confirmarAdicaoRoteiro()">Confirmar
-                        Adição</button>
+                    // Filtro B: Texto - Busca no Nome ou na Descrição (Tempo Real)
+                    // Se o campo estiver vazio, retorna true para não filtrar nada por texto
+                    const bateTexto = termo === "" ||
+                        item.nome.toLowerCase().includes(termo) ||
+                        item.descricao.toLowerCase().includes(termo);
+
+                    // Filtro C: Localidade - Busca na Rua, Cidade ou Estado
+                    let enderecoCompleto = "";
+                    if (typeof item.endereco === 'object' && item.endereco !== null) {
+                        enderecoCompleto = `${item.endereco.rua || ""} ${item.endereco.cidade || ""} ${item.endereco.estado || ""}`.toLowerCase();
+                    } else {
+                        enderecoCompleto = String(item.endereco || "").toLowerCase();
+                    }
+                    const bateLocal = localidade === "" || enderecoCompleto.includes(localidade);
+
+                    // O item só aparece se passar nos três filtros simultaneamente
+                    return bateNicho && bateTexto && bateLocal;
+                });
+
+                // Se um filtro geográfico (GPS ou Perfil) estiver ativo, repassa o controle com um bypass interno
+                if (filtroAtivo === 'gps') {
+                    window.filtrarPorGps(true);
+                    return;
+                } else if (filtroAtivo === 'perfil') {
+                    window.filtrarPorEnderecoPerfil(true);
+                    return;
+                }
+
+                // 3. Atualiza a tela com os resultados filtrados e paginados
+                renderizarLocais(locaisFiltrados);
+            }
+
+            function filtrarNicho(c, b) {
+                filtroAtual = c;
+                document.querySelectorAll('.btn-nicho').forEach(btn => btn.classList.remove('ativo'));
+                b.classList.add('ativo');
+                aplicarFiltros();
+            }
+
+            // Variável para controlar qual filtro geográfico está ativo
+            let filtroGeoAtivo = null;
+
+            // Variável global para saber qual filtro está ligado
+            let filtroAtivo = null;
+
+            // --- FUNÇÃO 1: GPS (ATUALIZADA COM INTEGRAÇÃO DE PAGINAÇÃO E PARÂMETRO BYPASS) ---
+            window.filtrarPorGps = (bypassToggle = false) => {
+                const btn = event && event.currentTarget ? event.currentTarget : document.querySelector('[onclick*="filtrarPorGps"]');
+
+                // Se já estiver ativo e não for uma atualização vinda da busca por texto, desliga e mostra tudo com paginação
+                if (filtroAtivo === 'gps' && bypassToggle !== true) {
+                    filtroAtivo = null;
+                    resetarEstiloBotao(btn, 'text-primary');
+                    aplicarFiltros();
+                    return;
+                }
+
+                if (!navigator.geolocation) return alert("Seu navegador não suporta geolocalização.");
+
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    if (bypassToggle !== true) {
+                        // Limpa outros filtros antes e reinicia a página se for um clique real
+                        resetarTodosBotoes();
+                        paginaAtual = 1;
+                    }
+
+                    filtroAtivo = 'gps';
+                    if (btn) {
+                        btn.classList.replace('btn-light', 'btn-primary');
+                        btn.classList.replace('text-primary', 'text-white');
+                    }
+
+                    const latUser = pos.coords.latitude;
+                    const lonUser = pos.coords.longitude;
+
+                    // Filtra geograficamente baseado na lista que já passou pela pesquisa por digitação
+                    locaisFiltrados = locaisFiltrados.filter(local => {
+                        const distancia = calcularDistancia(latUser, lonUser, local.lat, local.lon);
+                        return distancia <= 10;
+                    });
+
+                    if (locaisFiltrados.length === 0 && bypassToggle !== true) alert("Não encontramos locais num raio de 10km.");
+                    renderizarLocais(locaisFiltrados);
+                });
+            };
+
+            // --- FUNÇÃO 2: PERFIL (ATUALIZADA COM INTEGRAÇÃO DE PAGINAÇÃO E PARÂMETRO BYPASS) ---
+            window.filtrarPorEnderecoPerfil = (bypassToggle = false) => {
+                const btn = event && event.currentTarget ? event.currentTarget : document.querySelector('[onclick*="filtrarPorEnderecoPerfil"]');
+
+                // Se já estiver ativo e não for atualização por digitação, desliga e mostra tudo com paginação
+                if (filtroAtivo === 'perfil' && bypassToggle !== true) {
+                    filtroAtivo = null;
+                    resetarEstiloBotao(btn, 'text-laranja');
+                    aplicarFiltros();
+                    return;
+                }
+
+                // Verifica se o usuário está logado
+                if (!window.isLogado || !window.usuarioGlobal) return alert("Faça login primeiro!");
+
+                // CORREÇÃO: Acessa a cidade dentro do objeto 'endereco'
+                const cidadePerfil = window.usuarioGlobal.endereco ? window.usuarioGlobal.endereco.cidade : null;
+
+                if (!cidadePerfil) return alert("Cadastre sua cidade no Perfil!");
+
+                if (bypassToggle !== true) {
+                    // Limpa outros filtros visuais e reinicia a página se for um clique real
+                    resetarTodosBotoes();
+                    paginaAtual = 1;
+                }
+
+                filtroAtivo = 'perfil';
+                if (btn) {
+                    btn.classList.replace('btn-light', 'btn-primary');
+                    btn.classList.replace('text-laranja', 'text-white');
+                }
+
+                // Filtra comparando a cidade do perfil com a cidade do local extraída de locaisFiltrados
+                locaisFiltrados = locaisFiltrados.filter(local => {
+                    // Trata o endereço do local de forma segura, seja ele objeto ou string 
+                    const cidadeLocal = (typeof local.endereco === 'object' && local.endereco !== null)
+                        ? local.endereco.cidade
+                        : String(local.endereco || "");
+
+                    return cidadeLocal.toLowerCase().includes(cidadePerfil.toLowerCase());
+                });
+
+                if (locaisFiltrados.length === 0 && bypassToggle !== true) {
+                    alert(`Ainda não temos locais cadastrados em ${cidadePerfil}.`);
+                }
+
+                renderizarLocais(locaisFiltrados);
+            };
+
+            // --- FUNÇÕES DE APOIO ---
+
+            function resetarEstiloBotao(btn, classeCorOriginal) {
+                if (!btn) return;
+                btn.classList.remove('btn-primary', 'text-white');
+                btn.classList.add('btn-light', classeCorOriginal);
+            }
+
+            function resetarTodosBotoes() {
+                const btnGps = document.querySelector('[onclick*="filtrarPorGps"]');
+                const btnPerfil = document.querySelector('[onclick*="filtrarPorEnderecoPerfil"]');
+                if (btnGps) resetarEstiloBotao(btnGps, 'text-primary');
+                if (btnPerfil) resetarEstiloBotao(btnPerfil, 'text-laranja');
+            }
+
+            // Sua função Haversine que já funciona perfeitamente
+            function calcularDistancia(lat1, lon1, lat2, lon2) {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+        </script>
+        <input type="hidden" id="id-local-temp">
+
+        <div class="modal fade" id="modalAddRoteiro" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold">Adicionar ao Roteiro</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label small text-muted">Selecione um dos seus roteiros:</label>
+                        <select id="select-roteiros" class="form-select mb-3"></select>
+                        <button class="btn btn-primary w-100 fw-bold"
+                            onclick="window.confirmarAdicaoRoteiro()">Confirmar
+                            Adição</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 </body>
 
 </html>

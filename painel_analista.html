@@ -101,10 +101,21 @@
                     <h4 class="fw-bold mb-4 text-center">🌍 Mundoria</h4>
                     <hr>
                     <ul class="nav flex-column gap-2">
-                        <li class="nav-item"><a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Site
-                                Público</a></li>
-                        <li class="nav-item"><a href="#" class="nav-link active"><i
-                                    class="bi bi-graph-up-arrow me-2"></i> Business Intelligence</a></li>
+                        <li class="nav-item">
+                            <a href="index.html" class="nav-link"><i class="bi bi-house me-2"></i> Site Público</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="window.alternarVisualizacao('meu-painel')">
+                                <i class="bi bi-grid-fill me-2"></i> Meu Painel
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active">
+                                <i class="bi bi-graph-up-arrow me-2"></i> Business Intelligence
+                            </a>
+                        </li>
                     </ul>
                     <hr>
                     <button class="btn btn-sm btn-outline-danger w-100 mt-4" onclick="window.sair()">Sair do
@@ -307,6 +318,14 @@
         }
 
         window.sair = () => signOut(auth).then(() => window.location.href = "login.html");
+
+        // Adicione esta função no final do seu script para gerenciar o redirecionamento do analista
+        window.alternarVisualizacao = (tela) => {
+            if (tela === 'meu-painel') {
+                window.location.href = 'meu_painel.html';
+                return;
+            }
+        };
     </script>
 </body>
 

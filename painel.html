@@ -257,6 +257,11 @@
                                 <i class="bi bi-geo-alt-fill me-2"></i> Locais do Sistema
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="window.alternarVisualizacao('meu-painel')">
+                                <i class="bi bi-grid-fill me-2"></i> Meu Painel
+                            </a>
+                        </li>
                     </ul>
                     <hr>
                     <button class="btn btn-sm btn-outline-danger w-100 mt-4" id="btn-sair-produtor">Sair do
@@ -690,6 +695,12 @@
 
         // --- NAVEGAÇÃO ENTRE TELAS ---
         window.alternarVisualizacao = (tela) => {
+            // 0. REDIRECIONAMENTO: Se clicar em 'meu-painel', envia para a página sem mexer no DOM atual
+            if (tela === 'meu-painel') {
+                window.location.href = 'meu_painel.html';
+                return;
+            }
+
             const mainContent = document.querySelector('main');
 
             // 1. IMPORTANTE: Salva o e-mail que já está na tela para não perdê-lo

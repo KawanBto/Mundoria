@@ -146,6 +146,12 @@
                         </li>
 
                         <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="window.alternarVisualizacao('meu-painel')">
+                                <i class="bi bi-grid-fill me-2"></i> Meu Painel
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
                             <a href="#" class="nav-link active" onclick="location.reload()">
                                 <i class="bi bi-speedometer2 me-2"></i> Dashboard
                             </a>
@@ -2062,6 +2068,14 @@
             window.renderizarTabelaDash();
             // Scroll para o topo da tabela para facilitar a leitura
             document.querySelector('.card-admin').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // Adicione esta função no final do seu script para gerir o redirecionamento
+        window.alternarVisualizacao = (tela) => {
+            if (tela === 'meu-painel') {
+                window.location.href = 'meu_painel.html';
+                return;
+            }
         };
 
         window.removerAcesso = async (id) => { if (confirm("Voltar para Turista?")) { await updateDoc(doc(db, "users", id), { tipo: "turista" }); carregarEquipe(); } };

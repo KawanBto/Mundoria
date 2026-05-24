@@ -491,7 +491,7 @@
                         <div class="mb-2 position-relative">
                             <label class="fw-bold small">Logradouro (Rua/Bairro)</label>
                             <input type="text" id="sol-rua" class="form-control"
-                                oninput="window.buscarEndereco(this.value, 'sol')">
+                                oninput="window.buscarEndereco(this.value, 'sol')" autocomplete="off">
                             <div id="lista-sugestoes-sol" class="lista-sugestoes"></div>
                         </div>
 
@@ -1205,15 +1205,18 @@
             // ESCONDE TUDO O QUE ESTÁ SOBRANDO NA TELA 
             document.getElementById('area-gestao').classList.add('d-none');
             document.getElementById('area-pendente').classList.add('d-none');
-            document.getElementById('header-multi-negocio').classList.add('d-none'); // ADICIONE ESTA LINHA
+            document.getElementById('header-multi-negocio').classList.add('d-none');
 
-            // MOSTRA O FORMULÁRIO DE NOVO PEDIDO [cite: 406]
+            // MOSTRA O FORMULÁRIO DE NOVO PEDIDO
             document.getElementById('area-solicitacao').classList.remove('d-none');
-
             blobFinalNegocio = null;
 
-            // Força o mapa a carregar corretamente os pedaços (tiles) [cite: 406]
-            setTimeout(() => { if (mapaSol) mapaSol.invalidateSize(); }, 400);
+            // Força o mapa a carregar corretamente os pedaços (tiles) recalculando o tamanho do container
+            setTimeout(() => {
+                if (mapaSol) {
+                    mapaSol.invalidateSize();
+                }
+            }, 400);
         };
 
         document.getElementById('form-solicitacao-local').onsubmit = async (e) => {
@@ -1585,6 +1588,117 @@
                 }
             }
         };
+
+        // --- SISTEMA DE AUTOCOMPLETE PARA CADASTRO DE ESTABELECIMENTOS ---
+
+        // 1. Busca as sugestões de endereço conforme o usuário digita
+        window.buscarEndereco = (q, prefixo) => {
+            const lista = document.getElementById(`lista-sugestoes-${prefixo}`);
+            if (!lista) return;
+
+            if (q.length < 3) {
+                lista.style.display = 'none';
+                return;
+            }
+
+            // Solicitamos os detalhes do endereço (addressdetails=1) para isolar CEP, Cidade e Estado
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&addressdetails=1&limit=5&countrycodes=br`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        lista.innerHTML = data.map(item => {
+                            const addr = item.address;
+                            const rua = addr.road || addr.pedestrian || addr.suburb || item.display_name.split(',')[0];
+                            const cidade = addr.city || addr.town || addr.village || addr.municipality || "";
+                            const estado = addr.state || "";
+
+                            // Monta uma label amigável para aparecer na lista
+                            const labelExibicao = `${rua}${cidade ? ', ' + cidade : ''}${estado ? ' - ' + estado : ''}`;
+
+                            return `
+                        <div class="item-sugestao" 
+                             style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; background: white;" 
+                             onclick="window.selecionarEnderecoCadastro('${item.display_name.replace(/'/g, "\\'")}', '${item.lat}', '${item.lon}', '${prefixo}', '${addr.postcode || ''}')">
+                            <i class="bi bi-geo-alt-fill text-danger me-2"></i><strong>${labelExibicao}</strong>
+                        </div>`;
+                        }).join('');
+                        lista.style.display = 'block';
+                    } else {
+                        lista.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error("Erro no autocomplete:", err));
+        };
+
+        // 2. Executada ao clicar em uma sugestão da lista
+        // 2. Executada ao clicar em uma sugestão da lista do autocomplete
+        window.selecionarEnderecoCadastro = (labelCompleta, lat, lon, prefixo, cepOriginal) => {
+            // Fecha a caixinha de sugestões
+            const lista = document.getElementById(`lista-sugestoes-${prefixo}`);
+            if (lista) {
+                lista.style.display = 'none';
+                lista.innerHTML = '';
+            }
+
+            // Faz uma busca reversa rápida para trazer os dados limpos do ponto exato clicado
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`)
+                .then(r => r.json())
+                .then(data => {
+                    const addr = data.address || {};
+
+                    const rua = addr.road || addr.pedestrian || addr.suburb || labelCompleta.split(',')[0];
+                    const cidade = addr.city || addr.town || addr.village || addr.municipality || "";
+                    const estado = addr.state || "";
+                    // Tenta pegar o CEP do reverse ou o que veio do clique original
+                    let cep = addr.postcode || cepOriginal || "";
+
+                    // Formata o CEP caso ele venha puro do OpenStreetMap (ex: 09500000 -> 09500-000)
+                    if (cep && !cep.includes('-')) {
+                        cep = cep.replace(/\D/g, "").replace(/^(\d{5})(\d)/, "$1-$2");
+                    }
+
+                    // Preenche os campos do formulário na hora
+                    if (document.getElementById(`${prefixo}-rua`)) document.getElementById(`${prefixo}-rua`).value = rua;
+                    if (document.getElementById(`${prefixo}-cidade`)) document.getElementById(`${prefixo}-cidade`).value = cidade;
+                    if (document.getElementById(`${prefixo}-estado`)) document.getElementById(`${prefixo}-estado`).value = estado;
+                    if (document.getElementById(`${prefixo}-cep`)) document.getElementById(`${prefixo}-cep`).value = cep.substring(0, 9);
+
+                    // Seta as coordenadas nos inputs ocultos para o form-submit salvar certo
+                    if (document.getElementById(`${prefixo}-lat`)) document.getElementById(`${prefixo}-lat`).value = lat;
+                    if (document.getElementById(`${prefixo}-lon`)) document.getElementById(`${prefixo}-lon`).value = lon;
+
+                    // --- CORREÇÃO DO PING DO MARCADOR NO LEAFLET ---
+                    // Identifica qual mapa do seu projeto atualizar com base nas variáveis existentes
+                    const mapaAlvo = (prefixo === 'sol') ? mapaSol : mapaEdicao;
+
+                    if (mapaAlvo) {
+                        const coordenadas = [parseFloat(lat), parseFloat(lon)];
+
+                        // Força o Leaflet a recalcular o container e centraliza a câmera
+                        mapaAlvo.invalidateSize();
+                        mapaAlvo.setView(coordenadas, 16);
+
+                        // Renderiza o pino de forma limpa sem quebrar os cliques manuais
+                        if (prefixo === 'sol') {
+                            if (marcadorSol) mapaAlvo.removeLayer(marcadorSol);
+                            marcadorSol = L.marker(coordenadas).addTo(mapaAlvo);
+                        } else {
+                            if (marcadorEdicao) mapaAlvo.removeLayer(marcadorEdicao);
+                            marcadorEdicao = L.marker(coordenadas).addTo(mapaAlvo);
+                        }
+                    }
+                })
+                .catch(err => console.error("Erro ao processar seleção de endereço:", err));
+        };
+
+        // 4. Fecha a lista se o usuário clicar em qualquer outro lugar da tela
+        document.addEventListener('click', (e) => {
+            const lista = document.getElementById('lista-sugestoes-sol');
+            const input = document.getElementById('sol-rua');
+            if (lista && e.target !== lista && e.target !== input) {
+                lista.style.display = 'none';
+            }
+        });
         window.excluirLocal = async () => { if (confirm("EXCLUIR LOCAL?")) { await deleteDoc(doc(db, "locais", idLocalParceiroGlobal)); location.reload(); } };
     </script>
 </body>

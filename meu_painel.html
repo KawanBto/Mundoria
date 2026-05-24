@@ -993,10 +993,18 @@
             alert("Roteiro salvo!"); editandoRoteiroId = null; window.atualizarConteudoRoteiro(idR);
         };
 
-        // --- FAVORITOS (LINK HIGIENIZADO) ---
+        // --- FAVORITOS ---
         async function carregarFavoritos(email) {
             const snap = await getDocs(query(collection(db, "favoritos"), where("id_usuario", "==", email)));
-            const div = document.getElementById('lista-favoritos'); div.innerHTML = "";
+            const div = document.getElementById('lista-favoritos');
+
+            // Se não houver favoritos, mostra a mensagem e interrompe a execução igual às outras abas
+            if (snap.empty) {
+                div.innerHTML = '<p class="text-center py-5 text-muted">Sem favoritos.</p>';
+                return;
+            }
+
+            div.innerHTML = "";
             for (const d of snap.docs) {
                 const f = d.data(); const lD = await getDoc(doc(db, "locais", f.id_local));
                 if (lD.exists()) {

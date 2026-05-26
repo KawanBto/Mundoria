@@ -131,7 +131,7 @@
                     </div>
                 </div>
 
-                <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> Minha Localização</h5>
+                <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> Minha Residência</h5>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -327,7 +327,7 @@
 
             try {
                 await updateDoc(doc(db, "users", emailId), novosDados);
-                alert("Perfil atualizado! CEP agora está no lugar certo.");
+                alert("Perfil atualizado!");
                 // Opcional: recarregar para limpar o campo antigo que ficou fora do objeto
                 location.reload();
             } catch (e) {
